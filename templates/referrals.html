@@ -481,11 +481,11 @@
   <!-- Ticker -->
   <div class="rf-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST REFERRALS ★&nbsp;&nbsp;&nbsp;
-      INVITE FRIENDS &amp; EARN DOGE TOGETHER &nbsp;★&nbsp;&nbsp;&nbsp;
-      MORE FRIENDS = MORE DOGE &nbsp;★&nbsp;&nbsp;&nbsp;
+      ★ REFERRALS ★&nbsp;&nbsp;&nbsp;
+      INVITE FRIENDS & EARN TON TOGETHER &nbsp;★&nbsp;&nbsp;&nbsp;
+      MORE FRIENDS = MORE TON &nbsp;★&nbsp;&nbsp;&nbsp;
       UNLOCK MILESTONE BONUSES &nbsp;★&nbsp;&nbsp;&nbsp;
-      MUCH REFER. VERY EARN. SO DOGE. &nbsp;★&nbsp;&nbsp;&nbsp;
+      MUCH REFER. VERY EARN. SO TON. &nbsp;★&nbsp;&nbsp;&nbsp;
     </span>
   </div>
 
@@ -499,7 +499,7 @@
       </div>
       <div class="rf-hero-title">INVITE FRIENDS</div>
       <div class="rf-hero-desc">
-        Earn <strong>{{ format_doge(referral_bonus) }} DOGE</strong>
+        Earn <strong>{{ format_doge(referral_bonus) }} TON</strong>
         for each friend who completes a task!
       </div>
     </div>
@@ -663,7 +663,7 @@
             <span class="rf-tier-name">STARTER</span>
             <span class="rf-tier-goal">5 Referrals</span>
           </div>
-          <span class="rf-tier-reward">+0.5 DOGE<br>Bonus</span>
+          <span class="rf-tier-reward">+0.5 TON<br>Bonus</span>
           {% if validated_referrals >= 5 %}
           <span class="rf-tier-badge">UNLOCKED</span>
           {% endif %}
@@ -681,7 +681,7 @@
             <span class="rf-tier-name">RECRUITER</span>
             <span class="rf-tier-goal">10 Referrals</span>
           </div>
-          <span class="rf-tier-reward">+1 DOGE<br>Bonus</span>
+          <span class="rf-tier-reward">+1 TON<br>Bonus</span>
           {% if validated_referrals >= 10 %}
           <span class="rf-tier-badge">UNLOCKED</span>
           {% endif %}
@@ -699,7 +699,7 @@
             <span class="rf-tier-name">CHAMPION</span>
             <span class="rf-tier-goal">25 Referrals</span>
           </div>
-          <span class="rf-tier-reward">+3 DOGE<br>Bonus</span>
+          <span class="rf-tier-reward">+3 TON<br>Bonus</span>
           {% if validated_referrals >= 25 %}
           <span class="rf-tier-badge">UNLOCKED</span>
           {% endif %}
@@ -717,7 +717,7 @@
             <span class="rf-tier-name">LEGEND</span>
             <span class="rf-tier-goal">50 Referrals</span>
           </div>
-          <span class="rf-tier-reward">+10 DOGE<br>Bonus</span>
+          <span class="rf-tier-reward">+10 TON<br>Bonus</span>
           {% if validated_referrals >= 50 %}
           <span class="rf-tier-badge">UNLOCKED</span>
           {% endif %}
@@ -749,7 +749,7 @@ function copyInviteLink() { copyLink('inviteLink','copyBtn'); }
 
 function shareTelegram() {
   const link = document.getElementById('inviteLink').value;
-  const text = '🐕 ¡Únete a Doge Pixel y gana DOGE gratis! Completa misiones, haz check-in diario y retira Dogecoin real. \n\n👇 Entra aquí:';
+  const text = '🐕 ¡Únete a Doge Pixel y gana TON gratis! Completa misiones, haz check-in diario y retira TON real. \n\n👇 Entra aquí:';
   // For Mini App links, use openTelegramLink with share URL
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
   if (window.Telegram && window.Telegram.WebApp) {

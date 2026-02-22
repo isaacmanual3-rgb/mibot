@@ -199,8 +199,8 @@ async function viewUser(userId) {
                     <div class="form-group"><label class="form-label">Name</label><p>${u.first_name || ''}</p></div>
                     <div class="form-group"><label class="form-label">Status</label>
                         <p>${u.is_banned ? '<span class="badge badge-danger">BANNED</span>' : '<span class="badge badge-success">ACTIVE</span>'}</p></div>
-                    <div class="form-group"><label class="form-label">Balance</label><p class="text-gold">${bal} DOGE</p></div>
-                    <div class="form-group"><label class="form-label">Total Earned</label><p>${parseFloat(u.total_earned||0).toFixed(8)} DOGE</p></div>
+                    <div class="form-group"><label class="form-label">Balance</label><p class="text-gold">${bal} TON</p></div>
+                    <div class="form-group"><label class="form-label">Total Earned</label><p>${parseFloat(u.total_earned||0).toFixed(8)} TON</p></div>
                     <div class="form-group"><label class="form-label">Check-in Streak</label><p>${u.checkin_streak} days (Best: ${u.longest_streak})</p></div>
                     <div class="form-group"><label class="form-label">Total Check-ins</label><p>${u.total_checkins}</p></div>
                     <div class="form-group"><label class="form-label">Referrals</label><p>${u.validated_referrals} validated (+${parseFloat(u.referral_earnings||0).toFixed(8)} DOGE)</p></div>

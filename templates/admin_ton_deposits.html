@@ -21,7 +21,7 @@
             <th>Deposit ID</th>
             <th>User</th>
             <th>TON Amount</th>
-            <th>DOGE Credit</th>
+            <th>TON Credit</th>
             <th>Wallet From</th>
             <th>TX Hash</th>
             <th>Status</th>
@@ -81,7 +81,7 @@
 const adminTon = {
     approve: async function(depositId) {
         const txHash = document.getElementById('hash-' + depositId)?.value || '';
-        if (!confirm('Approve deposit ' + depositId + '? This will credit DOGE to the user.')) return;
+        if (!confirm('Approve deposit ' + depositId + '? This will credit TON to the user.')) return;
         const r = await fetch('/admin/ton-deposits/' + depositId + '/approve', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

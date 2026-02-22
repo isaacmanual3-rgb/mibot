@@ -394,10 +394,10 @@
 
   <div class="ex-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST LEADERBOARDS ★&nbsp;&nbsp;
+      ★ LEADERBOARDS ★&nbsp;&nbsp;
       COMPETE WITH OTHER QUESTERS FOR THE TOP SPOTS &nbsp;★&nbsp;&nbsp;
       TOP EARNERS • TOP REFERRERS • TOP STREAKS &nbsp;★&nbsp;&nbsp;
-      MUCH COMPETE. VERY RANK. SO DOGE. &nbsp;★&nbsp;&nbsp;
+      MUCH COMPETE. VERY RANK. SO TON. &nbsp;★&nbsp;&nbsp;
     </span>
   </div>
 
@@ -421,7 +421,7 @@
       </div>
       <div style="width:44px"></div><!-- spacer for icon -->
       <div class="ex-rank-right">
-        <span class="ex-rank-balance">{{ format_doge(user.doge_balance) }} DOGE</span>
+        <span class="ex-rank-balance">{{ format_doge(user.doge_balance) }} TON</span>
         <span class="ex-rank-balance-lbl">Current Balance</span>
       </div>
       <div class="ex-rank-icon" aria-hidden="true">
@@ -491,7 +491,7 @@
             <span class="ex-lb-rank">{{ loop.index + 3 }}</span>
             <div class="ex-lb-avatar">{{ user.username[0]|upper if user.username else '?' }}</div>
             <span class="ex-lb-name">{{ user.username or 'Anonymous' }}</span>
-            <span class="ex-lb-value">{{ format_doge(user.doge_balance) }}<small>DOGE</small></span>
+            <span class="ex-lb-value">{{ format_doge(user.doge_balance) }}<small>TON</small></span>
           </div>
           {% endfor %}
         </div>
@@ -639,7 +639,7 @@
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-coin"/></svg></span></div>
           <span class="ex-comm-val">{{ format_doge(total_distributed) }}</span>
-          <span class="ex-comm-lbl">DOGE Dist.</span>
+          <span class="ex-comm-lbl">TON Dist.</span>
         </div>
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-fire"/></svg></span></div>

@@ -1025,11 +1025,11 @@ canvas#oscCanvas {
   <!-- Ticker -->
   <div class="px-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST DAILY REWARDS ★&nbsp;&nbsp;&nbsp;&nbsp;
-      EARN DOGE EVERY DAY &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-      COMPLETE QUESTS FOR BONUS DOGE &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      ★ TON QUEST DAILY REWARDS ★&nbsp;&nbsp;&nbsp;&nbsp;
+      EARN TON EVERY DAY &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      COMPLETE QUESTS FOR BONUS TON &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
       INVITE FRIENDS &amp; MULTIPLY YOUR EARNINGS &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-      MUCH WOW. VERY EARN. SO DOGE. &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      MUCH WOW. VERY EARN. SO TON. &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
     </span>
   </div>
 
@@ -1098,7 +1098,7 @@ canvas#oscCanvas {
             <div class="mdb-live-counter">
               <span class="mdb-live-lbl">⛏ TOTAL PENDING</span>
               <span class="mdb-live-amount" id="mdbLiveAmount">0.00000000</span>
-              <span class="mdb-live-unit">DOGE</span>
+              <span class="mdb-live-unit">TON/span>
             </div>
             <div class="mdb-rate-row">
               <div class="mdb-rate-cell">
@@ -1192,14 +1192,14 @@ canvas#oscCanvas {
         <div class="mdb-noplan">
           <div class="mdb-noplan-rig">⛏</div>
           <div class="mdb-noplan-title">RIG OFFLINE</div>
-          <div class="mdb-noplan-sub">PURCHASE A PLAN TO START<br>EARNING DOGE AUTOMATICALLY</div>
+          <div class="mdb-noplan-sub">PURCHASE A PLAN TO START<br>EARNING TON AUTOMATICALLY</div>
 
           <!-- Plan preview -->
           <div class="mdb-plan-preview">
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#ff8a65">🔥 BRONZE</span>
               <span class="mdb-plan-preview-rate">STARTER TIER</span>
-              <span class="mdb-plan-preview-earn">EARN DOGE/HR</span>
+              <span class="mdb-plan-preview-earn">EARN TON/HR</span>
             </div>
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#b0bec5">🛡 SILVER</span>
@@ -1214,7 +1214,7 @@ canvas#oscCanvas {
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#ce93d8">♛ LEGENDARY</span>
               <span class="mdb-plan-preview-rate">MAXIMUM POWER</span>
-              <span class="mdb-plan-preview-earn">🔥 MAX DOGE</span>
+              <span class="mdb-plan-preview-earn">🔥 MAX TON</span>
             </div>
           </div>
 
@@ -1266,7 +1266,7 @@ canvas#oscCanvas {
       <div class="px-quest-list">
         <div class="px-quest-item">
           <div class="px-quest-num">1</div>
-          <div class="px-quest-text"><strong>BUY A MINING PLAN</strong> to start auto-earning DOGE</div>
+          <div class="px-quest-text"><strong>BUY A MINING PLAN</strong> to start auto-earning TON</div>
         </div>
         <div class="px-quest-item">
           <div class="px-quest-num">2</div>
@@ -1278,7 +1278,7 @@ canvas#oscCanvas {
         </div>
         <div class="px-quest-item">
           <div class="px-quest-num">4</div>
-          <div class="px-quest-text"><strong>WITHDRAW</strong> your DOGE to your wallet</div>
+          <div class="px-quest-text"><strong>WITHDRAW</strong> your TON to your wallet</div>
         </div>
       </div>
     </div>
@@ -1401,7 +1401,7 @@ const MDB = (() => {
     { t:'ok',   msgs: [
         () => `BLOCK #${(Math.floor(Math.random()*9000000)+1000000)} FOUND`,
         () => `HASH ${randHex(8)}...${randHex(4)} VERIFIED ✓`,
-        () => `+${fmtShort(state.hourlyRate/3600)} DOGE AWARDED`,
+        () => `+${fmtShort(state.hourlyRate/3600)} TON AWARDED`,
         () => `SHARE ACCEPTED BY POOL`,
       ]},
     { t:'info', msgs: [
@@ -1459,7 +1459,7 @@ const MDB = (() => {
       const el = $('mdbLiveAmount');
       if (el) el.textContent = total.toFixed(8);
 
-      /* update progress % (target = 0.1 DOGE = 1 claim threshold) */
+      /* update progress % (target = 0.1 TON = 1 claim threshold) */
       const threshold = Math.max(0.001, parseFloat(state.hourlyRate) * 0.5);
       const pct = Math.min(100, (total / threshold) * 100);
       const fill = $('mdbProgressFill');
@@ -1470,7 +1470,7 @@ const MDB = (() => {
       /* update claim button */
       const btn = $('mdbClaimBtn');
       if (btn && !btn.disabled) {
-        btn.innerHTML = `💰 CLAIM ${total.toFixed(6)} DOGE`;
+        btn.innerHTML = `💰 CLAIM ${total.toFixed(6)} TON`;
       }
     }, 250);
   }
@@ -1537,7 +1537,7 @@ const MDB = (() => {
     if (btn) {
       btn.disabled = state.pending <= 0;
       btn.innerHTML = state.pending > 0
-        ? `💰 CLAIM ${fmtShort(state.pending)} DOGE`
+        ? `💰 CLAIM ${fmtShort(state.pending)} TON`
         : `⛏ MINING... REWARDS ACCUMULATING`;
     }
 

@@ -840,11 +840,11 @@
   <!-- Ticker -->
   <div class="tq-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST TASKS ★&nbsp;&nbsp;&nbsp;
-      COMPLETE QUESTS TO EARN DOGE &nbsp;★&nbsp;&nbsp;&nbsp;
+      ★ TASKS ★&nbsp;&nbsp;&nbsp;
+      COMPLETE QUESTS TO EARN TON &nbsp;★&nbsp;&nbsp;&nbsp;
       DAILY TASKS RESET EVERY 24H &nbsp;★&nbsp;&nbsp;&nbsp;
       SPECIAL QUESTS = BIG REWARDS &nbsp;★&nbsp;&nbsp;&nbsp;
-      MUCH TASK. VERY DOGE. SO EARN. &nbsp;★&nbsp;&nbsp;&nbsp;
+      MUCH TASK. VERY TON. SO EARN. &nbsp;★&nbsp;&nbsp;&nbsp;
     </span>
   </div>
 
@@ -1025,7 +1025,7 @@ async function verifyTask() {
     const data = await response.json();
     if (data.success) {
       closeVerifyModal();
-      showToast('Quest completed! +' + data.reward + ' DOGE', 'success');
+      showToast('Quest completed! +' + data.reward + ' TON', 'success');
       const taskCard = document.querySelector(`[data-task-id="${currentTaskId}"]`);
       if (taskCard) {
         taskCard.classList.add('tq-task-done');
@@ -1056,7 +1056,7 @@ async function completeTaskDirect(taskId) {
     });
     const data = await response.json();
     if (data.success) {
-      showToast('Quest completed! +' + data.reward + ' DOGE', 'success');
+      showToast('Quest completed! +' + data.reward + ' TON', 'success');
       setTimeout(() => location.reload(), 1000);
     } else {
       showToast(data.message || 'Task failed', 'error');

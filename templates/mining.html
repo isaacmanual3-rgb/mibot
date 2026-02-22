@@ -457,11 +457,11 @@
 <div class="mn-shell">
   <div class="mn-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST MINING STATION ★&nbsp;&nbsp;
+      ★ MINING STATION ★&nbsp;&nbsp;
       PURCHASE MACHINES &amp; EARN AUTOMATICALLY &nbsp;★&nbsp;&nbsp;
       CLAIM PENDING REWARDS ANYTIME &nbsp;★&nbsp;&nbsp;
-      MORE MACHINES = MORE DOGE PER HOUR &nbsp;★&nbsp;&nbsp;
-      MUCH MINE. VERY PASSIVE. SO DOGE. &nbsp;★&nbsp;&nbsp;
+      MORE MACHINES = MORE TON PER HOUR &nbsp;★&nbsp;&nbsp;
+      MUCH MINE. VERY PASSIVE. SO TON. &nbsp;★&nbsp;&nbsp;
     </span>
   </div>
 
@@ -474,7 +474,7 @@
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span>
       </div>
       <div class="mn-hero-title">MINING STATION</div>
-      <div class="mn-hero-sub">Purchase mining machines and earn DOGE automatically!</div>
+      <div class="mn-hero-sub">Purchase mining machines and earn TON automatically!</div>
     </div>
 
     <!-- ── STATS ── -->
@@ -490,7 +490,7 @@
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
           </div>
           <span class="mn-stat-val">{{ format_doge(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
-          <span class="mn-stat-lbl">DOGE/Hour</span>
+          <span class="mn-stat-lbl">TON/Hour</span>
         </div>
         <div class="mn-stat">
           <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
@@ -507,7 +507,7 @@
     <div class="mn-claim">
       <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-        CLAIM {{ format_doge(pending_rewards) }} DOGE
+        CLAIM {{ format_doge(pending_rewards) }} TON
       </button>
     </div>
     {% endif %}
@@ -539,7 +539,7 @@
           </div>
           <div class="mn-machine-body">
             <span class="mn-machine-name">{{ machine.plan_name }}</span>
-            <span class="mn-machine-rate">{{ format_doge(machine.hourly_rate) }} DOGE/hr</span>
+            <span class="mn-machine-rate">{{ format_doge(machine.hourly_rate) }} TON/hr</span>
           </div>
           <div class="mn-machine-right">
             <div class="mn-machine-status">
@@ -562,7 +562,7 @@
         Mining Machines
       </div>
       <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
-        Purchase a miner to start earning DOGE automatically!
+        Purchase a miner to start earning TON automatically!
       </p>
 
       {% if plans %}
@@ -653,7 +653,7 @@
         <div class="mn-step">
           <div class="mn-step-num">4</div>
           <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span></div>
-          <div class="mn-step-lbl">Withdraw DOGE!</div>
+          <div class="mn-step-lbl">Withdraw TON!</div>
         </div>
       </div>
     </div>
@@ -671,11 +671,11 @@
     <div class="mn-modal-details">
       <div class="mn-detail-row">
         <span class="mn-detail-lbl">Cost</span>
-        <span class="mn-detail-val" id="purchaseCost">0 DOGE</span>
+        <span class="mn-detail-val" id="purchaseCost">0 TON</span>
       </div>
       <div class="mn-detail-row">
         <span class="mn-detail-lbl">Your Balance</span>
-        <span class="mn-detail-val">{{ format_doge(user.doge_balance) }} DOGE</span>
+        <span class="mn-detail-val">{{ format_doge(user.doge_balance) }} TON</span>
       </div>
     </div>
     <div class="mn-modal-btns">
@@ -696,7 +696,7 @@ let currentPlanPrice = 0;
 function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
   document.getElementById('purchaseMessage').textContent = `Purchase ${planName}?`;
-  document.getElementById('purchaseCost').textContent = `${price} DOGE`;
+  document.getElementById('purchaseCost').textContent = `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
 }
 function closePurchaseModal() {

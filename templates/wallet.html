@@ -422,11 +422,11 @@
 <div class="wl-shell">
   <div class="wl-ticker" aria-hidden="true">
     <span>
-      ★ DOGEQUEST WALLET ★&nbsp;&nbsp;
-      CHECK YOUR DOGE BALANCE &nbsp;★&nbsp;&nbsp;
+      ★ WALLET ★&nbsp;&nbsp;
+      CHECK YOUR TON BALANCE &nbsp;★&nbsp;&nbsp;
       WITHDRAW TO YOUR OWN WALLET &nbsp;★&nbsp;&nbsp;
       EARN MORE WITH TASKS &amp; REFERRALS &nbsp;★&nbsp;&nbsp;
-      MUCH BALANCE. VERY RICH. SO DOGE. &nbsp;★&nbsp;&nbsp;
+      MUCH BALANCE. VERY RICH. SO TON. &nbsp;★&nbsp;&nbsp;
     </span>
   </div>
 
@@ -436,17 +436,19 @@
     <div class="wl-hero">
       <div class="wl-hero-glow" aria-hidden="true"></div>
       <div class="wl-hero-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/><path d="M12 6v1m0 10v1" stroke-width="1.5"/></svg></span>
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
       </div>
-      <div class="wl-balance-amount">{{ format_doge(user.doge_balance) }}</div>
-      <div class="wl-balance-label">DOGE BALANCE</div>
+      <div class="wl-balance-amount" style="color:#0098EA;text-shadow:3px 3px 0 #004466,0 0 20px rgba(0,152,234,0.4)">
+        {{ "%.4f"|format(user.doge_balance / doge_to_ton_rate) }}
+      </div>
+      <div class="wl-balance-label" style="color:#0098EA">TON BALANCE</div>
       <div class="wl-mini-stats">
         <div class="wl-mini-stat">
-          <span class="val">{{ format_doge(user.total_earned) }}</span>
+          <span class="val">{{ "%.4f"|format(user.total_earned / doge_to_ton_rate) }} TON</span>
           <span class="lbl">Total Earned</span>
         </div>
         <div class="wl-mini-stat">
-          <span class="val">{{ format_doge(user.referral_earnings or 0) }}</span>
+          <span class="val">{{ "%.4f"|format((user.referral_earnings or 0) / doge_to_ton_rate) }} TON</span>
           <span class="lbl">From Referrals</span>
         </div>
       </div>
@@ -454,7 +456,7 @@
 
     <!-- ── ACTIONS ── -->
     <div class="wl-card">
-      {% set btn_count = 2 + (1 if ton_enabled else 0) %}
+      {% set btn_count = 1 + (1 if ton_enabled else 0) %}
       <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
         <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('ton-withdraw-modal')">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
@@ -466,19 +468,14 @@
           DEPOSIT TON
         </button>
         {% endif %}
-        <a href="{{ url_for('tasks') }}" class="wl-btn wl-btn-blue">
-          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-          EARN MORE
-        </a>
-      </div>
       <div class="wl-fee-box">
         <div class="wl-fee-left">
           <span class="wl-fee-label">Minimum Withdrawal</span>
-          <span class="wl-fee-value">{{ min_withdrawal }} DOGE</span>
+          <span class="wl-fee-value">{{ min_withdrawal }} TON</span>
         </div>
         <div class="wl-fee-right">
           <span>Network fee</span>
-          {{ withdrawal_fee }} DOGE
+          {{ withdrawal_fee }} TON
         </div>
       </div>
     </div>
@@ -547,7 +544,7 @@
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#555570" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></span>
         </div>
         <div class="wl-empty-title">NO TRANSACTIONS YET</div>
-        <div class="wl-empty-hint">Complete tasks to start earning DOGE!</div>
+        <div class="wl-empty-hint">Complete tasks to start earning TON!</div>
       </div>
       {% endif %}
     </div>
@@ -562,14 +559,14 @@
     <div class="modal-header">
       <span class="modal-title">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
-        WITHDRAW DOGE
+        WITHDRAW TON
       </span>
       <button class="modal-close" onclick="DogeQuest.closeModal('withdraw-modal')">×</button>
     </div>
 
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Amount (DOGE)</label>
+        <label class="form-label">Amount (TON)</label>
         <input type="number" id="withdraw-amount" class="form-input"
                placeholder="Enter amount"
                min="{{ min_withdrawal }}" step="0.00000001"
@@ -578,7 +575,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">DOGE Wallet Address</label>
+        <label class="form-label">TON Wallet Address</label>
         <input type="text" id="withdraw-wallet" class="form-input"
                placeholder="D..."
                value="{{ user.wallet_address or '' }}">
@@ -588,7 +585,7 @@
       <div class="wl-fee-summary">
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Network Fee</span>
-          <span class="wl-fee-row-val warn">{{ withdrawal_fee }} DOGE</span>
+          <span class="wl-fee-row-val warn">{{ withdrawal_fee }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">You Receive</span>
@@ -638,20 +635,20 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Cantidad a retirar (DOGE)</label>
+        <label class="form-label">Cantidad a retirar</label>
         <input type="number" id="ton-wd-amount-input" class="form-input"
                min="{{ ton_withdrawal_min }}" step="1" value="{{ ton_withdrawal_min }}">
-        <div class="form-hint">Disponible: {{ format_doge(user.doge_balance) }} DOGE</div>
+        <div class="form-hint">Disponible: {{ "%.4f"|format(user.doge_balance / doge_to_ton_rate) }} TON</div>
       </div>
 
       <div class="wl-fee-summary" style="margin-bottom:18px">
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Retiras</span>
-          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ ton_withdrawal_min }} DOGE</span>
+          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ "%.4f"|format(ton_withdrawal_min / doge_to_ton_rate) }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Comisión ({{ ton_withdrawal_fee_pct }}%)</span>
-          <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ (ton_withdrawal_min * ton_withdrawal_fee_pct / 100)|round(2) }} DOGE</span>
+          <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ "%.4f"|format((ton_withdrawal_min * ton_withdrawal_fee_pct / 100) / doge_to_ton_rate) }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Recibes en TON</span>
@@ -718,7 +715,7 @@
     <!-- PASO 1: Mostrando QR y dirección -->
     <div id="ton-step-qr">
       <div style="background:var(--surface3);border:2px solid #0098EA;padding:10px 14px;margin-bottom:14px;font-family:var(--font-px);font-size:0.37rem;color:#0098EA;letter-spacing:.08em;text-align:center">
-        1 TON = {{ ton_rate }} DOGE &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
+        Tasa: 1 TON = {{ ton_rate }} puntos &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
       </div>
 
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
@@ -771,7 +768,7 @@
       <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡DOGE ACREDITADO!</div>
+      <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡TON ACREDITADO!</div>
       <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
       <button id="ton-btn-success-close" class="wl-btn-confirm">VER MI BALANCE</button>
     </div>
@@ -791,7 +788,7 @@
 document.getElementById('withdraw-amount')?.addEventListener('input', function() {
   const a = parseFloat(this.value) || 0, fee = {{ withdrawal_fee }};
   document.getElementById('receive-amount').textContent =
-    Math.max(0, a - fee).toFixed(8).replace(/\.?0+$/, '') + ' DOGE';
+    Math.max(0, a - fee).toFixed(8).replace(/\.?0+$/, '') + ' TON';
 });
 
 {% if ton_withdrawal_enabled %}
@@ -823,8 +820,8 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     var fee = d * FEE_PCT / 100;
     var net = d - fee;
     var ton = net / DOGE_TO_TON;
-    el('ton-wd-preview-doge').textContent = d.toFixed(2) + ' DOGE';
-    el('ton-wd-preview-fee').textContent  = fee.toFixed(2) + ' DOGE';
+    el('ton-wd-preview-doge').textContent = d.toFixed(4) + ' TON';
+    el('ton-wd-preview-fee').textContent  = fee.toFixed(4) + ' TON';
     el('ton-wd-preview-ton').textContent  = ton.toFixed(4) + ' TON';
   });
 
@@ -899,7 +896,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
       showWdStep('error');
       var errMsg = err.message || 'Error desconocido';
       if (data && data.withdrawal_id) {
-        errMsg += '\n\nID: ' + data.withdrawal_id + '\n(Tu DOGE fue reservado, el TON se enviará manualmente)';
+        errMsg += '\n\nID: ' + data.withdrawal_id + '\n(Tu TON fue reservado, el TON se enviará manualmente)';
       }
       el('ton-wd-error-msg').textContent = errMsg;
     }
