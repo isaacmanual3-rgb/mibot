@@ -1526,25 +1526,23 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 }
 
 .hdr-balance-sym {
-    font-family: var(--font-pixel);
-    font-size: 0.5rem;
-    color: var(--doge-gold);
-    opacity: 0.9;
-    text-shadow: 0 0 8px rgba(255,185,0,0.4);
+    display: flex;
+    align-items: center;
+    opacity: 1;
 }
 
 .hdr-balance-amt {
     font-family: var(--font-pixel);
     font-size: 0.68rem;
-    color: var(--doge-gold);
-    text-shadow: 1px 1px 0 var(--gold-dark), 0 0 12px rgba(255,185,0,0.3);
+    color: #0098EA;
+    text-shadow: 0 0 12px rgba(0,152,234,0.45);
     letter-spacing: 0.02em;
 }
 
 .hdr-balance-lbl {
     font-family: var(--font-retro);
     font-size: 0.65rem;
-    color: rgba(255,185,0,0.45);
+    color: rgba(0,152,234,0.55);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
