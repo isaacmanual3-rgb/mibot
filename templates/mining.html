@@ -489,14 +489,14 @@
           <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
           </div>
-          <span class="mn-stat-val">{{ format_doge(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
+          <span class="mn-stat-val">{{ format_ton(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
           <span class="mn-stat-lbl">TON/Hour</span>
         </div>
         <div class="mn-stat">
           <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
           </div>
-          <span class="mn-stat-val" id="pendingRewards">{{ format_doge(pending_rewards) }}</span>
+          <span class="mn-stat-val" id="pendingRewards">{{ format_ton(pending_rewards) }}</span>
           <span class="mn-stat-lbl">Pending</span>
         </div>
       </div>
@@ -507,7 +507,7 @@
     <div class="mn-claim">
       <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-        CLAIM {{ format_doge(pending_rewards) }} TON
+        CLAIM {{ format_ton(pending_rewards) }} TON
       </button>
     </div>
     {% endif %}
@@ -539,7 +539,7 @@
           </div>
           <div class="mn-machine-body">
             <span class="mn-machine-name">{{ machine.plan_name }}</span>
-            <span class="mn-machine-rate">{{ format_doge(machine.hourly_rate) }} TON/hr</span>
+            <span class="mn-machine-rate">{{ format_ton(machine.hourly_rate) }} TON/hr</span>
           </div>
           <div class="mn-machine-right">
             <div class="mn-machine-status">
@@ -588,15 +588,15 @@
           <div class="mn-plan-stats">
             <div class="mn-plan-stat">
               <span class="mn-plan-stat-lbl">Price</span>
-              <span class="mn-plan-stat-val price">{{ format_doge(plan.price) }}</span>
+              <span class="mn-plan-stat-val price">{{ format_ton(plan.price) }}</span>
             </div>
             <div class="mn-plan-stat">
               <span class="mn-plan-stat-lbl">Rate</span>
-              <span class="mn-plan-stat-val rate">{{ format_doge(plan.hourly_rate) }}/hr</span>
+              <span class="mn-plan-stat-val rate">{{ format_ton(plan.hourly_rate) }}/hr</span>
             </div>
             <div class="mn-plan-stat">
               <span class="mn-plan-stat-lbl">Daily</span>
-              <span class="mn-plan-stat-val">~{{ format_doge(plan.hourly_rate * 24) }}</span>
+              <span class="mn-plan-stat-val">~{{ format_ton(plan.hourly_rate * 24) }}</span>
             </div>
             <div class="mn-plan-stat">
               <span class="mn-plan-stat-lbl">Duration</span>
@@ -675,7 +675,7 @@
       </div>
       <div class="mn-detail-row">
         <span class="mn-detail-lbl">Your Balance</span>
-        <span class="mn-detail-val">{{ format_doge(user.doge_balance) }} TON</span>
+        <span class="mn-detail-val">{{ format_ton(user.doge_balance) }} TON</span>
       </div>
     </div>
     <div class="mn-modal-btns">

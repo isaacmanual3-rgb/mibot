@@ -52,8 +52,14 @@
             <div class="hdr-balance">
                 <div class="hdr-balance-inner">
                     <div class="hdr-balance-top">
-                        <span class="hdr-balance-sym">Ð</span>
-                        <span class="hdr-balance-amt">{{ format_doge(user.doge_balance if user else 0) }}</span>
+                        <span class="hdr-balance-sym">
+                            <svg viewBox="0 0 56 56" fill="none" width="14" height="14" style="vertical-align:middle;margin-right:2px">
+                                <circle cx="28" cy="28" r="28" fill="#0098EA"/>
+                                <path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
+                                <line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span class="hdr-balance-amt">{{ format_ton(user.doge_balance if user else 0) }}</span>
                     </div>
                     <span class="hdr-balance-lbl">TON BALANCE</span>
                 </div>
@@ -71,7 +77,10 @@
                     </div>
                     <div class="menu-user-info">
                         <h3>{{ user.first_name or 'PLAYER' if user else 'PLAYER' }}</h3>
-                        <p>Ð {{ format_doge(user.doge_balance if user else 0) }}</p>
+                        <p>
+                            <svg viewBox="0 0 56 56" fill="none" width="12" height="12" style="vertical-align:middle;margin-right:2px"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
+                            {{ format_ton(user.doge_balance if user else 0) }} TON
+                        </p>
                     </div>
                 </div>
             </div>

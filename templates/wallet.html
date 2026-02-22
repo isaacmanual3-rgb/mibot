@@ -457,16 +457,16 @@
         <svg viewBox="0 0 56 56" fill="none" width="40" height="40"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
       </div>
       <div class="wl-balance-amount">
-        {{ "%.4f"|format(user.doge_balance|float / doge_to_ton_rate) }}
+        {{ format_ton(user.doge_balance) }}
       </div>
       <div class="wl-balance-label">TON BALANCE</div>
       <div class="wl-mini-stats">
         <div class="wl-mini-stat">
-          <span class="val">{{ "%.4f"|format(user.total_earned|float / doge_to_ton_rate) }} TON</span>
+          <span class="val">{{ format_ton(user.total_earned) }} TON</span>
           <span class="lbl">Total Earned</span>
         </div>
         <div class="wl-mini-stat">
-          <span class="val">{{ "%.4f"|format((user.referral_earnings|float or 0) / doge_to_ton_rate) }} TON</span>
+          <span class="val">{{ format_ton(user.referral_earnings or 0) }} TON</span>
           <span class="lbl">From Referrals</span>
         </div>
       </div>
@@ -528,7 +528,7 @@
             <span class="wl-tx-time">{{ wd.created_at | timeago }}</span>
           </div>
           <div style="text-align:right">
-            <div class="wl-tx-amount debit">-{{ format_doge(wd.amount) }}</div>
+            <div class="wl-tx-amount debit">-{{ format_ton(wd.amount) }}</div>
             <span class="wl-wd-badge {% if wd.status == 'completed' %}completed{% elif wd.status == 'pending' %}pending{% else %}rejected{% endif %}">
               {{ wd.status | upper }}
             </span>
@@ -562,7 +562,7 @@
             <span class="wl-tx-time">{{ tx.created_at | timeago }}</span>
           </div>
           <div class="wl-tx-amount {% if tx.amount > 0 %}credit{% else %}debit{% endif %}">
-            {% if tx.amount > 0 %}+{% endif %}{{ format_doge(tx.amount) }}
+            {% if tx.amount > 0 %}+{% endif %}{{ format_ton(tx.amount) }}
           </div>
         </div>
         {% endfor %}
@@ -601,7 +601,7 @@
                placeholder="Enter amount"
                min="{{ min_withdrawal }}" step="0.00000001"
                value="{{ min_withdrawal }}">
-        <div class="form-hint">Available: {{ format_doge(user.doge_balance) }} DOGE</div>
+        <div class="form-hint">Disponible: {{ format_ton(user.doge_balance) }} TON</div>
       </div>
 
       <div class="form-group">
@@ -620,7 +620,7 @@
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">You Receive</span>
           <span class="wl-fee-row-val good" id="receive-amount">
-            {{ format_doge(min_withdrawal - withdrawal_fee) }} DOGE
+            {{ format_ton(min_withdrawal - withdrawal_fee) }} TON
           </span>
         </div>
       </div>
@@ -652,7 +652,7 @@
     <!-- Paso 1: Formulario -->
     <div id="ton-wd-step-form">
       <div style="background:var(--surface3);border:2px solid #ffd700;padding:12px 14px;margin-bottom:16px;font-family:var(--font-px);font-size:0.37rem;color:#ffd700;letter-spacing:.08em;text-align:center">
-        100 DOGE = {{ (100 / doge_to_ton_rate)|round(4) }} TON &nbsp;·&nbsp; MIN: {{ ton_withdrawal_min }} DOGE
+        MIN: {{ ton_withdrawal_min }} TON
       </div>
 
       <div class="form-group">
@@ -668,21 +668,21 @@
         <label class="form-label">Cantidad a retirar</label>
         <input type="number" id="ton-wd-amount-input" class="form-input"
                min="{{ ton_withdrawal_min }}" step="1" value="{{ ton_withdrawal_min }}">
-        <div class="form-hint">Disponible: {{ "%.4f"|format(user.doge_balance|float / doge_to_ton_rate) }} TON</div>
+        <div class="form-hint">Disponible: {{ format_ton(user.doge_balance) }} TON</div>
       </div>
 
       <div class="wl-fee-summary" style="margin-bottom:18px">
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Retiras</span>
-          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ "%.4f"|format(ton_withdrawal_min / doge_to_ton_rate) }} TON</span>
+          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ format_ton(ton_withdrawal_min) }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Comisión ({{ ton_withdrawal_fee_pct }}%)</span>
-          <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ "%.4f"|format((ton_withdrawal_min * ton_withdrawal_fee_pct / 100) / doge_to_ton_rate) }} TON</span>
+          <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ format_ton(ton_withdrawal_min * ton_withdrawal_fee_pct / 100) }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Recibes en TON</span>
-          <span class="wl-fee-row-val good" id="ton-wd-preview-ton">{{ ((ton_withdrawal_min * (1 - ton_withdrawal_fee_pct/100)) / doge_to_ton_rate)|round(4) }} TON</span>
+          <span class="wl-fee-row-val good" id="ton-wd-preview-ton">{{ (ton_withdrawal_min * (1 - ton_withdrawal_fee_pct/100))|round(4) }} TON</span>
         </div>
       </div>
 
@@ -745,7 +745,7 @@
     <!-- PASO 1: Mostrando QR y dirección -->
     <div id="ton-step-qr">
       <div style="background:var(--surface3);border:2px solid #0098EA;padding:10px 14px;margin-bottom:14px;font-family:var(--font-px);font-size:0.37rem;color:#0098EA;letter-spacing:.08em;text-align:center">
-        Tasa: 1 TON = {{ ton_rate }} puntos &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
+        Mínimo: {{ ton_min }} TON &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
       </div>
 
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
@@ -827,7 +827,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
   var FEE_PCT     = {{ ton_withdrawal_fee_pct }};
   var DOGE_TO_TON = {{ doge_to_ton_rate }};
   var MIN_DOGE    = {{ ton_withdrawal_min }};
-  var MAX_DOGE    = {{ user.doge_balance|float }};
+  var MAX_DOGE = {{ user.doge_balance|float }};
 
   function el(id) { return document.getElementById(id); }
 

@@ -499,7 +499,7 @@
       </div>
       <div class="rf-hero-title">INVITE FRIENDS</div>
       <div class="rf-hero-desc">
-        Earn <strong>{{ format_doge(referral_bonus) }} TON</strong>
+        Earn <strong>{{ format_ton(referral_bonus) }} TON</strong>
         for each friend who completes a task!
       </div>
     </div>
@@ -532,7 +532,7 @@
           <div class="rf-stat-icon-wrap" style="border-color:var(--gold-dark); background:var(--gold-dim);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/><path d="M12 6v1m0 10v1" stroke-width="1.5"/></svg></span>
           </div>
-          <span class="rf-stat-val">{{ format_doge(referral_earnings) }}</span>
+          <span class="rf-stat-val">{{ format_ton(referral_earnings) }}</span>
           <span class="rf-stat-lbl">Total Earned</span>
         </div>
       </div>
@@ -619,7 +619,7 @@
             {% if ref.validated %}
             <span class="rf-badge validated">
               <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-              +{{ format_doge(referral_bonus) }}
+              +{{ format_ton(referral_bonus) }}
             </span>
             {% else %}
             <span class="rf-badge pending">

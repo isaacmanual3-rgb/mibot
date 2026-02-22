@@ -858,7 +858,7 @@
           <span class="tq-stat-lbl">Completed</span>
         </div>
         <div class="tq-stat">
-          <span class="tq-stat-val">{{ format_doge(total_earned) }}</span>
+          <span class="tq-stat-val">{{ format_ton(total_earned) }}</span>
           <span class="tq-stat-lbl">Earned</span>
         </div>
         <div class="tq-stat">
@@ -916,7 +916,7 @@
           <div class="tq-task-right">
             <div class="tq-reward">
               <span class="tq-reward-icon">Ð</span>
-              <span class="tq-reward-val">+{{ format_doge(task.reward) }}</span>
+              <span class="tq-reward-val">+{{ format_ton(task.reward) }}</span>
             </div>
             {% if task.completed %}
               <span class="tq-badge tq-badge-done">CLAIMED</span>

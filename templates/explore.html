@@ -421,7 +421,7 @@
       </div>
       <div style="width:44px"></div><!-- spacer for icon -->
       <div class="ex-rank-right">
-        <span class="ex-rank-balance">{{ format_doge(user.doge_balance) }} TON</span>
+        <span class="ex-rank-balance">{{ format_ton(user.doge_balance) }} TON</span>
         <span class="ex-rank-balance-lbl">Current Balance</span>
       </div>
       <div class="ex-rank-icon" aria-hidden="true">
@@ -456,7 +456,7 @@
             <span class="ex-podium-rank">2</span>
             <div class="ex-podium-platform">
               <span class="ex-podium-name">{{ top_earners[1].username or 'Anonymous' }}</span>
-              <span class="ex-podium-value">{{ format_doge(top_earners[1].doge_balance) }}</span>
+              <span class="ex-podium-value">{{ format_ton(top_earners[1].doge_balance) }}</span>
             </div>
           </div>
           {% endif %}
@@ -468,7 +468,7 @@
             <span class="ex-podium-rank">1</span>
             <div class="ex-podium-platform">
               <span class="ex-podium-name">{{ top_earners[0].username or 'Anonymous' }}</span>
-              <span class="ex-podium-value">{{ format_doge(top_earners[0].doge_balance) }}</span>
+              <span class="ex-podium-value">{{ format_ton(top_earners[0].doge_balance) }}</span>
             </div>
           </div>
           {% endif %}
@@ -479,7 +479,7 @@
             <span class="ex-podium-rank">3</span>
             <div class="ex-podium-platform">
               <span class="ex-podium-name">{{ top_earners[2].username or 'Anonymous' }}</span>
-              <span class="ex-podium-value">{{ format_doge(top_earners[2].doge_balance) }}</span>
+              <span class="ex-podium-value">{{ format_ton(top_earners[2].doge_balance) }}</span>
             </div>
           </div>
           {% endif %}
@@ -491,7 +491,7 @@
             <span class="ex-lb-rank">{{ loop.index + 3 }}</span>
             <div class="ex-lb-avatar">{{ user.username[0]|upper if user.username else '?' }}</div>
             <span class="ex-lb-name">{{ user.username or 'Anonymous' }}</span>
-            <span class="ex-lb-value">{{ format_doge(user.doge_balance) }}<small>TON</small></span>
+            <span class="ex-lb-value">{{ format_ton(user.doge_balance) }}<small>TON</small></span>
           </div>
           {% endfor %}
         </div>
@@ -638,7 +638,7 @@
         </div>
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-coin"/></svg></span></div>
-          <span class="ex-comm-val">{{ format_doge(total_distributed) }}</span>
+          <span class="ex-comm-val">{{ format_ton(total_distributed) }}</span>
           <span class="ex-comm-lbl">TON Dist.</span>
         </div>
         <div class="ex-comm-stat">
