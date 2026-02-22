@@ -553,7 +553,7 @@ def create_ton_withdrawal(user_id, doge_amount, ton_wallet):
         return {'error': 'User not found'}
 
     balance = float(user.get('doge_balance', 0))
-    min_doge = float(get_config('ton_withdrawal_min_doge', '10'))
+    min_doge = float(get_config('ton_withdrawal_min_doge', '0.01'))
     fee_pct  = float(get_config('ton_withdrawal_fee_percent', '2'))
     rate     = float(get_config('doge_to_ton_rate', '100'))  # DOGE per 1 TON → 1 DOGE = 1/rate TON
 
@@ -924,50 +924,53 @@ def get_mining_plan(plan_id):
     return execute_query(query, (plan_id,), fetch_one=True)
 
 def purchase_mining_machine(user_id, plan_id):
-    """Purchase a mining machine"""
+    """Purchase a mining machine — free plans skip balance check, 30-day cooldown per plan"""
     import uuid
 
-    # Get plan details
     plan = get_mining_plan(plan_id)
     if not plan:
         return {'success': False, 'message': 'Plan not found'}
-
     if not plan.get('active'):
         return {'success': False, 'message': 'This plan is not available'}
 
-    # Get user
     user = get_user(user_id)
     if not user:
         return {'success': False, 'message': 'User not found'}
 
-    # Check balance
     price = float(plan['price'])
-    balance = float(user.get('doge_balance', 0))
+    is_free = price == 0.0
 
-    if balance < price:
-        return {'success': False, 'message': f'Insufficient balance. Need {price:.8f} DOGE'}
+    # ── 30-day cooldown: one active machine per plan at a time ──
+    existing = execute_query(
+        "SELECT expires_at FROM user_mining_machines WHERE user_id=%s AND plan_id=%s AND expires_at > NOW() ORDER BY expires_at DESC LIMIT 1",
+        (str(user_id), plan_id), fetch_one=True
+    )
+    if existing:
+        exp = existing['expires_at']
+        return {'success': False, 'message': f'Ya tienes este plan activo. Podrás renovarlo el {exp.strftime("%d/%m/%Y")}.'}
 
-    # Deduct balance
-    update_balance(user_id, -price, 'mining_purchase', f'Purchased {plan["name"]}')
+    # ── Balance check (skip for free plans) ──
+    if not is_free:
+        balance = float(user.get('doge_balance', 0))
+        if balance < price:
+            return {'success': False, 'message': f'Saldo insuficiente. Necesitas {price:.2f} TON'}
+        update_balance(user_id, -price, 'mining_purchase', f'Plan {plan["name"]} activado')
 
-    # Create machine
+    # ── Create machine ──
     machine_id = f"machine_{uuid.uuid4().hex[:12]}"
     duration_days = plan.get('duration_days', 30)
     expires_at = datetime.now() + timedelta(days=duration_days)
 
-    query = """
+    execute_query("""
         INSERT INTO user_mining_machines
         (machine_id, user_id, plan_id, plan_name, hourly_rate, last_claim_at, expires_at)
         VALUES (%s, %s, %s, %s, %s, NOW(), %s)
-    """
-    execute_query(query, (
-        machine_id, str(user_id), plan_id, plan['name'],
-        plan['hourly_rate'], expires_at
-    ))
+    """, (machine_id, str(user_id), plan_id, plan['name'], plan['hourly_rate'], expires_at))
 
+    action = 'activado gratis' if is_free else f'activado por {price:.2f} TON'
     return {
         'success': True,
-        'message': f'Successfully purchased {plan["name"]}!',
+        'message': f'Plan {plan["name"]} {action}! Gana TON por 30 días.',
         'machine_id': machine_id
     }
 
@@ -1526,7 +1529,7 @@ def init_all_tables():
         ('ton_deposits_enabled',     '1'),
         ('ton_auto_confirm',         '0'),
         ('ton_withdrawal_enabled',   '1'),
-        ('ton_withdrawal_min_doge',  '10'),
+        ('ton_withdrawal_min_doge',  '0.01'),
         ('ton_withdrawal_fee_percent','2'),
         ('doge_to_ton_rate',         '100'),
         ('ton_bot_mnemonic',         os.environ.get('TON_BOT_MNEMONIC', '')),
@@ -1551,11 +1554,20 @@ def init_all_tables():
     # ── Default mining plans (only if empty) ─────────────────
     count = execute_query("SELECT COUNT(*) as c FROM mining_plans", fetch_one=True)
     if count and count.get('c', 0) == 0:
+        # Plans: price, 30-day return %, hourly_rate = price * return_pct / 100 / 720h
+        # Starter: FREE, 20% return → earns 0.20 TON over 30d → 0.000278 TON/hr
+        # Basic:   1 TON,  30% → earns 0.30 TON → 0.000417/hr
+        # Pro:     5 TON,  50% → earns 2.50 TON → 0.003472/hr
+        # Elite:   20 TON, 70% → earns 14 TON  → 0.019444/hr
+        # Master:  50 TON, 85% → earns 42.5 TON → 0.059028/hr
+        # Legend: 100 TON,100% → earns 100 TON  → 0.138889/hr
         default_plans = [
-            ('Miner Básico',    'basic',    1.0,  0.00010000, 30, 'Minero de nivel básico'),
-            ('Miner Estándar',  'standard', 5.0,  0.00060000, 30, 'Minero de nivel estándar'),
-            ('Miner Pro',       'pro',      10.0, 0.00150000, 30, 'Minero de nivel pro'),
-            ('Miner Elite',     'elite',    25.0, 0.00450000, 30, 'Minero de nivel elite'),
+            ('Starter',  'starter',  0.0,   0.00027800, 30, 'Plan gratuito · Gana 20% en 30 días · Solo una activación'),
+            ('Basic',    'basic',    1.0,   0.00041700, 30, 'Gana 30% en 30 días · Renovable cada mes'),
+            ('Pro',      'pro',      5.0,   0.00347200, 30, 'Gana 50% en 30 días · Renovable cada mes'),
+            ('Elite',    'elite',    20.0,  0.01944400, 30, 'Gana 70% en 30 días · Renovable cada mes'),
+            ('Master',   'master',   50.0,  0.05902800, 30, 'Gana 85% en 30 días · Renovable cada mes'),
+            ('Legend',   'legendary',100.0, 0.13888900, 30, 'Gana 100% en 30 días · Máximo rendimiento'),
         ]
         for plan in default_plans:
             execute_query(
