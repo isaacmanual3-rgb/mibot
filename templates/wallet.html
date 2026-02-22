@@ -454,18 +454,12 @@
 
     <!-- ── ACTIONS ── -->
     <div class="wl-card">
-      {% set btn_count = 2 + (1 if ton_enabled else 0) + (1 if ton_withdrawal_enabled else 0) %}
+      {% set btn_count = 2 + (1 if ton_enabled else 0) %}
       <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
         <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('ton-withdraw-modal')">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
           WITHDRAW
         </button>
-        {% if ton_withdrawal_enabled %}
-        <button class="wl-btn wl-btn-ton" id="ton-withdraw-btn">
-          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
-          RETIRAR TON
-        </button>
-        {% endif %}
         {% if ton_enabled %}
         <button class="wl-btn wl-btn-ton" id="ton-deposit-btn">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
@@ -721,91 +715,74 @@
       <button class="modal-close" id="ton-modal-close">×</button>
     </div>
 
-    <!-- PASO 1: Conectar wallet -->
-    <div id="ton-step-connect">
-      <div style="text-align:center;padding:16px 0 10px">
-        <div style="background:var(--surface3);border:2px solid #0098EA;padding:14px;margin-bottom:18px;font-family:var(--font-px);font-size:0.38rem;color:#0098EA;letter-spacing:.1em">
-          1 TON = {{ ton_rate }} DOGE &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
-        </div>
-        <p style="font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
-          Conecta tu wallet TON (Tonkeeper, MyTonWallet, etc.) para depositar TON y recibir DOGE automáticamente.
-        </p>
-        <button id="ton-btn-connect" style="width:100%;padding:15px;background:#0098EA;color:#fff;border:2px solid #00b4ff;box-shadow:4px 4px 0 #004466;font-family:var(--font-px);font-size:0.5rem;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          CONECTAR WALLET
-        </button>
-        <div id="ton-connect-error" style="display:none;margin-top:12px;color:#ff4d6a;font-size:0.78rem"></div>
+    <!-- PASO 1: Mostrando QR y dirección -->
+    <div id="ton-step-qr">
+      <div style="background:var(--surface3);border:2px solid #0098EA;padding:10px 14px;margin-bottom:14px;font-family:var(--font-px);font-size:0.37rem;color:#0098EA;letter-spacing:.08em;text-align:center">
+        1 TON = {{ ton_rate }} DOGE &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
       </div>
+
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
+        Envía TON desde <strong style="color:#fff">cualquier wallet o exchange</strong>.<br>
+        <span style="color:#ffd700;font-size:0.75rem">⚠ Incluye el MEMO/Comentario obligatoriamente</span>
+      </p>
+
+      <!-- QR Code -->
+      <div style="text-align:center;margin-bottom:14px">
+        <div id="ton-qr-container" style="display:inline-block;background:#fff;padding:10px;border:3px solid #0098EA">
+          <canvas id="ton-qr-canvas" width="160" height="160"></canvas>
+        </div>
+      </div>
+
+      <!-- Dirección del bot -->
+      <div style="margin-bottom:12px">
+        <div style="font-family:var(--font-px);font-size:0.32rem;color:var(--muted);margin-bottom:5px;letter-spacing:.08em">DIRECCIÓN TON (envía aquí)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="ton-dep-address" style="flex:1;background:var(--surface3);border:1px solid #333;padding:10px;font-size:0.68rem;color:#0098EA;word-break:break-all;line-height:1.4">{{ ton_wallet_address }}</div>
+          <button onclick="copyDepAddr()" style="flex-shrink:0;background:#0098EA;border:none;color:#fff;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em" id="ton-copy-addr-btn">COPIAR</button>
+        </div>
+      </div>
+
+      <!-- MEMO obligatorio -->
+      <div style="margin-bottom:16px">
+        <div style="font-family:var(--font-px);font-size:0.32rem;color:#ffd700;margin-bottom:5px;letter-spacing:.08em">MEMO / COMENTARIO (obligatorio ⚠)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="ton-dep-memo" style="flex:1;background:rgba(255,215,0,0.07);border:2px solid #ffd700;padding:10px;font-family:var(--font-px);font-size:0.5rem;color:#ffd700;letter-spacing:.1em;text-align:center">{{ user_deposit_memo }}</div>
+          <button onclick="copyDepMemo()" style="flex-shrink:0;background:#c8a200;border:none;color:#1a1a2e;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em;font-weight:bold" id="ton-copy-memo-btn">COPIAR</button>
+        </div>
+        <div style="font-size:0.72rem;color:#ff4d6a;margin-top:6px;line-height:1.4">
+          ⚠ Si no incluyes el MEMO tu depósito no se acreditará automáticamente.
+        </div>
+      </div>
+
+      <!-- Estado de espera -->
+      <div id="ton-waiting-box" style="background:rgba(0,152,234,0.08);border:1px solid rgba(0,152,234,0.3);padding:12px;text-align:center;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px">
+          <div id="ton-pulse" style="width:10px;height:10px;background:#0098EA;border-radius:50%;animation:ton-pulse 1.5s ease-in-out infinite"></div>
+          <span style="font-family:var(--font-px);font-size:0.36rem;color:#0098EA;letter-spacing:.06em">ESPERANDO DEPÓSITO...</span>
+        </div>
+        <div style="font-size:0.74rem;color:var(--text2)">Se acreditará automáticamente en segundos</div>
+      </div>
+
+      <button id="ton-btn-cancel" class="wl-btn-cancel" style="width:100%">CERRAR</button>
     </div>
 
-    <!-- PASO 2: Monto y enviar -->
-    <div id="ton-step-amount" style="display:none">
-      <div style="background:rgba(0,152,234,0.08);border:2px solid rgba(0,152,234,0.3);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-        <div style="flex:1;min-width:0;overflow:hidden">
-          <div style="font-family:var(--font-px);font-size:0.34rem;color:var(--muted);margin-bottom:3px">WALLET CONECTADA</div>
-          <div id="ton-wallet-display" style="font-size:0.7rem;color:#0098EA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-        </div>
-        <button id="ton-btn-disconnect" style="background:none;border:1px solid #333;color:#666;padding:3px 8px;cursor:pointer;font-size:0.72rem;flex-shrink:0">✕</button>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Cantidad (TON)</label>
-        <input type="number" id="ton-amount-input" class="form-input"
-               min="{{ ton_min }}" step="0.01" value="{{ ton_min }}">
-        <div class="form-hint">Mínimo: {{ ton_min }} TON</div>
-      </div>
-
-      <div class="wl-fee-summary" style="margin-bottom:18px">
-        <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Envías</span>
-          <span class="wl-fee-row-val" id="ton-preview-ton">{{ ton_min }} TON</span>
-        </div>
-        <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Recibes</span>
-          <span class="wl-fee-row-val good" id="ton-preview-doge">{{ (ton_min * ton_rate)|round(2) }} DOGE</span>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="ton-btn-cancel" class="wl-btn-cancel">CANCELAR</button>
-        <button id="ton-btn-send" class="wl-btn-confirm" style="background:#0098EA;border-color:#00b4ff;box-shadow:3px 3px 0 0 #004466">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          ENVIAR TON
-        </button>
-      </div>
-    </div>
-
-    <!-- PASO 3: Verificando -->
-    <div id="ton-step-verifying" style="display:none;text-align:center;padding:30px 0">
-      <div style="width:52px;height:52px;border:3px solid #0098EA;border-top-color:transparent;border-radius:50%;animation:ton-spin 1s linear infinite;margin:0 auto 18px"></div>
-      <div style="font-family:var(--font-px);font-size:0.48rem;color:#0098EA;margin-bottom:10px">VERIFICANDO...</div>
-      <div id="ton-verify-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5">Confirmando tu transacción en la blockchain TON</div>
-    </div>
-
-    <!-- PASO 4: Éxito -->
+    <!-- PASO 2: Éxito -->
     <div id="ton-step-success" style="display:none;text-align:center;padding:30px 0">
       <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡DOGE ACREDITADO!</div>
-      <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px"></div>
+      <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
       <button id="ton-btn-success-close" class="wl-btn-confirm">VER MI BALANCE</button>
-    </div>
-
-    <!-- PASO 5: Error -->
-    <div id="ton-step-error" style="display:none;text-align:center;padding:30px 0">
-      <div style="width:52px;height:52px;background:rgba(255,77,106,0.1);border:2px solid rgba(255,77,106,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#ff4d6a" stroke-width="2.5" width="26"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-      <div style="font-family:var(--font-px);font-size:0.48rem;color:#ff4d6a;margin-bottom:10px">ERROR</div>
-      <div id="ton-error-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5;margin-bottom:18px"></div>
-      <button id="ton-btn-retry" class="wl-btn-confirm" style="background:#1a1a2e;border-color:#333;color:#aaa;box-shadow:none">INTENTAR DE NUEVO</button>
     </div>
 
   </div>
 </div>
-<style>@keyframes ton-spin { to { transform:rotate(360deg) } }</style>
+<style>
+  @keyframes ton-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:0.6} }
+</style>
+{% endif %}
+
 {% endif %}
 
 {% endblock %}
@@ -935,251 +912,127 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
 </script>
 
 {% if ton_enabled %}
-<script src="https://unpkg.com/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 (function() {
-  /* ─── Config ─────────────────────────────── */
-  var RATE     = {{ ton_rate }};
-  var MIN_TON  = {{ ton_min }};
-  var RECEIVER = "{{ ton_wallet_address }}";
-  var MANIFEST = window.location.origin + "/static/tonconnect-manifest.json";
+  var DEPOSIT_ID  = null;
+  var pollTimer   = null;
+  var RATE        = {{ ton_rate }};
+  var MEMO        = "{{ user_deposit_memo }}";
+  var ADDRESS     = "{{ ton_wallet_address }}";
 
-  /* ─── State ──────────────────────────────── */
-  var tc        = null;   // TonConnectUI instance
-  var wallet    = null;   // connected wallet
-  var depId     = null;   // current deposit ID
-  var dogeAmt   = 0;      // expected DOGE
-  var pollTimer = null;
-
-  /* ─── UI helpers ─────────────────────────── */
   function el(id) { return document.getElementById(id); }
 
-  function showStep(name) {
-    ['connect','amount','verifying','success','error'].forEach(function(s) {
+  function showDepStep(name) {
+    ['qr','success'].forEach(function(s) {
       var d = el('ton-step-' + s);
       if (d) d.style.display = (s === name) ? 'block' : 'none';
     });
   }
 
-  function shortAddr(addr) {
-    var s = String(addr || '');
-    return s.length > 16 ? s.slice(0,8) + '…' + s.slice(-6) : s;
-  }
-
-  /* ─── Init TON Connect (lazy) ────────────── */
-  function initTC() {
-    if (tc) return;
+  function generateQR() {
+    var canvas = el('ton-qr-canvas');
+    if (!canvas || !ADDRESS || ADDRESS.includes('AQUI')) return;
+    // TON URI con dirección y texto del memo
+    var tonUri = 'ton://transfer/' + ADDRESS + '?text=' + encodeURIComponent(MEMO);
     try {
-      tc = new TON_CONNECT_UI.TonConnectUI({
-        manifestUrl: MANIFEST,
-        buttonRootId: null
+      var qr = new QRCode(el('ton-qr-container'), {
+        text: tonUri,
+        width: 160, height: 160,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
       });
-      window._tonConnectUI = tc;  // share instance with withdraw modal
-      tc.onStatusChange(function(w) {
-        wallet = w;
-        if (w) {
-          el('ton-wallet-display').textContent = shortAddr(w.account.address);
-          showStep('amount');
-        } else {
-          showStep('connect');
-        }
-      });
+      // Remove the canvas element since QRCode lib creates its own
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     } catch(e) {
-      console.error('TonConnect init:', e);
-      el('ton-connect-error').style.display = 'block';
-      el('ton-connect-error').textContent = 'Error al cargar TON Connect. Recarga la página.';
+      // Fallback: draw simple QR placeholder
+      if (canvas) {
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0,0,160,160);
+        ctx.fillStyle = '#0098EA';
+        ctx.font = '10px monospace';
+        ctx.fillText('QR: ' + ADDRESS.slice(0,10) + '...', 5, 20);
+      }
     }
   }
 
-  /* ─── Amount preview ─────────────────────── */
-  el('ton-amount-input') && el('ton-amount-input').addEventListener('input', function() {
-    var v = parseFloat(this.value) || 0;
-    el('ton-preview-ton').textContent  = v.toFixed(2) + ' TON';
-    el('ton-preview-doge').textContent = (v * RATE).toFixed(2) + ' DOGE';
-  });
-
-  /* ─── Button: Conectar wallet ────────────── */
-  el('ton-btn-connect') && el('ton-btn-connect').addEventListener('click', function() {
-    var btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Cargando...';
-    initTC();
-    if (!tc) { btn.disabled = false; btn.textContent = 'CONECTAR WALLET'; return; }
-    // Already connected?
-    if (wallet) { showStep('amount'); btn.disabled = false; btn.textContent = 'CONECTAR WALLET'; return; }
-    tc.openModal().catch(function(e) {
-      console.warn('openModal:', e);
-    }).finally(function() {
-      btn.disabled = false;
-      btn.textContent = 'CONECTAR WALLET';
+  function copyDepAddr() {
+    var addr = ADDRESS;
+    if (!addr) return;
+    navigator.clipboard.writeText(addr).then(function() {
+      var btn = el('ton-copy-addr-btn');
+      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = 'COPIAR'; }, 2000); }
     });
+  }
+  window.copyDepAddr = copyDepAddr;
+
+  function copyDepMemo() {
+    navigator.clipboard.writeText(MEMO).then(function() {
+      var btn = el('ton-copy-memo-btn');
+      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = 'COPIAR'; }, 2000); }
+    });
+  }
+  window.copyDepMemo = copyDepMemo;
+
+  /* Start polling for deposit */
+  async function startPolling(depositId) {
+    DEPOSIT_ID = depositId;
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async function() {
+      try {
+        var r = await fetch('/api/ton/deposit/status/' + DEPOSIT_ID);
+        var d = await r.json();
+        if (d.status === 'credited' || d.status === 'confirmed') {
+          clearInterval(pollTimer);
+          showDepStep('success');
+          var msg = '✅ ' + d.ton_amount.toFixed(4) + ' TON recibidos\n';
+          msg += '+ ' + d.doge_credited.toFixed(2) + ' DOGE acreditados a tu cuenta';
+          el('ton-success-msg').textContent = msg;
+        }
+      } catch(e) { /* ignorar, seguir intentando */ }
+    }, 8000);
+  }
+
+  /* Open deposit modal */
+  el('ton-deposit-btn') && el('ton-deposit-btn').addEventListener('click', async function() {
+    showDepStep('qr');
+    DogeQuest.openModal('ton-deposit-modal');
+    // Generate QR on first open
+    if (!el('ton-qr-canvas') && !document.querySelector('#ton-qr-container img')) {
+      generateQR();
+    }
+    // Get or create deposit ID for polling
+    try {
+      var r = await fetch('/api/ton/deposit/address');
+      var d = await r.json();
+      if (d.success) {
+        startPolling(d.deposit_id);
+      }
+    } catch(e) {}
   });
 
-  /* ─── Button: Desconectar ────────────────── */
-  el('ton-btn-disconnect') && el('ton-btn-disconnect').addEventListener('click', async function() {
-    if (tc) { try { tc.disconnect(); } catch(e) {} }
-    wallet = null;
-    try { await fetch('/api/ton/wallet/clear', { method: 'POST' }); } catch(e) {}
-    showStep('connect');
-    DogeQuest.showToast('Wallet desvinculada. Conecta tu wallet TON.', 'success');
+  // Generate QR immediately on page load so it's ready
+  document.addEventListener('DOMContentLoaded', function() {
+    if (ADDRESS && !ADDRESS.includes('AQUI')) {
+      setTimeout(generateQR, 300);
+    }
   });
 
-  /* ─── Button: Cancelar ───────────────────── */
-  el('ton-btn-cancel') && el('ton-btn-cancel').addEventListener('click', function() {
-    DogeQuest.closeModal('ton-deposit-modal');
-  });
-
-  /* ─── Button: Cerrar modal ───────────────── */
+  /* Close modal */
   el('ton-modal-close') && el('ton-modal-close').addEventListener('click', function() {
+    if (pollTimer) clearInterval(pollTimer);
     DogeQuest.closeModal('ton-deposit-modal');
   });
-
-  /* ─── Button: Éxito → recargar ───────────── */
+  el('ton-btn-cancel') && el('ton-btn-cancel').addEventListener('click', function() {
+    if (pollTimer) clearInterval(pollTimer);
+    DogeQuest.closeModal('ton-deposit-modal');
+  });
   el('ton-btn-success-close') && el('ton-btn-success-close').addEventListener('click', function() {
+    if (pollTimer) clearInterval(pollTimer);
     DogeQuest.closeModal('ton-deposit-modal');
     location.reload();
   });
-
-  /* ─── Button: Reintentar ─────────────────── */
-  el('ton-btn-retry') && el('ton-btn-retry').addEventListener('click', function() {
-    showStep('amount');
-  });
-
-  /* ─── Button: ENVIAR TON ─────────────────── */
-  el('ton-btn-send') && el('ton-btn-send').addEventListener('click', function() {
-    sendTon();
-  });
-
-  /* ─── Abrir modal → init TC ──────────────── */
-  el('ton-deposit-btn') && el('ton-deposit-btn').addEventListener('click', function() {
-    showStep('connect');
-    DogeQuest.openModal('ton-deposit-modal');   // ← FIX: faltaba abrir el modal
-    setTimeout(function() {
-      initTC();
-      if (wallet) {
-        el('ton-wallet-display').textContent = shortAddr(wallet.account.address);
-        showStep('amount');
-      }
-    }, 200);
-  });
-
-  /* ─── Envío principal ────────────────────── */
-  async function sendTon() {
-    if (!wallet) {
-      DogeQuest.showToast('Conecta tu wallet TON primero', 'error');
-      showStep('connect');
-      return;
-    }
-
-    var tonAmt = parseFloat(el('ton-amount-input').value || '0');
-    if (isNaN(tonAmt) || tonAmt < MIN_TON) {
-      DogeQuest.showToast('Mínimo ' + MIN_TON + ' TON', 'error');
-      return;
-    }
-    if (!RECEIVER || RECEIVER.includes('AQUI')) {
-      DogeQuest.showToast('Wallet destino no configurada. Contacta al admin.', 'error');
-      return;
-    }
-
-    var btn = el('ton-btn-send');
-    btn.disabled = true;
-    btn.textContent = 'Preparando...';
-
-    try {
-      /* 1. Registrar depósito en backend */
-      var initRes = await fetch('/api/ton/deposit/init', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ ton_wallet: wallet.account.address, ton_amount: tonAmt })
-      });
-      var initData = await initRes.json();
-      if (!initData.success) throw new Error(initData.message || 'Error al iniciar depósito');
-
-      depId   = initData.deposit_id;
-      dogeAmt = initData.doge_credited;
-
-      /* 2. Firmar y enviar tx con TON Connect */
-      btn.textContent = 'Esperando firma...';
-      var nanotons = String(Math.round(tonAmt * 1e9));
-
-      var txResult;
-      try {
-        txResult = await tc.sendTransaction({
-          validUntil: Math.floor(Date.now() / 1000) + 600,
-          messages: [{ address: RECEIVER, amount: nanotons, text: depId }]
-        });
-      } catch(txErr) {
-        var msg = (txErr && txErr.message) ? txErr.message.toLowerCase() : '';
-        if (msg.includes('cancel') || msg.includes('reject') || msg.includes('close') || (txErr && txErr.code === 300)) {
-          btn.disabled = false;
-          btn.textContent = 'ENVIAR TON';
-          DogeQuest.showToast('Transacción cancelada', 'error');
-          return;
-        }
-        throw txErr;
-      }
-
-      /* 3. Enviar BOC al backend para verificación automática */
-      showStep('verifying');
-      el('ton-verify-msg').textContent = 'TX enviada. Verificando en la blockchain (puede tomar hasta 30 seg)...';
-
-      var boc = (txResult && txResult.boc) ? txResult.boc : '';
-      var verRes = await fetch('/api/ton/deposit/verify', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ deposit_id: depId, boc: boc })
-      });
-      var verData = await verRes.json();
-
-      if (verData.success) {
-        /* Acreditado inmediatamente */
-        clearInterval(pollTimer);
-        showStep('success');
-        el('ton-success-msg').textContent =
-          tonAmt + ' TON → ' + dogeAmt.toFixed(2) + ' DOGE acreditados en tu cuenta. ✅';
-      } else {
-        /* Polling hasta confirmar */
-        el('ton-verify-msg').textContent = verData.message || 'Verificando en la red TON...';
-        startPolling();
-      }
-
-    } catch(err) {
-      console.error('sendTon error:', err);
-      showStep('error');
-      el('ton-error-msg').textContent = (err && err.message)
-        ? err.message
-        : 'Error al procesar. Si enviaste TON, guarda el ID: ' + (depId || '?');
-      btn.disabled = false;
-      btn.textContent = 'ENVIAR TON';
-    }
-  }
-
-  /* ─── Polling cada 8s × 15 intentos ─────── */
-  function startPolling() {
-    var attempts = 0;
-    clearInterval(pollTimer);
-    pollTimer = setInterval(async function() {
-      attempts++;
-      try {
-        var r = await fetch('/api/ton/deposit/status/' + depId);
-        var d = await r.json();
-        if (d.status === 'credited') {
-          clearInterval(pollTimer);
-          showStep('success');
-          el('ton-success-msg').textContent =
-            d.doge_credited.toFixed(2) + ' DOGE acreditados en tu cuenta. ✅';
-        } else if (d.status === 'failed') {
-          clearInterval(pollTimer);
-          showStep('error');
-          el('ton-error-msg').textContent = 'No se pudo verificar. Contacta soporte con ID: ' + depId;
-        } else if (attempts >= 15) {
-          clearInterval(pollTimer);
-          el('ton-verify-msg').textContent =
-            'TX enviada (ID: ' + depId + '). El DOGE se acreditará en minutos. Puedes cerrar esta ventana.';
-        }
-      } catch(e) { /* ignorar errores de red, seguir intentando */ }
-    }, 8000);
-  }
 
 })();
 </script>
