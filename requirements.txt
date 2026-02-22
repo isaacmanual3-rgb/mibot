@@ -12,8 +12,8 @@ mysql-connector-python==8.2.0
 # HTTP Requests (for Telegram API + TON toncenter)
 requests==2.31.0
 
-# TON wallet — derivación compatible con Tonkeeper
-tonsdk==0.0.23
+# TON wallet signing (Ed25519) — usado por ton_wallet.py
+cryptography==42.0.5
 
 # Environment Variables
 python-dotenv==1.0.0
