@@ -207,60 +207,93 @@ def _tc_post(method, payload, api_key=''):
 
 def _get_network_time(api_key=''):
     """
-    Obtiene tiempo Unix real. Estrategia:
-    1. Toncenter getMasterchainInfo (fuente más confiable para TON)
-    2. Leer header HTTP Date de cualquier respuesta HTTP (siempre disponible)
-    3. Tiempo local del sistema
+    Obtiene el utime real de la blockchain TON.
+
+    Estrategia multicapa:
+    1. getMasterchainInfo con API key -> utime del último bloque (ideal)
+    2. getMasterchainInfo sin API key -> utime del último bloque
+    3. getConsensusBlock -> utime alternativo
+    4. Header HTTP Date del servidor (puede tener hasta 30s de retraso)
+    5. Tiempo local del sistema
     """
     from email.utils import parsedate_to_datetime
 
-    def _time_from_http_date(headers):
-        """Extrae Unix timestamp del header Date de HTTP."""
-        date_str = headers.get('Date', '')
-        if date_str:
+    def _http_date(headers):
+        s = headers.get('Date', '')
+        if s:
             try:
-                return int(parsedate_to_datetime(date_str).timestamp())
+                return int(parsedate_to_datetime(s).timestamp())
             except Exception:
                 pass
         return 0
 
-    # 1: Toncenter (intenta con y sin api_key)
-    for use_key in ([True, False] if api_key else [False]):
+    def _try_masterchain(hdrs):
+        """Intenta getMasterchainInfo y retorna utime o 0."""
         try:
-            hdrs = {}
-            if use_key and api_key:
-                hdrs['X-API-Key'] = api_key
             r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=8)
             data = r.json()
             if data.get('ok'):
-                utime = data['result'].get('last', {}).get('utime', 0)
+                utime = data.get('result', {}).get('last', {}).get('utime', 0)
                 if utime > 1_000_000_000:
-                    logger.info(f'net_time via Toncenter utime: {utime}')
-                    return utime
-            # Aunque la respuesta no sea ok, podemos leer el Date header
-            t = _time_from_http_date(r.headers)
+                    return utime, 'getMasterchainInfo ok'
+            # Aunque falle, el @extra a veces tiene el tiempo
+            extra = str(data.get('@extra', ''))
+            if extra and ':' in extra:
+                try:
+                    t = int(extra.split(':')[0])
+                    if t > 1_000_000_000:
+                        return t, '@extra'
+                except Exception:
+                    pass
+            # Último recurso: Date header de la respuesta
+            t = _http_date(r.headers)
             if t > 1_000_000_000:
-                logger.info(f'net_time via Toncenter Date header: {t}')
-                return t
+                return t, 'Date header'
         except Exception as e:
-            logger.warning(f'Toncenter time fallo (key={use_key}): {e}')
+            logger.warning(f'getMasterchainInfo fallo: {e}')
+        return 0, None
 
-    # 2: Cualquier servidor HTTP externo accesible - leer solo el header Date
-    for url in [
-        'https://toncenter.com/',
-        'https://ton.org/',
-        'https://api.telegram.org/',
-    ]:
+    # 1. Con API key
+    if api_key:
+        t, src = _try_masterchain({'X-API-Key': api_key})
+        if t:
+            logger.info(f'net_time via Toncenter ({src}, con key): {t}')
+            return t
+
+    # 2. Sin API key
+    t, src = _try_masterchain({})
+    if t:
+        logger.info(f'net_time via Toncenter ({src}, sin key): {t}')
+        return t
+
+    # 3. getConsensusBlock (endpoint alternativo)
+    try:
+        r = requests.post(
+            f'{TONCENTER}/getConsensusBlock',
+            json={}, timeout=6,
+            headers={'X-API-Key': api_key} if api_key else {}
+        )
+        data = r.json()
+        if data.get('ok'):
+            t = data.get('result', {}).get('timestamp', 0)
+            if t > 1_000_000_000:
+                logger.info(f'net_time via getConsensusBlock: {t}')
+                return t
+    except Exception as e:
+        logger.warning(f'getConsensusBlock fallo: {e}')
+
+    # 4. Date header de cualquier URL accesible
+    for url in ['https://toncenter.com/', 'https://api.telegram.org/']:
         try:
-            r = requests.head(url, timeout=5, allow_redirects=True)
-            t = _time_from_http_date(r.headers)
+            r = requests.head(url, timeout=4, allow_redirects=False)
+            t = _http_date(r.headers)
             if t > 1_000_000_000:
-                logger.info(f'net_time via HTTP Date header ({url}): {t}')
+                logger.info(f'net_time via Date header ({url}): {t}')
                 return t
-        except Exception as e:
-            logger.warning(f'HTTP Date header fallo ({url}): {e}')
+        except Exception:
+            pass
 
-    # 3: Último recurso: tiempo local
+    # 5. Tiempo local (último recurso)
     local = int(time.time())
     logger.error(f'TODAS las fuentes de tiempo fallaron. Usando tiempo local: {local}')
     return local
@@ -450,8 +483,10 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         steps.append(f'Destino OK wc={to_wc}')
 
         net_time  = _get_network_time(api_key)
-        expire_at = net_time + 300  # 5 minutos para mayor tolerancia a latencia
-        logger.info(f'net_time={net_time} expire_at={expire_at}')
+        # expire_at: tiempo actual TON + 120s de ventana
+        # No ponemos más tiempo porque seqno puede cambiar si hay otra tx
+        expire_at = net_time + 120
+        logger.info(f'net_time={net_time} expira_en={expire_at}')
 
         nanotons = int(float(ton_amount) * 1_000_000_000)
         steps.append(f'Firmando BOC: {ton_amount} TON -> {to_addr}')
