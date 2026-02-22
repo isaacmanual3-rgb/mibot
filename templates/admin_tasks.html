@@ -1,0 +1,358 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">TASK MANAGEMENT</h1>
+        <p class="page-subtitle">Manage quests and rewards</p>
+    </div>
+    <button class="btn btn-primary" onclick="openModal('newTaskModal')">+ NEW TASK</button>
+</div>
+
+<!-- Task Stats -->
+<div class="stats-grid">
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_tasks }}</span>
+        <span class="stat-label">Total Tasks</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-success">{{ active_tasks }}</span>
+        <span class="stat-label">Active</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_completions }}</span>
+        <span class="stat-label">Total Completions</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-gold">{{ format_doge(total_rewards_paid) }}</span>
+        <span class="stat-label">Rewards Paid</span>
+    </div>
+</div>
+
+<!-- Tasks Table -->
+<div class="card pixel-border">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Order</th>
+                <th>Task</th>
+                <th>Category</th>
+                <th>Reward</th>
+                <th>Completions</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>
+                    <div class="flex gap-2">
+                        <button class="btn btn-secondary" onclick="moveTask({{ task.id }}, 'up')" title="Move Up">↑</button>
+                        <span>{{ task.sort_order }}</span>
+                        <button class="btn btn-secondary" onclick="moveTask({{ task.id }}, 'down')" title="Move Down">↓</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        <span style="font-size: 1.5rem;">{{ task.icon }}</span>
+                        <div>
+                            <strong>{{ task.title }}</strong>
+                            <br><small class="text-muted">{{ task.description[:50] }}...</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge badge-info">{{ task.category|upper }}</span>
+                </td>
+                <td class="text-gold">{{ format_doge(task.reward) }}</td>
+                <td>{{ task.completions }}</td>
+                <td>
+                    {% if task.is_active %}
+                        <span class="badge badge-success">ACTIVE</span>
+                    {% else %}
+                        <span class="badge badge-danger">INACTIVE</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button class="btn btn-secondary" onclick="editTask({{ task.id }})">EDIT</button>
+                        {% if task.is_active %}
+                            <button class="btn btn-warning" onclick="toggleTask({{ task.id }}, false)">DISABLE</button>
+                        {% else %}
+                            <button class="btn btn-success" onclick="toggleTask({{ task.id }}, true)">ENABLE</button>
+                        {% endif %}
+                        <button class="btn btn-danger" onclick="deleteTask({{ task.id }})">DELETE</button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-muted">No tasks created yet</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- New Task Modal -->
+<div id="newTaskModal" class="modal">
+    <div class="modal-content pixel-border" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">CREATE NEW TASK</h3>
+        </div>
+        <form id="newTaskForm">
+            <div class="form-group">
+                <label class="form-label">Title *</label>
+                <input type="text" name="title" class="form-input" placeholder="Task title" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description *</label>
+                <textarea name="description" class="form-input" rows="3" placeholder="Task description" required style="resize: vertical;"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Reward (DOGE) *</label>
+                    <input type="number" step="0.00000001" name="reward" class="form-input" placeholder="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-input">
+                        <option value="social">Social</option>
+                        <option value="daily">Daily</option>
+                        <option value="special">Special</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <input type="text" name="icon" class="form-input" placeholder="◈" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sort Order</label>
+                    <input type="number" name="sort_order" class="form-input" placeholder="1" value="1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Link (URL)</label>
+                <input type="url" name="link" class="form-input" placeholder="https://t.me/channel">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Channel ID (for verification)</label>
+                    <input type="text" name="channel_id" class="form-input" placeholder="-1001234567890">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Channel Username</label>
+                    <input type="text" name="channel_username" class="form-input" placeholder="channelname">
+                </div>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('newTaskModal')">CANCEL</button>
+            <button class="btn btn-primary" onclick="createTask()">CREATE TASK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div id="editTaskModal" class="modal">
+    <div class="modal-content pixel-border" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">EDIT TASK</h3>
+        </div>
+        <form id="editTaskForm">
+            <input type="hidden" name="task_id" id="editTaskId">
+            <div class="form-group">
+                <label class="form-label">Title *</label>
+                <input type="text" name="title" id="editTitle" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description *</label>
+                <textarea name="description" id="editDescription" class="form-input" rows="3" required style="resize: vertical;"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Reward (DOGE) *</label>
+                    <input type="number" step="0.00000001" name="reward" id="editReward" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" id="editCategory" class="form-input">
+                        <option value="social">Social</option>
+                        <option value="daily">Daily</option>
+                        <option value="special">Special</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Icon</label>
+                    <input type="text" name="icon" id="editIcon" class="form-input" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sort Order</label>
+                    <input type="number" name="sort_order" id="editSortOrder" class="form-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Link (URL)</label>
+                <input type="url" name="link" id="editLink" class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Channel ID</label>
+                    <input type="text" name="channel_id" id="editChannelId" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Channel Username</label>
+                    <input type="text" name="channel_username" id="editChannelUsername" class="form-input">
+                </div>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('editTaskModal')">CANCEL</button>
+            <button class="btn btn-primary" onclick="updateTask()">SAVE CHANGES</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function createTask() {
+    const form = document.getElementById('newTaskForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/admin/api/task/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Task created successfully', 'success');
+            closeModal('newTaskModal');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to create task', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function editTask(taskId) {
+    try {
+        const response = await fetch(`/admin/api/task/${taskId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const task = data.task;
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editTitle').value = task.title;
+            document.getElementById('editDescription').value = task.description;
+            document.getElementById('editReward').value = task.reward;
+            document.getElementById('editCategory').value = task.category || 'social';
+            document.getElementById('editIcon').value = task.icon || '';
+            document.getElementById('editSortOrder').value = task.sort_order;
+            document.getElementById('editLink').value = task.link || '';
+            document.getElementById('editChannelId').value = task.channel_id || '';
+            document.getElementById('editChannelUsername').value = task.channel_username || '';
+            
+            openModal('editTaskModal');
+        }
+    } catch (error) {
+        showToast('Failed to load task', 'error');
+    }
+}
+
+async function updateTask() {
+    const form = document.getElementById('editTaskForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/admin/api/task/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Task updated successfully', 'success');
+            closeModal('editTaskModal');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to update task', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function toggleTask(taskId, active) {
+    try {
+        const response = await fetch(`/admin/api/task/${taskId}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: active })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`Task ${active ? 'enabled' : 'disabled'}`, 'success');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to update task', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function deleteTask(taskId) {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/admin/api/task/${taskId}/delete`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Task deleted', 'success');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to delete task', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function moveTask(taskId, direction) {
+    try {
+        const response = await fetch(`/admin/api/task/${taskId}/move`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+</script>
+{% endblock %}

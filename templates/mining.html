@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+
+{% block title %}Mining - DogeQuest{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg:        #08080f;
+  --surface:   #0d0d1a;
+  --surface2:  #111122;
+  --surface3:  #070710;
+  --gold:      #ffd700;
+  --gold2:     #ffb300;
+  --gold-dark: #5a3a00;
+  --gold-dim:  rgba(255,215,0,0.07);
+  --green:     #00e676;
+  --blue:      #40c4ff;
+  --red:       #ff4d6a;
+  --orange:    #ff9800;
+  --purple:    #ce93d8;
+  --cyan:      #80deea;
+  --silver:    #b0bec5;
+  --bronze:    #ff8a65;
+  --border:    #1e1e34;
+  --text:      #e0e2f0;
+  --text2:     #9090b8;
+  --muted:     #4a4a6e;
+  --font-px:   'Press Start 2P', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+.mn-shell *, .mn-shell *::before, .mn-shell *::after { box-sizing: border-box; }
+.mn-shell {
+  font-family: var(--font-body);
+  background: var(--bg); min-height: 100vh;
+  color: var(--text); position: relative; overflow-x: hidden;
+}
+.mn-shell::before {
+  content:''; position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.011) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.011) 1px, transparent 1px);
+  background-size:24px 24px; pointer-events:none; z-index:0;
+}
+.mn-shell::after {
+  content:''; position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px);
+  pointer-events:none; z-index:1;
+}
+
+/* TICKER */
+.mn-ticker {
+  position:relative; z-index:20;
+  background:var(--gold); height:28px;
+  display:flex; align-items:center; overflow:hidden;
+  border-bottom:3px solid var(--gold-dark);
+}
+.mn-ticker span {
+  display:inline-block; white-space:nowrap;
+  font-family:var(--font-px); font-size:0.42rem;
+  color:#0a0800; letter-spacing:0.08em;
+  animation:mn-tick 32s linear infinite;
+}
+@keyframes mn-tick{ from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+
+/* PAGE */
+.mn-page {
+  position:relative; z-index:5;
+  max-width:560px; margin:0 auto;
+  padding:20px 14px 80px;
+  display:flex; flex-direction:column; gap:14px;
+}
+
+/* CARD */
+.mn-card {
+  background:var(--surface);
+  border:2px solid var(--border);
+  box-shadow:4px 4px 0 0 #030308;
+  position:relative; padding:20px;
+  animation:mn-up .3s ease both;
+}
+.mn-card::before,.mn-card::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.mn-card::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-card::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.mn-card:nth-child(1){animation-delay:.04s}
+.mn-card:nth-child(2){animation-delay:.09s}
+.mn-card:nth-child(3){animation-delay:.14s}
+.mn-card:nth-child(4){animation-delay:.19s}
+.mn-card:nth-child(5){animation-delay:.24s}
+.mn-card:nth-child(6){animation-delay:.29s}
+@keyframes mn-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.mn-label {
+  font-family:var(--font-px); font-size:0.42rem;
+  color:var(--muted); letter-spacing:0.18em; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px; margin-bottom:16px;
+}
+.mn-label::after{ content:''; flex:1; height:1px; background:var(--border); }
+
+/* ═══════════════════════════════
+   SVG ICON SYSTEM — PREMIUM
+═══════════════════════════════ */
+.px-icon {
+  display:flex; align-items:center; justify-content:center;
+  width:22px; height:22px; flex-shrink:0;
+}
+.px-icon svg {
+  width:100%; height:100%;
+  display:block;
+}
+
+/* ═══════════════════════════════
+   MINING HERO
+═══════════════════════════════ */
+.mn-hero {
+  background: linear-gradient(160deg, #08080e 0%, #0c0c1e 100%);
+  border: 2px solid var(--gold-dark);
+  box-shadow: 4px 4px 0 0 #020201, 0 0 50px rgba(255,215,0,0.06);
+  padding: 28px 20px 24px; text-align: center;
+  position: relative; overflow: hidden;
+  animation: mn-up .3s .04s ease both;
+}
+.mn-hero::before,.mn-hero::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.mn-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+
+.mn-hero-glow {
+  position:absolute; top:-40px; left:50%; transform:translateX(-50%);
+  width:200px; height:200px;
+  background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 68%);
+  pointer-events:none;
+}
+
+.mn-hero-icon {
+  width:54px; height:54px;
+  background:var(--gold-dim); border:2px solid var(--gold-dark);
+  box-shadow:3px 3px 0 0 #020201;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 18px;
+  animation: mn-bounce .8s steps(1) infinite;
+}
+@keyframes mn-bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+.mn-hero-title {
+  font-family:var(--font-px); font-size:0.75rem;
+  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark), 0 0 16px rgba(255,215,0,0.3);
+  letter-spacing:.07em; margin-bottom:10px;
+  animation: mn-flicker 6s ease infinite;
+}
+@keyframes mn-flicker{ 0%,91%,93%,95%,100%{opacity:1} 92%,94%{opacity:0.55} }
+.mn-hero-sub { font-size:0.8rem; color:var(--text2); line-height:1.5; }
+
+/* ═══════════════════════════════
+   STATS GRID
+═══════════════════════════════ */
+.mn-stats {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+  border:2px solid var(--border);
+}
+.mn-stat {
+  padding:16px 10px; text-align:center;
+  background:var(--surface3); position:relative;
+}
+.mn-stat + .mn-stat::before {
+  content:''; position:absolute; left:0; top:15%; bottom:15%;
+  width:1px; background:var(--border);
+}
+.mn-stat-icon {
+  width:34px; height:34px;
+  background:var(--surface); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 10px;
+}
+.mn-stat-val {
+  display:block; font-family:var(--font-px); font-size:0.62rem;
+  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark);
+  margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mn-stat-lbl { font-size:0.6rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+
+/* ═══════════════════════════════
+   CLAIM SECTION
+═══════════════════════════════ */
+.mn-claim {
+  background:#060612; border:2px solid rgba(0,230,118,0.3);
+  box-shadow:4px 4px 0 0 #020205, 0 0 20px rgba(0,230,118,0.06);
+  padding:16px 20px; position:relative;
+}
+.mn-claim::before,.mn-claim::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--green); border-style:solid;
+}
+.mn-claim::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-claim::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+
+.mn-claim-btn {
+  width:100%; padding:16px; display:flex; align-items:center; justify-content:center; gap:12px;
+  font-family:var(--font-px); font-size:0.52rem; letter-spacing:.07em;
+  background:var(--green); color:#050f08;
+  border:2px solid #00c853;
+  box-shadow:4px 4px 0 0 #003318;
+  cursor:pointer; transition:transform .07s, box-shadow .07s;
+  animation: mn-pulse 2s ease-in-out infinite;
+}
+@keyframes mn-pulse{
+  0%,100%{box-shadow:4px 4px 0 0 #003318, 0 0 0 0 rgba(0,230,118,0)}
+  50%{box-shadow:4px 4px 0 0 #003318, 0 0 0 6px rgba(0,230,118,0)}
+}
+.mn-claim-btn:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #003318; animation:none; }
+.mn-claim-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #003318; }
+.mn-claim-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; animation:none; }
+
+/* ═══════════════════════════════
+   YOUR MACHINES
+═══════════════════════════════ */
+.mn-machines { display:flex; flex-direction:column; gap:8px; }
+
+.mn-machine {
+  background:var(--surface3); border:2px solid var(--border);
+  box-shadow:2px 2px 0 0 #020205;
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  position:relative;
+}
+.mn-machine::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:3px; background:var(--green);
+}
+.mn-machine-icon {
+  flex-shrink:0; width:42px; height:42px;
+  background:var(--surface); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+}
+.mn-machine-body { flex:1; min-width:0; }
+.mn-machine-name {
+  display:block; font-family:var(--font-px); font-size:0.46rem;
+  color:var(--text); letter-spacing:.04em; margin-bottom:5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mn-machine-rate { font-size:0.7rem; color:var(--text2); }
+.mn-machine-right { flex-shrink:0; text-align:right; }
+.mn-machine-status {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--font-px); font-size:0.36rem;
+  color:var(--green); letter-spacing:.06em;
+  text-shadow:0 0 8px rgba(0,230,118,0.4); margin-bottom:5px;
+}
+.mn-status-dot {
+  width:6px; height:6px; background:var(--green);
+  box-shadow:0 0 6px rgba(0,230,118,0.6);
+  animation:mn-dot 1s steps(1) infinite;
+}
+@keyframes mn-dot{ 0%,100%{opacity:1} 50%{opacity:0.2} }
+.mn-machine-exp { font-size:0.6rem; color:var(--muted); }
+
+/* ═══════════════════════════════
+   PLANS GRID
+═══════════════════════════════ */
+.mn-plans { display:flex; flex-direction:column; gap:10px; }
+
+.mn-plan {
+  background:var(--surface3); border:2px solid var(--border);
+  box-shadow:3px 3px 0 0 #020205; padding:16px; position:relative;
+}
+/* Tier accent top bar */
+.mn-plan::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:3px; background:var(--muted);
+}
+.mn-plan.basic::before    { background:var(--text2); }
+.mn-plan.bronze::before   { background:var(--bronze); }
+.mn-plan.silver::before   { background:var(--silver); }
+.mn-plan.gold::before     { background:var(--gold); }
+.mn-plan.diamond::before  { background:var(--cyan); }
+.mn-plan.legendary::before{ background:var(--purple); box-shadow:0 0 12px rgba(206,147,216,0.5); }
+
+.mn-plan-top {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.mn-plan-icon {
+  flex-shrink:0; width:44px; height:44px;
+  background:var(--surface); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:2px 2px 0 0 #020205;
+}
+.mn-plan.gold   .mn-plan-icon { border-color:var(--gold-dark); background:rgba(255,215,0,0.05); }
+.mn-plan.diamond.mn-plan-icon, .mn-plan.diamond .mn-plan-icon { border-color:rgba(128,222,234,0.3); background:rgba(128,222,234,0.04); }
+.mn-plan.legendary .mn-plan-icon { border-color:rgba(206,147,216,0.3); background:rgba(206,147,216,0.04); }
+
+.mn-plan-header { flex:1; }
+.mn-plan-tier {
+  display:block; font-family:var(--font-px); font-size:0.36rem;
+  letter-spacing:.14em; margin-bottom:5px;
+}
+.mn-plan.basic .mn-plan-tier    { color:var(--text2); }
+.mn-plan.bronze .mn-plan-tier   { color:var(--bronze); }
+.mn-plan.silver .mn-plan-tier   { color:var(--silver); }
+.mn-plan.gold .mn-plan-tier     { color:var(--gold); }
+.mn-plan.diamond .mn-plan-tier  { color:var(--cyan); }
+.mn-plan.legendary .mn-plan-tier{ color:var(--purple); }
+
+.mn-plan-name {
+  display:block; font-family:var(--font-px); font-size:0.52rem;
+  color:var(--text); letter-spacing:.04em;
+}
+
+.mn-plan-stats {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;
+}
+.mn-plan-stat {
+  background:var(--surface); border:1px solid var(--border); padding:10px 8px;
+}
+.mn-plan-stat-lbl {
+  display:block; font-family:var(--font-px); font-size:0.32rem;
+  color:var(--muted); letter-spacing:.1em; margin-bottom:5px;
+}
+.mn-plan-stat-val {
+  display:block; font-family:var(--font-px); font-size:0.52rem;
+  color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mn-plan-stat-val.price { color:var(--gold); text-shadow:1px 1px 0 var(--gold-dark); }
+.mn-plan-stat-val.rate  { color:var(--green); }
+
+.mn-plan-desc { font-size:0.72rem; color:var(--text2); line-height:1.5; margin-bottom:14px; }
+
+.mn-btn-purchase {
+  width:100%; padding:14px; display:flex; align-items:center; justify-content:center; gap:10px;
+  font-family:var(--font-px); font-size:0.48rem; letter-spacing:.06em;
+  background:var(--surface); color:var(--text); cursor:pointer;
+  border:2px solid var(--border); box-shadow:3px 3px 0 0 #020205;
+  transition:transform .07s, box-shadow .07s, color .1s, border-color .1s;
+}
+.mn-btn-purchase:hover  { transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 #020205; color:var(--gold); border-color:var(--gold-dark); }
+.mn-btn-purchase:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #020205; }
+
+/* Gold/Diamond/Legendary buy button */
+.mn-plan.gold .mn-btn-purchase, .mn-plan.diamond .mn-btn-purchase, .mn-plan.legendary .mn-btn-purchase {
+  background:var(--gold); color:#0a0800;
+  border:2px solid var(--gold2); box-shadow:3px 3px 0 0 var(--gold-dark);
+}
+.mn-plan.gold .mn-btn-purchase:hover, .mn-plan.diamond .mn-btn-purchase:hover, .mn-plan.legendary .mn-btn-purchase:hover {
+  box-shadow:5px 5px 0 0 var(--gold-dark); color:#0a0800;
+}
+
+/* ═══════════════════════════════
+   HOW IT WORKS
+═══════════════════════════════ */
+.mn-steps {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:4px;
+}
+.mn-step { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; }
+.mn-step-num {
+  width:24px; height:24px; background:var(--gold); color:#0a0800;
+  font-family:var(--font-px); font-size:0.48rem;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:2px 2px 0 0 var(--gold-dark);
+}
+.mn-step-icon {
+  width:36px; height:36px; background:var(--surface3);
+  border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+}
+.mn-step-lbl { font-size:0.6rem; color:var(--text2); text-align:center; line-height:1.5; max-width:58px; }
+.mn-step-arrow { font-family:var(--font-px); font-size:0.5rem; color:var(--muted); margin-top:20px; flex-shrink:0; }
+
+/* ═══════════════════════════════
+   PURCHASE MODAL
+═══════════════════════════════ */
+.mn-modal-bg {
+  display:none; position:fixed; inset:0;
+  background:rgba(4,4,10,0.9); z-index:100;
+  align-items:center; justify-content:center;
+}
+.mn-modal-bg.show { display:flex; animation:mn-modal-bg .2s ease; }
+@keyframes mn-modal-bg{ from{opacity:0} to{opacity:1} }
+
+.mn-modal {
+  background:var(--surface2);
+  border:2px solid var(--border);
+  box-shadow:0 0 40px rgba(0,0,0,0.7);
+  width:90%; max-width:400px; padding:28px 20px 32px;
+  position:relative;
+  animation:mn-sheet .25s cubic-bezier(.22,.77,.42,1) both;
+}
+@keyframes mn-sheet{ from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+.mn-modal::before,.mn-modal::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.mn-modal::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-modal::after{top:-2px;right:-2px;border-width:2px 2px 0 0}
+
+.mn-modal-handle { width:36px; height:4px; background:var(--border); margin:0 auto 22px; }
+
+.mn-modal-icon {
+  width:50px; height:50px; background:var(--gold-dim); border:2px solid var(--gold-dark);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 16px; box-shadow:3px 3px 0 0 #020201;
+}
+.mn-modal-title {
+  font-family:var(--font-px); font-size:0.62rem;
+  color:var(--text); text-align:center; letter-spacing:.06em; margin-bottom:10px;
+}
+.mn-modal-msg { font-size:0.82rem; color:var(--text2); text-align:center; margin-bottom:20px; line-height:1.5; }
+
+.mn-modal-details { display:flex; flex-direction:column; gap:8px; margin-bottom:22px; }
+.mn-detail-row {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--surface3); border:1px solid var(--border); padding:10px 14px;
+}
+.mn-detail-lbl { font-size:0.72rem; color:var(--text2); }
+.mn-detail-val { font-family:var(--font-px); font-size:0.44rem; color:var(--gold); text-shadow:1px 1px 0 var(--gold-dark); }
+
+.mn-modal-btns { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
+.mn-btn-cancel {
+  font-family:var(--font-px); font-size:0.44rem; letter-spacing:.06em;
+  padding:14px; background:transparent; color:var(--text2);
+  border:2px solid var(--border); box-shadow:2px 2px 0 0 #030308;
+  cursor:pointer; transition:transform .07s;
+}
+.mn-btn-cancel:hover{ transform:translate(-1px,-1px); }
+.mn-btn-confirm {
+  font-family:var(--font-px); font-size:0.5rem; letter-spacing:.06em;
+  padding:14px; background:var(--gold); color:#0a0800;
+  border:2px solid var(--gold2); box-shadow:3px 3px 0 0 var(--gold-dark);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .07s, box-shadow .07s;
+}
+.mn-btn-confirm:hover  { transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 var(--gold-dark); }
+.mn-btn-confirm:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--gold-dark); }
+.mn-btn-confirm:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+.mn-spinner {
+  display:inline-block; width:10px; height:10px;
+  border:2px solid rgba(0,0,0,0.3); border-top-color:#0a0800;
+  animation:mn-spin .4s steps(4) infinite;
+}
+@keyframes mn-spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+/* No plans */
+.mn-no-plans { padding:40px 20px; text-align:center; }
+.mn-no-plans-icon {
+  width:42px; height:42px; background:var(--surface3); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 16px; animation:mn-bounce .9s steps(1) infinite;
+}
+.mn-no-plans-title { font-family:var(--font-px); font-size:0.5rem; color:var(--text2); margin-bottom:10px; }
+.mn-no-plans-hint  { font-size:0.78rem; color:var(--muted); }
+</style>
+
+<div class="mn-shell">
+  <div class="mn-ticker" aria-hidden="true">
+    <span>
+      ★ DOGEQUEST MINING STATION ★&nbsp;&nbsp;
+      PURCHASE MACHINES &amp; EARN AUTOMATICALLY &nbsp;★&nbsp;&nbsp;
+      CLAIM PENDING REWARDS ANYTIME &nbsp;★&nbsp;&nbsp;
+      MORE MACHINES = MORE DOGE PER HOUR &nbsp;★&nbsp;&nbsp;
+      MUCH MINE. VERY PASSIVE. SO DOGE. &nbsp;★&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="mn-page">
+
+    <!-- ── HERO ── -->
+    <div class="mn-hero">
+      <div class="mn-hero-glow" aria-hidden="true"></div>
+      <div class="mn-hero-icon">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span>
+      </div>
+      <div class="mn-hero-title">MINING STATION</div>
+      <div class="mn-hero-sub">Purchase mining machines and earn DOGE automatically!</div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div class="mn-card" style="padding:0; overflow:hidden;">
+      <div class="mn-stats">
+        <div class="mn-stat">
+          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span></div>
+          <span class="mn-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
+          <span class="mn-stat-lbl">Machines</span>
+        </div>
+        <div class="mn-stat" style="background:rgba(255,215,0,0.03); border-top:2px solid rgba(255,215,0,0.12);">
+          <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">
+            <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
+          </div>
+          <span class="mn-stat-val">{{ format_doge(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
+          <span class="mn-stat-lbl">DOGE/Hour</span>
+        </div>
+        <div class="mn-stat">
+          <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
+            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
+          </div>
+          <span class="mn-stat-val" id="pendingRewards">{{ format_doge(pending_rewards) }}</span>
+          <span class="mn-stat-lbl">Pending</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CLAIM ── -->
+    {% if pending_rewards > 0 %}
+    <div class="mn-claim">
+      <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
+        CLAIM {{ format_doge(pending_rewards) }} DOGE
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- ── YOUR MACHINES ── -->
+    {% if user_machines %}
+    <div class="mn-card">
+      <div class="mn-label">
+        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span>
+        Your Machines
+      </div>
+      <div class="mn-machines">
+        {% for machine in user_machines %}
+        <div class="mn-machine">
+          <div class="mn-machine-icon">
+            {% if 'Diamond' in machine.plan_name or 'diamond' in machine.plan_name %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#80deea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 3L8 9l4 12 4-12L12 3z" stroke-opacity="0.5"/></svg></span>
+            {% elif 'Gold' in machine.plan_name or 'gold' in machine.plan_name %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+            {% elif 'Silver' in machine.plan_name or 'silver' in machine.plan_name %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v7c0 5-3.5 9-8 10C8.5 21 5 17 5 12V5l7-3z"/><path d="M9 12l2 2 4-4" stroke="#40c4ff" stroke-width="2"/></svg></span>
+            {% elif 'Bronze' in machine.plan_name or 'bronze' in machine.plan_name %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.5 0 7-2.5 7-6 0-4-2.5-6-4-8-1 2-1.5 3-3 4-1-2-1.5-4-1-6C8 8 5 10.5 5 15c0 4 2.5 7 7 7z"/><path d="M12 22c1.5 0 3-1 3-3s-1.5-3-3-4c-1.5 1-3 2-3 4s1.5 3 3 3z" fill="#ffd700" stroke="#ffd700" stroke-width="1"/></svg></span>
+            {% elif 'Legendary' in machine.plan_name or 'legendary' in machine.plan_name %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ce93d8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-3-10-4.5 5L12 5l-1.5 8L6 8z"/><path d="M3 18v2h18v-2"/><circle cx="12" cy="5" r="1" fill="#ffd700"/><circle cx="3" cy="8" r="1" fill="#ce93d8"/><circle cx="21" cy="8" r="1" fill="#ce93d8"/></svg></span>
+            {% else %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+            {% endif %}
+          </div>
+          <div class="mn-machine-body">
+            <span class="mn-machine-name">{{ machine.plan_name }}</span>
+            <span class="mn-machine-rate">{{ format_doge(machine.hourly_rate) }} DOGE/hr</span>
+          </div>
+          <div class="mn-machine-right">
+            <div class="mn-machine-status">
+              <div class="mn-status-dot"></div> MINING
+            </div>
+            <div class="mn-machine-exp">
+              Exp: {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── AVAILABLE PLANS ── -->
+    <div class="mn-card">
+      <div class="mn-label">
+        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
+        Mining Machines
+      </div>
+      <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
+        Purchase a miner to start earning DOGE automatically!
+      </p>
+
+      {% if plans %}
+      <div class="mn-plans">
+        {% for plan in plans %}
+        <div class="mn-plan {{ plan.tier|default('basic') }}" data-plan-id="{{ plan.id }}">
+          <div class="mn-plan-top">
+            <div class="mn-plan-icon">
+              {% if plan.tier == 'legendary' %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ce93d8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-3-10-4.5 5L12 5l-1.5 8L6 8z"/><path d="M3 18v2h18v-2"/><circle cx="12" cy="5" r="1" fill="#ffd700"/><circle cx="3" cy="8" r="1" fill="#ce93d8"/><circle cx="21" cy="8" r="1" fill="#ce93d8"/></svg></span>
+              {% elif plan.tier == 'diamond'  %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#80deea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 3L8 9l4 12 4-12L12 3z" stroke-opacity="0.5"/></svg></span>
+              {% elif plan.tier == 'gold'     %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+              {% elif plan.tier == 'silver'   %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v7c0 5-3.5 9-8 10C8.5 21 5 17 5 12V5l7-3z"/><path d="M9 12l2 2 4-4" stroke="#40c4ff" stroke-width="2"/></svg></span>
+              {% elif plan.tier == 'bronze'   %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.5 0 7-2.5 7-6 0-4-2.5-6-4-8-1 2-1.5 3-3 4-1-2-1.5-4-1-6C8 8 5 10.5 5 15c0 4 2.5 7 7 7z"/><path d="M12 22c1.5 0 3-1 3-3s-1.5-3-3-4c-1.5 1-3 2-3 4s1.5 3 3 3z" fill="#ffd700" stroke="#ffd700" stroke-width="1"/></svg></span>
+              {% else                         %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+              {% endif %}
+            </div>
+            <div class="mn-plan-header">
+              <span class="mn-plan-tier">{{ plan.tier|upper }}</span>
+              <span class="mn-plan-name">{{ plan.name }}</span>
+            </div>
+          </div>
+
+          <div class="mn-plan-stats">
+            <div class="mn-plan-stat">
+              <span class="mn-plan-stat-lbl">Price</span>
+              <span class="mn-plan-stat-val price">{{ format_doge(plan.price) }}</span>
+            </div>
+            <div class="mn-plan-stat">
+              <span class="mn-plan-stat-lbl">Rate</span>
+              <span class="mn-plan-stat-val rate">{{ format_doge(plan.hourly_rate) }}/hr</span>
+            </div>
+            <div class="mn-plan-stat">
+              <span class="mn-plan-stat-lbl">Daily</span>
+              <span class="mn-plan-stat-val">~{{ format_doge(plan.hourly_rate * 24) }}</span>
+            </div>
+            <div class="mn-plan-stat">
+              <span class="mn-plan-stat-lbl">Duration</span>
+              <span class="mn-plan-stat-val">{{ plan.duration_days }}d</span>
+            </div>
+          </div>
+
+          {% if plan.description %}
+          <p class="mn-plan-desc">{{ plan.description }}</p>
+          {% endif %}
+
+          <button class="mn-btn-purchase" onclick="purchaseMachine({{ plan.id }}, '{{ plan.name }}', {{ plan.price }})">
+            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
+            PURCHASE
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="mn-no-plans">
+        <div class="mn-no-plans-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span></div>
+        <div class="mn-no-plans-title">NO PLANS AVAILABLE</div>
+        <div class="mn-no-plans-hint">Check back soon!</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── HOW IT WORKS ── -->
+    <div class="mn-card">
+      <div class="mn-label">
+        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
+        How It Works
+      </div>
+      <div class="mn-steps">
+        <div class="mn-step">
+          <div class="mn-step-num">1</div>
+          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
+          <div class="mn-step-lbl">Purchase a miner</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">2</div>
+          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span></div>
+          <div class="mn-step-lbl">Mining starts auto</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">3</div>
+          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div>
+          <div class="mn-step-lbl">Claim rewards</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">4</div>
+          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span></div>
+          <div class="mn-step-lbl">Withdraw DOGE!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── PURCHASE MODAL ── -->
+<div id="purchaseModal" class="mn-modal-bg">
+  <div class="mn-modal">
+    <div class="mn-modal-handle"></div>
+    <div class="mn-modal-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
+    <div class="mn-modal-title">CONFIRM PURCHASE</div>
+    <p class="mn-modal-msg" id="purchaseMessage">Are you sure you want to purchase this miner?</p>
+    <div class="mn-modal-details">
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Cost</span>
+        <span class="mn-detail-val" id="purchaseCost">0 DOGE</span>
+      </div>
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Your Balance</span>
+        <span class="mn-detail-val">{{ format_doge(user.doge_balance) }} DOGE</span>
+      </div>
+    </div>
+    <div class="mn-modal-btns">
+      <button class="mn-btn-cancel" onclick="closePurchaseModal()">CANCEL</button>
+      <button class="mn-btn-confirm" id="confirmPurchaseBtn" onclick="confirmPurchase()">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        CONFIRM
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentPlanId = null;
+let currentPlanName = '';
+let currentPlanPrice = 0;
+
+function purchaseMachine(planId, planName, price) {
+  currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
+  document.getElementById('purchaseMessage').textContent = `Purchase ${planName}?`;
+  document.getElementById('purchaseCost').textContent = `${price} DOGE`;
+  document.getElementById('purchaseModal').classList.add('show');
+}
+function closePurchaseModal() {
+  document.getElementById('purchaseModal').classList.remove('show');
+  currentPlanId = null;
+}
+async function confirmPurchase() {
+  if (!currentPlanId) return;
+  const btn = document.getElementById('confirmPurchaseBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mn-spinner"></span> PROCESSING...';
+  try {
+    const res = await fetch('/api/mining/purchase', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan_id:currentPlanId})
+    });
+    const data = await res.json();
+    if (data.success) {
+      closePurchaseModal();
+      showToast(data.message,'success');
+      createPixelExplosion(window.innerWidth/2,window.innerHeight/2,'#00ff66');
+      setTimeout(()=>location.reload(),1500);
+    } else { showToast(data.message||'Purchase failed','error'); }
+  } catch(e){ showToast('Connection error','error'); }
+  btn.disabled=false;
+  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> CONFIRM';
+}
+async function claimMiningRewards() {
+  const btn = document.querySelector('.claim-mining-btn');
+  if(!btn||btn.disabled) return;
+  btn.disabled=true;
+  btn.innerHTML='<span class="mn-spinner"></span> CLAIMING...';
+  try {
+    const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
+    const data = await res.json();
+    if(data.success){ showToast(data.message,'success'); createCoinRain(10); setTimeout(()=>location.reload(),1500); }
+    else{ showToast(data.message||'Claim failed','error'); }
+  } catch(e){ showToast('Connection error','error'); }
+  btn.disabled=false;
+  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> CLAIM';
+}
+function updatePendingRewards(){
+  fetch('/api/mining/stats').then(r=>r.json()).then(data=>{
+    if(data.success&&data.pending_rewards){
+      const el=document.getElementById('pendingRewards');
+      if(el) el.textContent=data.pending_rewards.toFixed(8).replace(/\.?0+$/,'');
+    }
+  }).catch(()=>{});
+}
+setInterval(updatePendingRewards,30000);
+function showToast(m,t){ if(window.DogeQuest&&window.DogeQuest.showToast){window.DogeQuest.showToast(m,t);}else{alert(m);} }
+function createPixelExplosion(x,y,c){ if(window.DogeQuest&&window.DogeQuest.createPixelExplosion){window.DogeQuest.createPixelExplosion(x,y,c);} }
+function createCoinRain(n){ if(window.DogeQuest&&window.DogeQuest.createCoinRain){window.DogeQuest.createCoinRain(n);} }
+// Close modal on backdrop
+document.getElementById('purchaseModal').addEventListener('click',function(e){if(e.target===this)closePurchaseModal();});
+</script>
+{% endblock %}

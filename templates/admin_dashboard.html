@@ -1,0 +1,199 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">DASHBOARD</h1>
+        <p class="page-subtitle">Overview of Doge Pixel statistics</p>
+    </div>
+    <div class="flex gap-2">
+        <span class="text-muted">Last updated: {{ now }}</span>
+    </div>
+</div>
+
+<!-- Key Stats -->
+<div class="stats-grid">
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_users }}</span>
+        <span class="stat-label">Total Users</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ active_today }}</span>
+        <span class="stat-label">Active Today</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-gold">{{ format_doge(total_distributed) }}</span>
+        <span class="stat-label">DOGE Distributed</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-warning">{{ pending_withdrawals }}</span>
+        <span class="stat-label">Pending Withdrawals</span>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_checkins }}</span>
+        <span class="stat-label">Total Check-ins</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ checkins_today }}</span>
+        <span class="stat-label">Check-ins Today</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_tasks_completed }}</span>
+        <span class="stat-label">Tasks Completed</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value">{{ total_referrals }}</span>
+        <span class="stat-label">Total Referrals</span>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- Recent Users -->
+    <div class="card pixel-border">
+        <div class="card-header">RECENT USERS</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Balance</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in recent_users %}
+                <tr>
+                    <td>
+                        <span>{{ user.username or 'Anonymous' }}</span>
+                        <small class="text-muted ml-2">#{{ user.telegram_id }}</small>
+                    </td>
+                    <td class="text-gold">{{ format_doge(user.doge_balance) }}</td>
+                    <td class="text-muted">{{ user.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-muted">No users yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-4">
+            <a href="/admin/users" class="btn btn-secondary">View All Users →</a>
+        </div>
+    </div>
+
+    <!-- Pending Withdrawals -->
+    <div class="card pixel-border">
+        <div class="card-header">PENDING WITHDRAWALS</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Requested</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in pending_withdrawal_list %}
+                <tr>
+                    <td>{{ w.username or 'Anonymous' }}</td>
+                    <td class="text-gold">{{ format_doge(w.amount) }}</td>
+                    <td class="text-muted">{{ w.created_at }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-muted">No pending withdrawals</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-4">
+            <a href="/admin/withdrawals" class="btn btn-secondary">Manage Withdrawals →</a>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+    <!-- Top Earners -->
+    <div class="card pixel-border">
+        <div class="card-header">TOP EARNERS</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>User</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in top_earners %}
+                <tr>
+                    <td>
+                        {% if loop.index == 1 %}
+                            <span class="text-gold">♔</span>
+                        {% elif loop.index == 2 %}
+                            <span class="text-muted">♔</span>
+                        {% elif loop.index == 3 %}
+                            <span style="color: #cd7f32;">♔</span>
+                        {% else %}
+                            {{ loop.index }}
+                        {% endif %}
+                    </td>
+                    <td>{{ user.username or 'Anonymous' }}</td>
+                    <td class="text-gold">{{ format_doge(user.doge_balance) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-muted">No data</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Active Tasks -->
+    <div class="card pixel-border">
+        <div class="card-header">ACTIVE TASKS</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Reward</th>
+                    <th>Completions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in active_tasks %}
+                <tr>
+                    <td>{{ task.title }}</td>
+                    <td class="text-gold">{{ format_doge(task.reward) }}</td>
+                    <td>{{ task.completions }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-muted">No active tasks</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="mt-4">
+            <a href="/admin/tasks" class="btn btn-secondary">Manage Tasks →</a>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card pixel-border mt-4">
+    <div class="card-header">QUICK ACTIONS</div>
+    <div class="flex gap-4">
+        <a href="/admin/tasks?action=new" class="btn btn-primary">+ New Task</a>
+        <a href="/admin/promo?action=new" class="btn btn-primary">+ New Promo Code</a>
+        <a href="/admin/withdrawals?filter=pending" class="btn btn-warning">Review Withdrawals</a>
+        <a href="/admin/config" class="btn btn-secondary">Edit Config</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "admin_base.html" %}
+{% block title %}TON Deposits{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">TON DEPOSITS</h1>
+        <p class="page-subtitle">Review and approve TON deposit requests</p>
+    </div>
+</div>
+
+{% if pending %}
+<div class="section-title" style="margin-bottom:12px;font-size:0.9rem;color:#ff9800">
+    ⚠ {{ pending|length }} Pending Deposit(s) Awaiting Approval
+</div>
+{% endif %}
+
+<div class="table-container">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Deposit ID</th>
+            <th>User</th>
+            <th>TON Amount</th>
+            <th>DOGE Credit</th>
+            <th>Wallet From</th>
+            <th>TX Hash</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in deposits %}
+        <tr id="row-{{ d.deposit_id }}">
+            <td style="font-family:monospace;font-size:0.8rem">{{ d.deposit_id }}</td>
+            <td>{{ d.first_name or d.user_id }}<br><span style="color:#666;font-size:0.75rem">{{ d.user_id }}</span></td>
+            <td><strong style="color:#0098EA">{{ "%.4f"|format(d.ton_amount) }} TON</strong></td>
+            <td><strong style="color:#ffd700">{{ "%.2f"|format(d.doge_credited) }} DOGE</strong></td>
+            <td style="font-family:monospace;font-size:0.7rem;word-break:break-all;max-width:150px">{{ d.ton_wallet_from }}</td>
+            <td style="font-family:monospace;font-size:0.7rem;word-break:break-all;max-width:120px">
+                {% if d.ton_tx_hash %}
+                <a href="https://tonscan.org/tx/{{ d.ton_tx_hash }}" target="_blank" style="color:#0098EA">{{ d.ton_tx_hash[:16] }}...</a>
+                {% else %}—{% endif %}
+            </td>
+            <td>
+                <span style="padding:3px 8px;font-size:0.72rem;
+                    {% if d.status=='credited' %}color:#00e676;border:1px solid rgba(0,230,118,0.3);background:rgba(0,230,118,0.07)
+                    {% elif d.status=='pending' %}color:#ff9800;border:1px solid rgba(255,152,0,0.3);background:rgba(255,152,0,0.07)
+                    {% else %}color:#ff4d6a;border:1px solid rgba(255,77,106,0.3);background:rgba(255,77,106,0.07){% endif %}">
+                    {{ d.status|upper }}
+                </span>
+            </td>
+            <td style="font-size:0.8rem">{{ d.created_at }}</td>
+            <td>
+                {% if d.status == 'pending' %}
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <input type="text" id="hash-{{ d.deposit_id }}" placeholder="tx hash (opt)"
+                           style="font-size:0.75rem;padding:4px 8px;background:#111;border:1px solid #333;color:#eee;width:120px">
+                    <button onclick="adminTon.approve('{{ d.deposit_id }}')"
+                            style="padding:5px 12px;background:#00e676;color:#000;border:none;cursor:pointer;font-weight:bold;font-size:0.8rem">
+                        ✓ APPROVE
+                    </button>
+                    <button onclick="adminTon.reject('{{ d.deposit_id }}')"
+                            style="padding:5px 10px;background:#ff4d6a;color:#fff;border:none;cursor:pointer;font-size:0.8rem">
+                        ✕
+                    </button>
+                </div>
+                {% else %}
+                —
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" style="text-align:center;color:#666;padding:30px">No TON deposits found</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<script>
+const adminTon = {
+    approve: async function(depositId) {
+        const txHash = document.getElementById('hash-' + depositId)?.value || '';
+        if (!confirm('Approve deposit ' + depositId + '? This will credit DOGE to the user.')) return;
+        const r = await fetch('/admin/ton-deposits/' + depositId + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tx_hash: txHash})
+        });
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('row-' + depositId).style.opacity = '0.5';
+            alert('✓ ' + d.message);
+            location.reload();
+        } else {
+            alert('Error: ' + d.message);
+        }
+    },
+    reject: async function(depositId) {
+        const note = prompt('Rejection reason:') || 'Rejected by admin';
+        const r = await fetch('/admin/ton-deposits/' + depositId + '/reject', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({note: note})
+        });
+        const d = await r.json();
+        if (d.success) { location.reload(); }
+        else { alert('Error: ' + d.message); }
+    }
+};
+</script>
+{% endblock %}

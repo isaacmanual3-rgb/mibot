@@ -1,0 +1,382 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin - Promo Codes{% endblock %}
+
+{% block admin_content %}
+<div class="admin-header">
+    <h1>📦 PROMO CODES</h1>
+    <button class="btn btn-primary" onclick="openCreateModal()">+ NEW CODE</button>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.total_codes }}</span>
+            <span class="stat-label">Total Codes</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.active_codes }}</span>
+            <span class="stat-label">Active</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🎫</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ stats.total_uses }}</span>
+            <span class="stat-label">Total Uses</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🐕</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ format_doge(stats.total_distributed) }}</span>
+            <span class="stat-label">DOGE Distributed</span>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="admin-card">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label>Status</label>
+            <select id="filter-status" onchange="filterCodes()">
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="depleted">Depleted</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Search</label>
+            <input type="text" id="filter-search" placeholder="Code..." onkeyup="filterCodes()">
+        </div>
+    </div>
+</div>
+
+<!-- Promo Codes Table -->
+<div class="admin-card">
+    <div class="table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>CODE</th>
+                    <th>REWARD</th>
+                    <th>USES</th>
+                    <th>MAX USES</th>
+                    <th>EXPIRES</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody id="codes-table">
+                {% for code in codes %}
+                <tr data-code="{{ code.code }}" data-status="{{ code.status }}">
+                    <td>
+                        <span class="code-badge">{{ code.code }}</span>
+                        <button class="btn-icon" onclick="copyCode('{{ code.code }}')" title="Copy">📋</button>
+                    </td>
+                    <td class="text-gold">{{ format_doge(code.reward) }} DOGE</td>
+                    <td>{{ code.uses }}</td>
+                    <td>{{ code.max_uses if code.max_uses else '∞' }}</td>
+                    <td>{{ code.expires_at.strftime('%Y-%m-%d') if code.expires_at else 'Never' }}</td>
+                    <td>
+                        {% if code.status == 'active' %}
+                        <span class="status-badge status-active">ACTIVE</span>
+                        {% elif code.status == 'expired' %}
+                        <span class="status-badge status-expired">EXPIRED</span>
+                        {% else %}
+                        <span class="status-badge status-depleted">DEPLETED</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon" onclick="viewCodeDetails('{{ code.code }}')" title="View">👁</button>
+                            {% if code.status == 'active' %}
+                            <button class="btn-icon" onclick="deactivateCode('{{ code.code }}')" title="Deactivate">⏸</button>
+                            {% else %}
+                            <button class="btn-icon" onclick="activateCode('{{ code.code }}')" title="Activate">▶</button>
+                            {% endif %}
+                            <button class="btn-icon btn-danger" onclick="deleteCode('{{ code.code }}')" title="Delete">🗑</button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-table">No promo codes found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Redemptions -->
+<div class="admin-card">
+    <h3 style="margin-bottom: 16px;">🕐 RECENT REDEMPTIONS</h3>
+    <div class="table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>USER</th>
+                    <th>CODE</th>
+                    <th>REWARD</th>
+                    <th>DATE</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for redemption in recent_redemptions %}
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <span class="user-name">{{ redemption.first_name }}</span>
+                            <span class="user-id">ID: {{ redemption.telegram_id }}</span>
+                        </div>
+                    </td>
+                    <td><span class="code-badge">{{ redemption.code }}</span></td>
+                    <td class="text-gold">+{{ format_doge(redemption.reward) }}</td>
+                    <td>{{ redemption.redeemed_at | timeago }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-table">No recent redemptions</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="create-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">📦 CREATE PROMO CODE</span>
+            <button class="modal-close" onclick="closeModal('create-modal')">×</button>
+        </div>
+        
+        <form id="create-form" onsubmit="createCode(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">CODE</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" name="code" class="form-input" placeholder="WELCOME2024" required style="text-transform: uppercase;">
+                        <button type="button" class="btn btn-outline" onclick="generateCode()">🎲</button>
+                    </div>
+                    <p class="form-hint">Letters, numbers, and underscores only</p>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">REWARD (DOGE)</label>
+                        <input type="number" name="reward" class="form-input" placeholder="0.1" step="0.00000001" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">MAX USES</label>
+                        <input type="number" name="max_uses" class="form-input" placeholder="100" min="1">
+                        <p class="form-hint">Leave empty for unlimited</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">EXPIRES AT</label>
+                    <input type="datetime-local" name="expires_at" class="form-input">
+                    <p class="form-hint">Leave empty for no expiration</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">DESCRIPTION (OPTIONAL)</label>
+                    <textarea name="description" class="form-input" rows="2" placeholder="Internal note about this code..."></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('create-modal')">CANCEL</button>
+                <button type="submit" class="btn btn-primary">CREATE CODE</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" id="details-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">📦 CODE DETAILS</span>
+            <button class="modal-close" onclick="closeModal('details-modal')">×</button>
+        </div>
+        
+        <div class="modal-body" id="code-details">
+            <!-- Filled by JS -->
+        </div>
+        
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('details-modal')">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.code-badge {
+    font-family: var(--font-mono);
+    background: var(--bg-tertiary);
+    padding: 4px 8px;
+    border: 1px solid var(--blue-primary);
+    font-size: 0.85rem;
+    color: var(--blue-bright);
+}
+
+.status-active { background: var(--success); color: #000; }
+.status-expired { background: var(--warning); color: #000; }
+.status-depleted { background: var(--text-muted); color: #000; }
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.text-gold { color: var(--doge-gold); }
+</style>
+
+<script>
+function openCreateModal() {
+    document.getElementById('create-form').reset();
+    openModal('create-modal');
+}
+
+function generateCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.querySelector('input[name="code"]').value = code;
+}
+
+function copyCode(code) {
+    navigator.clipboard.writeText(code);
+    showToast('Code copied!', 'success');
+}
+
+function filterCodes() {
+    const status = document.getElementById('filter-status').value;
+    const search = document.getElementById('filter-search').value.toLowerCase();
+    
+    document.querySelectorAll('#codes-table tr').forEach(row => {
+        const rowStatus = row.dataset.status;
+        const rowCode = row.dataset.code?.toLowerCase() || '';
+        
+        const matchesStatus = !status || rowStatus === status;
+        const matchesSearch = !search || rowCode.includes(search);
+        
+        row.style.display = matchesStatus && matchesSearch ? '' : 'none';
+    });
+}
+
+function createCode(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+    
+    fetch('/admin/promo/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(data))
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Promo code created!', 'success');
+            closeModal('create-modal');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Failed to create code', 'error');
+        }
+    });
+}
+
+function viewCodeDetails(code) {
+    fetch(`/admin/promo/${code}/details`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const c = data.code;
+            document.getElementById('code-details').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span class="code-badge" style="font-size: 1.2rem; padding: 8px 16px;">${c.code}</span>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Reward</span>
+                        <span class="detail-value text-gold">${c.reward} DOGE</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Uses</span>
+                        <span class="detail-value">${c.uses} / ${c.max_uses || '∞'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Created</span>
+                        <span class="detail-value">${c.created_at}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Expires</span>
+                        <span class="detail-value">${c.expires_at || 'Never'}</span>
+                    </div>
+                </div>
+                ${c.description ? `<p style="margin-top: 16px; color: var(--text-muted);">${c.description}</p>` : ''}
+            `;
+            openModal('details-modal');
+        }
+    });
+}
+
+function deactivateCode(code) {
+    if (!confirm('Deactivate this promo code?')) return;
+    
+    fetch(`/admin/promo/${code}/deactivate`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Code deactivated', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error, 'error');
+        }
+    });
+}
+
+function activateCode(code) {
+    fetch(`/admin/promo/${code}/activate`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Code activated', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error, 'error');
+        }
+    });
+}
+
+function deleteCode(code) {
+    if (!confirm('Delete this promo code? This cannot be undone.')) return;
+    
+    fetch(`/admin/promo/${code}/delete`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Code deleted', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error, 'error');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,297 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">USER MANAGEMENT</h1>
+        <p class="page-subtitle">{{ total_users }} total users registered</p>
+    </div>
+    <div class="flex gap-2">
+        <input type="text" id="searchInput" class="form-input" placeholder="Search users..." style="width: 250px;">
+        <button class="btn btn-primary" onclick="searchUsers()">SEARCH</button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card pixel-border">
+    <div class="flex gap-4 items-center">
+        <span class="text-muted">Filter:</span>
+        <a href="/admin/users" class="btn {% if not filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+        <a href="/admin/users?filter=active" class="btn {% if filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}">Active Today</a>
+        <a href="/admin/users?filter=banned" class="btn {% if filter == 'banned' %}btn-primary{% else %}btn-secondary{% endif %}">Banned</a>
+        <a href="/admin/users?filter=top" class="btn {% if filter == 'top' %}btn-primary{% else %}btn-secondary{% endif %}">Top Earners</a>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card pixel-border">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Balance</th>
+                <th>Streak</th>
+                <th>Referrals</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td class="text-muted">#{{ user.telegram_id }}</td>
+                <td>
+                    <strong>{{ user.username or 'Anonymous' }}</strong>
+                    {% if user.first_name %}
+                    <br><small class="text-muted">{{ user.first_name }} {{ user.last_name or '' }}</small>
+                    {% endif %}
+                </td>
+                <td class="text-gold">{{ format_doge(user.doge_balance) }}</td>
+                <td>
+                    {{ user.checkin_streak }} days
+                    <br><small class="text-muted">Best: {{ user.longest_streak }}</small>
+                </td>
+                <td>
+                    {{ user.validated_referrals }}
+                    <br><small class="text-muted">+{{ format_doge(user.referral_earnings) }}</small>
+                </td>
+                <td>
+                    {% if user.is_banned %}
+                        <span class="badge badge-danger">BANNED</span>
+                    {% else %}
+                        <span class="badge badge-success">ACTIVE</span>
+                    {% endif %}
+                </td>
+                <td class="text-muted">{{ user.created_at }}</td>
+                <td>
+                    <div class="flex gap-2" style="flex-wrap:wrap;">
+                        <button class="btn btn-secondary" onclick="viewUser('{{ user.user_id }}')">VIEW</button>
+                        <button class="btn btn-outline" onclick="viewHistory('{{ user.user_id }}')">HISTORY</button>
+                        {% if user.is_banned %}
+                            <button class="btn btn-success" onclick="unbanUser('{{ user.user_id }}')">UNBAN</button>
+                        {% else %}
+                            <button class="btn btn-danger" onclick="banUser('{{ user.user_id }}')">BAN</button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="text-muted">No users found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">← PREV</a>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+                <span class="page-btn active">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                <a href="?page={{ p }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">{{ p }}</a>
+            {% elif p == 4 or p == total_pages - 2 %}
+                <span class="page-btn">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">NEXT →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- User Detail Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content pixel-border">
+        <div class="modal-header">
+            <h3 class="modal-title">USER DETAILS</h3>
+        </div>
+        <div id="userDetails">
+            <!-- Populated by JS -->
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('userModal')">CLOSE</button>
+            <button class="btn btn-primary" id="adjustBalanceBtn">ADJUST BALANCE</button>
+        </div>
+    </div>
+</div>
+
+<!-- Adjust Balance Modal -->
+<div id="balanceModal" class="modal">
+    <div class="modal-content pixel-border">
+        <div class="modal-header">
+            <h3 class="modal-title">ADJUST BALANCE</h3>
+        </div>
+        <form id="balanceForm">
+            <input type="hidden" id="balanceUserId" name="user_id">
+            <div class="form-group">
+                <label class="form-label">Current Balance</label>
+                <input type="text" id="currentBalance" class="form-input" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Adjustment Amount (+ or -)</label>
+                <input type="number" step="0.00000001" name="amount" class="form-input" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <input type="text" name="reason" class="form-input" placeholder="Admin adjustment" required>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('balanceModal')">CANCEL</button>
+            <button class="btn btn-primary" onclick="submitBalanceAdjustment()">APPLY</button>
+        </div>
+    </div>
+</div>
+
+<!-- History Modal -->
+<div id="historyModal" class="modal">
+    <div class="modal-content pixel-border" style="max-width:750px;width:95%;">
+        <div class="modal-header">
+            <h3 class="modal-title">BALANCE HISTORY</h3>
+        </div>
+        <div id="historyContent" style="max-height:400px;overflow-y:auto;">
+            <p class="text-muted">Loading...</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('historyModal')">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function searchUsers() {
+    const query = document.getElementById('searchInput').value;
+    window.location.href = '/admin/users?search=' + encodeURIComponent(query);
+}
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') searchUsers();
+});
+
+let _currentUserId = null;
+
+async function viewUser(userId) {
+    _currentUserId = userId;
+    try {
+        const response = await fetch(`/admin/api/user/${userId}`);
+        const data = await response.json();
+        if (data.success) {
+            const u = data.user;
+            const bal = parseFloat(u.doge_balance || 0).toFixed(8);
+            document.getElementById('userDetails').innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label class="form-label">Telegram ID</label><p>${u.telegram_id}</p></div>
+                    <div class="form-group"><label class="form-label">Username</label><p>@${u.username || 'N/A'}</p></div>
+                    <div class="form-group"><label class="form-label">Name</label><p>${u.first_name || ''}</p></div>
+                    <div class="form-group"><label class="form-label">Status</label>
+                        <p>${u.is_banned ? '<span class="badge badge-danger">BANNED</span>' : '<span class="badge badge-success">ACTIVE</span>'}</p></div>
+                    <div class="form-group"><label class="form-label">Balance</label><p class="text-gold">${bal} DOGE</p></div>
+                    <div class="form-group"><label class="form-label">Total Earned</label><p>${parseFloat(u.total_earned||0).toFixed(8)} DOGE</p></div>
+                    <div class="form-group"><label class="form-label">Check-in Streak</label><p>${u.checkin_streak} days (Best: ${u.longest_streak})</p></div>
+                    <div class="form-group"><label class="form-label">Total Check-ins</label><p>${u.total_checkins}</p></div>
+                    <div class="form-group"><label class="form-label">Referrals</label><p>${u.validated_referrals} validated (+${parseFloat(u.referral_earnings||0).toFixed(8)} DOGE)</p></div>
+                    <div class="form-group"><label class="form-label">Wallet</label><p style="word-break:break-all;">${u.wallet_address || 'Not linked'}</p></div>
+                    <div class="form-group"><label class="form-label">Joined</label><p>${u.created_at}</p></div>
+                    <div class="form-group"><label class="form-label">Last Active</label><p>${u.last_active || 'N/A'}</p></div>
+                </div>`;
+            document.getElementById('adjustBalanceBtn').onclick = () => {
+                closeModal('userModal');
+                openBalanceModal(u.user_id, bal);
+            };
+            openModal('userModal');
+        } else { showToast(data.message || 'User not found', 'error'); }
+    } catch(e) { showToast('Connection error', 'error'); }
+}
+
+function openBalanceModal(userId, currentBalance) {
+    _currentUserId = userId;
+    document.getElementById('balanceUserId').value = userId;
+    document.getElementById('currentBalance').value = currentBalance + ' DOGE';
+    openModal('balanceModal');
+}
+
+async function submitBalanceAdjustment() {
+    const userId  = document.getElementById('balanceUserId').value;
+    const amount  = document.querySelector('#balanceForm [name=amount]').value;
+    const reason  = document.querySelector('#balanceForm [name=reason]').value;
+    try {
+        const res  = await fetch('/admin/api/user/adjust-balance', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({user_id: userId, amount: parseFloat(amount), reason})
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Balance adjusted!', 'success');
+            closeModal('balanceModal');
+            location.reload();
+        } else { showToast(data.message || 'Failed', 'error'); }
+    } catch(e) { showToast('Connection error', 'error'); }
+}
+
+async function viewHistory(userId) {
+    _currentUserId = userId;
+    document.getElementById('historyContent').innerHTML = '<p class="text-muted">Loading...</p>';
+    openModal('historyModal');
+    try {
+        const res  = await fetch(`/admin/api/user/${userId}/history?limit=100`);
+        const data = await res.json();
+        if (data.success && data.history.length > 0) {
+            const rows = data.history.map(h => {
+                const sign  = h.amount >= 0 ? '+' : '';
+                const color = h.amount >= 0 ? '#ffd700' : '#ff4466';
+                return `<tr>
+                    <td class="text-muted" style="font-size:.85rem;">${h.created_at}</td>
+                    <td><span class="badge badge-info">${h.action}</span></td>
+                    <td style="color:${color};font-weight:bold;">${sign}${parseFloat(h.amount).toFixed(8)}</td>
+                    <td class="text-muted" style="font-size:.85rem;">${parseFloat(h.balance_after).toFixed(8)}</td>
+                    <td style="font-size:.85rem;">${h.description || ''}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('historyContent').innerHTML = `
+                <table class="data-table" style="font-size:.9rem;">
+                    <thead><tr><th>Date</th><th>Action</th><th>Amount</th><th>Balance After</th><th>Description</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        } else {
+            document.getElementById('historyContent').innerHTML = '<p class="text-muted" style="padding:20px;">No history found.</p>';
+        }
+    } catch(e) {
+        document.getElementById('historyContent').innerHTML = '<p style="color:red;">Error loading history.</p>';
+    }
+}
+
+async function banUser(userId) {
+    if (!confirm('Ban this user?')) return;
+    try {
+        const res  = await fetch(`/admin/api/user/${userId}/ban`, {method:'POST'});
+        const data = await res.json();
+        if (data.success) { showToast('User banned','success'); location.reload(); }
+        else { showToast(data.message||'Failed','error'); }
+    } catch(e) { showToast('Connection error','error'); }
+}
+
+async function unbanUser(userId) {
+    try {
+        const res  = await fetch(`/admin/api/user/${userId}/unban`, {method:'POST'});
+        const data = await res.json();
+        if (data.success) { showToast('User unbanned','success'); location.reload(); }
+        else { showToast(data.message||'Failed','error'); }
+    } catch(e) { showToast('Connection error','error'); }
+}
+</script>
+{% endblock %}

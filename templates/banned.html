@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Account Suspended - Doge Pixel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .pixel-border {
+            border: 3px solid #ff3366;
+            background: #111111;
+            box-shadow: 
+                inset -3px -3px 0 #aa1144,
+                inset 3px 3px 0 #ff6688;
+        }
+        
+        .card {
+            padding: 32px 24px;
+        }
+        
+        .icon-container {
+            margin-bottom: 24px;
+        }
+        
+        .ban-icon {
+            font-size: 64px;
+            color: #ff3366;
+            display: block;
+            animation: pixel-shake 0.5s steps(4) infinite;
+        }
+        
+        @keyframes pixel-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.9rem;
+            color: #ff3366;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        p {
+            font-size: 1.3rem;
+            color: #aaaaaa;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        
+        .reason-box {
+            background: #1a0a0a;
+            border: 2px solid #441122;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .reason-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.5rem;
+            color: #ff3366;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .reason-text {
+            font-size: 1.2rem;
+            color: #ff6688;
+        }
+        
+        .info-box {
+            background: #0a0a11;
+            border: 2px solid #222233;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        
+        .info-box p {
+            font-size: 1.1rem;
+            color: #666688;
+            margin: 0;
+        }
+        
+        .contact-link {
+            color: #00aaff;
+            text-decoration: none;
+        }
+        
+        .contact-link:hover {
+            text-decoration: underline;
+        }
+        
+        .error-code {
+            margin-top: 24px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.5rem;
+            color: #333333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card pixel-border">
+            <div class="icon-container">
+                <span class="ban-icon">✕</span>
+            </div>
+            
+            <h1>ACCOUNT SUSPENDED</h1>
+            
+            <p>Your account has been suspended due to a violation of our terms of service.</p>
+            
+            {% if reason %}
+            <div class="reason-box">
+                <span class="reason-label">REASON</span>
+                <span class="reason-text">{{ reason }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-box">
+                <p>If you believe this is a mistake, contact support at <a href="mailto:support@dogepixel.app" class="contact-link">support@dogepixel.app</a> or message our Telegram support bot.</p>
+            </div>
+            
+            <p class="error-code">ERR_ACCOUNT_SUSPENDED</p>
+        </div>
+    </div>
+</body>
+</html>

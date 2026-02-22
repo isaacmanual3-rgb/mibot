@@ -1,0 +1,667 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin - Configuration{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>⚙️ CONFIGURATION</h1>
+    <button class="btn btn-primary" onclick="saveAllConfig()">💾 SAVE ALL</button>
+</div>
+
+<!-- Reward Settings -->
+<div class="admin-card">
+    <h3 class="card-section-title">🎁 REWARD SETTINGS</h3>
+    
+    <div class="config-grid">
+        <div class="config-item">
+            <label class="config-label">Daily Base Reward</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="daily_base_reward" 
+                       value="{{ config.daily_base_reward or 0.01 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Base reward for daily check-in</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Streak Bonus</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="daily_streak_bonus" 
+                       value="{{ config.daily_streak_bonus or 0.002 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE/day</span>
+            </div>
+            <p class="config-hint">Additional reward per streak day</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Referral Bonus</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="referral_bonus" 
+                       value="{{ config.referral_bonus or 0.05 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Reward when referral completes first task</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Max Streak Bonus Days</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="max_streak_bonus_days" 
+                       value="{{ config.max_streak_bonus_days or 30 }}"
+                       step="1" min="1">
+                <span class="config-unit">days</span>
+            </div>
+            <p class="config-hint">Cap for streak bonus multiplier</p>
+        </div>
+    </div>
+</div>
+
+<!-- Withdrawal Settings -->
+<div class="admin-card">
+    <h3 class="card-section-title">💸 WITHDRAWAL SETTINGS</h3>
+    
+    <div class="config-grid">
+        <div class="config-item">
+            <label class="config-label">Minimum Withdrawal</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="min_withdrawal" 
+                       value="{{ config.min_withdrawal or 1 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Minimum amount users can withdraw</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Withdrawal Fee</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="withdrawal_fee" 
+                       value="{{ config.withdrawal_fee or 0.5 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Network fee deducted from withdrawals</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Max Daily Withdrawal</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="max_daily_withdrawal" 
+                       value="{{ config.max_daily_withdrawal or 100 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Maximum withdrawal per user per day</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Withdrawals Enabled</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    <input type="checkbox" data-key="withdrawals_enabled" 
+                           {% if config.withdrawals_enabled != '0' %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Enabled' if config.withdrawals_enabled != '0' else 'Disabled' }}</span>
+            </div>
+            <p class="config-hint">Allow users to request withdrawals</p>
+        </div>
+    </div>
+</div>
+
+<!-- Bot Settings -->
+<div class="admin-card">
+    <h3 class="card-section-title">🤖 BOT SETTINGS</h3>
+    
+    <div class="config-grid">
+        <div class="config-item">
+            <label class="config-label">Bot Username</label>
+            <div class="config-input-group">
+                <input type="text" class="form-input config-input" 
+                       data-key="bot_username" 
+                       value="{{ config.bot_username or '' }}"
+                       placeholder="Dogepixelbot">
+            </div>
+            <p class="config-hint">Telegram bot username (without @)</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Support Channel</label>
+            <div class="config-input-group">
+                <input type="text" class="form-input config-input" 
+                       data-key="support_channel" 
+                       value="{{ config.support_channel or '' }}"
+                       placeholder="@Doge PixelSupport">
+            </div>
+            <p class="config-hint">Support channel for users</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Announcements Channel</label>
+            <div class="config-input-group">
+                <input type="text" class="form-input config-input" 
+                       data-key="announcements_channel" 
+                       value="{{ config.announcements_channel or '' }}"
+                       placeholder="@Doge PixelNews">
+            </div>
+            <p class="config-hint">Channel for announcements</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Maintenance Mode</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    <input type="checkbox" data-key="maintenance_mode" 
+                           {% if config.maintenance_mode == '1' %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Enabled' if config.maintenance_mode == '1' else 'Disabled' }}</span>
+            </div>
+            <p class="config-hint">Show maintenance page to users</p>
+        </div>
+    </div>
+</div>
+
+<!-- Security Settings -->
+<div class="admin-card">
+    <h3 class="card-section-title">🔒 SECURITY SETTINGS</h3>
+    
+    <div class="config-grid">
+        <div class="config-item">
+            <label class="config-label">VPN Blocking</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    <input type="checkbox" data-key="vpn_blocking_enabled" 
+                           {% if config.vpn_blocking_enabled == '1' %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Enabled' if config.vpn_blocking_enabled == '1' else 'Disabled' }}</span>
+            </div>
+            <p class="config-hint">Block users using VPNs or proxies</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">New Registrations</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    <input type="checkbox" data-key="registrations_enabled" 
+                           {% if config.registrations_enabled != '0' %}checked{% endif %}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Enabled' if config.registrations_enabled != '0' else 'Disabled' }}</span>
+            </div>
+            <p class="config-hint">Allow new users to register</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Task Cooldown</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="task_cooldown" 
+                       value="{{ config.task_cooldown or 86400 }}"
+                       step="1" min="0">
+                <span class="config-unit">seconds</span>
+            </div>
+            <p class="config-hint">Time before tasks can be repeated</p>
+        </div>
+        
+        <div class="config-item">
+            <label class="config-label">Max Referrals Per User</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input" 
+                       data-key="max_referrals" 
+                       value="{{ config.max_referrals or 100 }}"
+                       step="1" min="0">
+                <span class="config-unit">users</span>
+            </div>
+            <p class="config-hint">Maximum referrals per user (0 = unlimited)</p>
+        </div>
+    </div>
+</div>
+
+<!-- Admin IDs -->
+<div class="admin-card">
+    <h3 class="card-section-title">👑 ADMIN ACCESS</h3>
+    
+    <div class="config-item" style="max-width: 100%;">
+        <label class="config-label">Admin Telegram IDs</label>
+        <textarea class="form-input config-input" 
+                  data-key="admin_ids" 
+                  rows="3"
+                  placeholder="123456789&#10;987654321">{{ config.admin_ids or '' }}</textarea>
+        <p class="config-hint">One Telegram ID per line. These users can access the admin panel.</p>
+    </div>
+    
+    <div class="config-item">
+        <label class="config-label">Admin Panel Username</label>
+        <input type="text" class="form-input config-input" 
+               data-key="admin_username" 
+               value="{{ config.admin_username or 'admin' }}"
+               placeholder="admin">
+        <p class="config-hint">Username for the admin panel login form.</p>
+    </div>
+    
+    <div class="config-item">
+        <label class="config-label">Admin Panel Password</label>
+        <input type="text" class="form-input config-input" 
+               data-key="admin_password" 
+               value="{{ config.admin_password or '' }}"
+               placeholder="Enter new password to change">
+        <p class="config-hint">Password for the admin panel login.</p>
+    </div>
+</div>
+
+<!-- TON Deposit Settings -->
+<div class="admin-card" style="border-color:rgba(0,152,234,0.3)">
+    <h3 class="card-section-title" style="color:#0098EA">&#9670; TON DEPOSITS</h3>
+
+    <div class="config-grid">
+        <div class="config-item" style="grid-column:1/-1">
+            <label class="config-label">Wallet TON destino</label>
+            <div class="config-input-group">
+                <input type="text" class="form-input config-input"
+                       data-key="ton_wallet_address"
+                       value="{{ config.get('ton_wallet_address', '') if config is mapping else '' }}"
+                       placeholder="EQD... o UQ...">
+            </div>
+            <p class="config-hint">Direccion de tu wallet TON donde los usuarios enviaran los depositos.</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Tasa (DOGE por TON)</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="ton_to_doge_rate"
+                       value="{{ config.get('ton_to_doge_rate', '100') if config is mapping else '100' }}"
+                       step="1" min="1">
+                <span class="config-unit">DOGE/TON</span>
+            </div>
+            <p class="config-hint">Cuantos DOGE se acreditan por cada TON depositado</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Deposito Minimo</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="ton_min_deposit"
+                       value="{{ config.get('ton_min_deposit', '0.1') if config is mapping else '0.1' }}"
+                       step="0.01" min="0.01">
+                <span class="config-unit">TON</span>
+            </div>
+            <p class="config-hint">Monto minimo por deposito</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Depositos Habilitados</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    {% set ton_enabled_val = config.get('ton_deposits_enabled', '1') if config is mapping else '1' %}
+                    <input type="checkbox" data-key="ton_deposits_enabled"
+                           {{ 'checked' if ton_enabled_val != '0' else '' }}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Habilitado' if ton_enabled_val != '0' else 'Deshabilitado' }}</span>
+            </div>
+            <p class="config-hint">Activar/desactivar depositos TON para usuarios</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Auto-confirmar depositos</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    {% set ton_auto_val = config.get('ton_auto_confirm', '1') if config is mapping else '1' %}
+                    <input type="checkbox" data-key="ton_auto_confirm"
+                           {{ 'checked' if ton_auto_val == '1' else '' }}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Activado' if ton_auto_val == '1' else 'Desactivado' }}</span>
+            </div>
+            <p class="config-hint">Recomendado: Activado. El DOGE se acredita automaticamente al recibir el TON.</p>
+        </div>
+
+        <div class="config-item" style="grid-column:1/-1;border-top:1px solid #222;padding-top:16px;margin-top:8px">
+            <label class="config-label" style="color:#0098EA">RETIROS TON</label>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Retiros TON Habilitados</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    {% set ton_wd_val = config.get('ton_withdrawal_enabled', '1') if config is mapping else '1' %}
+                    <input type="checkbox" data-key="ton_withdrawal_enabled"
+                           {{ 'checked' if ton_wd_val != '0' else '' }}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'Habilitado' if ton_wd_val != '0' else 'Deshabilitado' }}</span>
+            </div>
+            <p class="config-hint">Permitir a usuarios retirar DOGE como TON</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Min. Retiro TON (DOGE)</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="ton_withdrawal_min_doge"
+                       value="{{ config.get('ton_withdrawal_min_doge', '10') if config is mapping else '10' }}"
+                       step="1" min="1">
+                <span class="config-unit">DOGE</span>
+            </div>
+            <p class="config-hint">Minimo DOGE para solicitar retiro en TON</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Comision Retiro TON</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="ton_withdrawal_fee_percent"
+                       value="{{ config.get('ton_withdrawal_fee_percent', '2') if config is mapping else '2' }}"
+                       step="0.1" min="0" max="50">
+                <span class="config-unit">%</span>
+            </div>
+            <p class="config-hint">% de comision al retirar DOGE como TON</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Tasa DOGE → TON</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="doge_to_ton_rate"
+                       value="{{ config.get('doge_to_ton_rate', '100') if config is mapping else '100' }}"
+                       step="1" min="1">
+                <span class="config-unit">DOGE/TON</span>
+            </div>
+            <p class="config-hint">Cuantos DOGE equivalen a 1 TON (para calcular retiros)</p>
+        </div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px 14px;background:rgba(0,152,234,0.06);border:1px solid rgba(0,152,234,0.2);font-size:0.82rem;color:#0098EA;line-height:1.6">
+        <strong>Instrucciones:</strong><br>
+        1. Escribe tu direccion TON arriba y pulsa SAVE ALL<br>
+        2. Activa los dos toggles<br>
+        3. Ver depositos en: <a href="/admin/ton-deposits" style="color:#0098EA">Admin &rarr; TON Deposits</a>
+    </div>
+
+    <!-- ── RETIROS AUTOMÁTICOS: Configuración de la wallet del bot ── -->
+    <div style="margin-top:20px;padding:16px;background:rgba(255,152,0,0.05);border:2px solid rgba(255,152,0,0.25);">
+        <div style="font-family:var(--font-pixel);font-size:0.5rem;color:#ff9800;letter-spacing:.08em;margin-bottom:14px">
+            &#9881; RETIROS AUTOMÁTICOS — WALLET DEL BOT
+        </div>
+        <div class="config-grid">
+            <div class="config-item" style="grid-column:1/-1">
+                <label class="config-label" style="color:#ff9800">Mnemonic (24 palabras) — Wallet que envía TON</label>
+                <div class="config-input-group">
+                    <input type="password" class="form-input config-input"
+                           id="ton-mnemonic-input"
+                           data-key="ton_bot_mnemonic"
+                           value="{{ config.get('ton_bot_mnemonic', '') if config is mapping else '' }}"
+                           placeholder="word1 word2 word3 ... word24"
+                           autocomplete="off">
+                    <button type="button" onclick="document.getElementById('ton-mnemonic-input').type = document.getElementById('ton-mnemonic-input').type === 'password' ? 'text' : 'password'" style="padding:0 10px;background:#222;border:1px solid #444;color:#aaa;cursor:pointer;font-size:0.75rem">👁</button>
+                </div>
+                <p class="config-hint" style="color:#a06000">
+                    ⚠️ Esta es la wallet que <strong>enviará TON</strong> a los usuarios cuando pidan retiro.<br>
+                    Debe tener saldo TON suficiente. Guárdalo como secreto — solo visible para admins.<br>
+                    Si está vacío, los retiros quedan en modo manual (admin los procesa desde la app TON).
+                </p>
+            </div>
+            <div class="config-item">
+                <label class="config-label">API Key de Toncenter (opcional)</label>
+                <div class="config-input-group">
+                    <input type="text" class="form-input config-input"
+                           data-key="toncenter_api_key"
+                           value="{{ config.get('toncenter_api_key', '') if config is mapping else '' }}"
+                           placeholder="tu-api-key-de-toncenter.com">
+                </div>
+                <p class="config-hint">Obtén una gratis en <a href="https://toncenter.com" target="_blank" style="color:#0098EA">toncenter.com</a> para mayor límite de requests.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="admin-card danger-zone">
+    <h3 class="card-section-title" style="color: var(--danger);">⚠️ DANGER ZONE</h3>
+    
+    <div class="danger-actions">
+        <div class="danger-item">
+            <div class="danger-info">
+                <span class="danger-title">Reset All Tasks</span>
+                <span class="danger-desc">Mark all task completions as incomplete. Users can complete tasks again.</span>
+            </div>
+            <button class="btn btn-danger" onclick="resetAllTasks()">RESET TASKS</button>
+        </div>
+        
+        <div class="danger-item">
+            <div class="danger-info">
+                <span class="danger-title">Clear Cache</span>
+                <span class="danger-desc">Clear all cached data including verification cache.</span>
+            </div>
+            <button class="btn btn-outline" onclick="clearCache()">CLEAR CACHE</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.card-section-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--blue-primary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-label {
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.config-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-input {
+    flex: 1;
+}
+
+.config-unit {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    min-width: 60px;
+}
+
+.config-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.config-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle {
+    position: relative;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    transition: 0.2s;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background: var(--text-muted);
+    transition: 0.2s;
+}
+
+.toggle input:checked + .toggle-slider {
+    background: var(--blue-dark);
+    border-color: var(--blue-primary);
+}
+
+.toggle input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+    background: var(--blue-bright);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.danger-zone {
+    border-color: var(--danger);
+}
+
+.danger-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.danger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: rgba(255, 51, 102, 0.1);
+    border: 1px solid rgba(255, 51, 102, 0.3);
+}
+
+.danger-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.danger-title {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--text-primary);
+}
+
+.danger-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+</style>
+
+<script>
+// Toggle label update
+document.querySelectorAll('.toggle input').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const label = this.closest('.config-toggle').querySelector('.toggle-label');
+        label.textContent = this.checked ? 'Enabled' : 'Disabled';
+    });
+});
+
+function saveAllConfig() {
+    const configs = {};
+    
+    // Collect all config inputs
+    document.querySelectorAll('.config-input').forEach(input => {
+        const key = input.dataset.key;
+        if (input.type === 'checkbox') {
+            configs[key] = input.checked ? '1' : '0';
+        } else {
+            configs[key] = input.value;
+        }
+    });
+    
+    // Collect toggles
+    document.querySelectorAll('.toggle input').forEach(toggle => {
+        const key = toggle.dataset.key;
+        configs[key] = toggle.checked ? '1' : '0';
+    });
+    
+    fetch('/admin/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configs)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Configuration saved!', 'success');
+        } else {
+            showToast(data.error || 'Failed to save', 'error');
+        }
+    });
+}
+
+function resetAllTasks() {
+    if (!confirm('This will reset ALL task completions. Users can complete all tasks again. Continue?')) return;
+    if (!confirm('Are you REALLY sure? This cannot be undone!')) return;
+    
+    fetch('/admin/config/reset-tasks', { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Reset ${data.count} task completions`, 'success');
+        } else {
+            showToast(data.error, 'error');
+        }
+    });
+}
+
+function clearCache() {
+    fetch('/admin/config/clear-cache', { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Cache cleared!', 'success');
+        } else {
+            showToast(data.error, 'error');
+        }
+    });
+}
+</script>
+{% endblock %}

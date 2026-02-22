@@ -1,0 +1,1235 @@
+{% extends "base.html" %}
+
+{% block title %}Doge Pixel - Wallet{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg:        #08080f;
+  --surface:   #0d0d1a;
+  --surface2:  #111122;
+  --surface3:  #070710;
+  --gold:      #ffd700;
+  --gold2:     #ffb300;
+  --gold-dark: #5a3a00;
+  --gold-dim:  rgba(255,215,0,0.07);
+  --green:     #00e676;
+  --blue:      #40c4ff;
+  --red:       #ff4d6a;
+  --orange:    #ff9800;
+  --border:    #1e1e34;
+  --text:      #e0e2f0;
+  --text2:     #9090b8;
+  --muted:     #4a4a6e;
+  --font-px:   'Press Start 2P', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+.wl-shell *, .wl-shell *::before, .wl-shell *::after { box-sizing: border-box; }
+
+.wl-shell {
+  font-family: var(--font-body);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  position: relative; overflow-x: hidden;
+}
+.wl-shell::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.011) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.011) 1px, transparent 1px);
+  background-size: 24px 24px; pointer-events: none; z-index: 0;
+}
+.wl-shell::after {
+  content: ''; position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px);
+  pointer-events: none; z-index: 1;
+}
+
+/* TICKER */
+.wl-ticker {
+  position: relative; z-index: 20;
+  background: var(--gold); height: 28px;
+  display: flex; align-items: center; overflow: hidden;
+  border-bottom: 3px solid var(--gold-dark);
+}
+.wl-ticker span {
+  display: inline-block; white-space: nowrap;
+  font-family: var(--font-px); font-size: 0.42rem;
+  color: #0a0800; letter-spacing: 0.08em;
+  animation: wl-tick 30s linear infinite;
+}
+@keyframes wl-tick { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+
+/* PAGE */
+.wl-page {
+  position: relative; z-index: 5;
+  max-width: 560px; margin: 0 auto;
+  padding: 20px 14px 80px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* CARD */
+.wl-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 0 #030308;
+  position: relative; padding: 20px;
+  animation: wl-up .3s ease both;
+}
+.wl-card::before,.wl-card::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.wl-card::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.wl-card::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.wl-card:nth-child(1){animation-delay:.04s}
+.wl-card:nth-child(2){animation-delay:.09s}
+.wl-card:nth-child(3){animation-delay:.14s}
+.wl-card:nth-child(4){animation-delay:.19s}
+@keyframes wl-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.wl-label {
+  font-family: var(--font-px); font-size: 0.42rem;
+  color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+}
+.wl-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ═══════════════════════════════
+   CSS PIXEL ICONS
+═══════════════════════════════ */
+.px-icon {
+  display:flex; align-items:center; justify-content:center;
+  width:22px; height:22px; flex-shrink:0;
+}
+.px-icon svg {
+  width:100%; height:100%; display:block;
+}
+
+/* ═══════════════════════════════
+   BALANCE HERO CARD
+═══════════════════════════════ */
+.wl-hero {
+  background: linear-gradient(160deg, #09091a 0%, #0c0c20 100%);
+  border: 2px solid var(--gold-dark);
+  box-shadow: 4px 4px 0 0 #020201, 0 0 50px rgba(255,215,0,0.07);
+  padding: 28px 20px 24px;
+  text-align: center; position: relative; overflow: hidden;
+  animation: wl-up .3s .04s ease both;
+}
+.wl-hero::before,.wl-hero::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.wl-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.wl-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+
+.wl-hero-glow {
+  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+  width:200px; height:200px;
+  background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 68%);
+  pointer-events:none;
+}
+
+.wl-hero-icon {
+  width: 54px; height: 54px;
+  background: var(--gold-dim);
+  border: 2px solid var(--gold-dark);
+  box-shadow: 3px 3px 0 0 #020201;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.wl-balance-amount {
+  font-family: var(--font-px);
+  font-size: 1.4rem;
+  color: var(--gold);
+  text-shadow: 3px 3px 0 var(--gold-dark), 0 0 20px rgba(255,215,0,0.35);
+  margin-bottom: 8px;
+  line-height: 1.2;
+  animation: wl-flicker 5s ease infinite;
+}
+@keyframes wl-flicker {
+  0%,91%,93%,95%,100%{opacity:1} 92%,94%{opacity:0.55}
+}
+.wl-balance-label {
+  font-family: var(--font-px); font-size: 0.42rem;
+  color: var(--muted); letter-spacing: 0.15em; margin-bottom: 20px;
+}
+
+.wl-mini-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.wl-mini-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  padding: 12px 8px; text-align: center;
+}
+.wl-mini-stat .val {
+  display: block; font-family: var(--font-px); font-size: 0.6rem;
+  color: var(--text); margin-bottom: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wl-mini-stat .lbl {
+  display: block; font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 0.07em; text-transform: uppercase;
+}
+
+/* ═══════════════════════════════
+   ACTION BUTTONS
+═══════════════════════════════ */
+.wl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+.wl-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 15px 12px;
+  font-family: var(--font-px); font-size: 0.5rem;
+  letter-spacing: 0.06em; border: none; cursor: pointer;
+  text-align: center; text-decoration: none;
+  transition: transform .07s, box-shadow .07s;
+}
+.wl-btn:hover  { transform: translate(-1px,-1px); }
+.wl-btn:active { transform: translate(2px,2px); }
+
+.wl-btn-gold {
+  background: var(--gold); color: #0a0800;
+  border: 2px solid var(--gold2);
+  box-shadow: 4px 4px 0 0 var(--gold-dark), 0 0 16px rgba(255,215,0,0.2);
+}
+.wl-btn-gold:hover  { box-shadow: 5px 5px 0 0 var(--gold-dark), 0 0 24px rgba(255,215,0,0.35); }
+.wl-btn-gold:active { box-shadow: 1px 1px 0 0 var(--gold-dark); }
+
+.wl-btn-blue {
+  background: #001e3a; color: var(--blue);
+  border: 2px solid #004a7a;
+  box-shadow: 4px 4px 0 0 #000d1a;
+  text-shadow: 0 0 8px rgba(64,196,255,0.3);
+}
+.wl-btn-blue:hover  { box-shadow: 5px 5px 0 0 #000d1a; color: #fff; }
+.wl-btn-blue:active { box-shadow: 1px 1px 0 0 #000d1a; }
+
+.wl-btn-ton {
+  background: #001a2e; color: #0098EA;
+  border: 2px solid #0098EA;
+  box-shadow: 4px 4px 0 0 #000810;
+  text-shadow: 0 0 8px rgba(0,152,234,0.3);
+}
+.wl-btn-ton:hover  { box-shadow: 5px 5px 0 0 #000810; color: #fff; background: #002244; }
+.wl-btn-ton:active { box-shadow: 1px 1px 0 0 #000810; }
+
+/* Min withdrawal info */
+.wl-fee-box {
+  background: var(--surface3);
+  border: 2px solid var(--border);
+  padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wl-fee-left { }
+.wl-fee-label {
+  display: block; font-family: var(--font-px); font-size: 0.38rem;
+  color: var(--muted); letter-spacing: 0.12em; margin-bottom: 6px;
+}
+.wl-fee-value {
+  display: block; font-family: var(--font-px); font-size: 0.7rem;
+  color: var(--blue); text-shadow: 0 0 8px rgba(64,196,255,0.3);
+}
+.wl-fee-right { font-size: 0.72rem; color: var(--text2); text-align: right; }
+.wl-fee-right span { display: block; color: var(--muted); font-size: 0.65rem; margin-bottom: 2px; }
+
+/* ═══════════════════════════════
+   TRANSACTION LIST
+═══════════════════════════════ */
+.wl-tx-list { display: flex; flex-direction: column; gap: 8px; }
+
+.wl-tx {
+  background: var(--surface3);
+  border: 2px solid var(--border);
+  box-shadow: 2px 2px 0 0 #020205;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; position: relative;
+}
+.wl-tx::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width: 3px;
+}
+.wl-tx.credit::before { background: var(--green); }
+.wl-tx.debit::before  { background: var(--red); }
+
+.wl-tx-icon {
+  flex-shrink: 0; width: 36px; height: 36px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.wl-tx.credit .wl-tx-icon { background: rgba(0,230,118,0.06); border-color: rgba(0,230,118,0.2); }
+.wl-tx.debit  .wl-tx-icon { background: rgba(255,77,106,0.06); border-color: rgba(255,77,106,0.2); }
+
+.wl-tx-body { flex: 1; min-width: 0; }
+.wl-tx-action {
+  display: block; font-family: var(--font-px); font-size: 0.44rem;
+  color: var(--text); letter-spacing: 0.04em; margin-bottom: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wl-tx-time { font-size: 0.65rem; color: var(--muted); }
+
+.wl-tx-amount {
+  flex-shrink: 0; font-family: var(--font-px); font-size: 0.52rem;
+  text-align: right;
+}
+.wl-tx-amount.credit { color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.3); }
+.wl-tx-amount.debit  { color: var(--red); }
+
+/* Withdrawal status badge */
+.wl-wd-badge {
+  display: block; margin-top: 5px;
+  font-family: var(--font-px); font-size: 0.34rem;
+  letter-spacing: 0.06em; padding: 3px 6px;
+  border: 1px solid; text-align: right;
+}
+.wl-wd-badge.completed { color: var(--green); border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.05); }
+.wl-wd-badge.pending   { color: var(--orange); border-color: rgba(255,152,0,0.3); background: rgba(255,152,0,0.05); }
+.wl-wd-badge.rejected  { color: var(--red); border-color: rgba(255,77,106,0.3); background: rgba(255,77,106,0.05); }
+
+/* Empty */
+.wl-empty {
+  padding: 40px 20px; text-align: center;
+}
+.wl-empty-icon {
+  width: 42px; height: 42px; background: var(--surface3); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  animation: wl-bounce .9s steps(1) infinite;
+}
+@keyframes wl-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.wl-empty-title { font-family: var(--font-px); font-size: 0.5rem; color: var(--text2); letter-spacing:.06em; margin-bottom:10px; }
+.wl-empty-hint  { font-size: 0.78rem; color: var(--muted); }
+
+/* ═══════════════════════════════
+   WITHDRAW MODAL (bottom sheet)
+═══════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(4,4,10,0.9); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.active, .modal-overlay.show { display: flex; animation: wl-modal-bg .2s ease; }
+@keyframes wl-modal-bg { from{opacity:0} to{opacity:1} }
+
+.modal-content {
+  background: var(--surface2);
+  border: 2px solid var(--border); border-bottom: none;
+  box-shadow: 0 -6px 40px rgba(0,0,0,0.7);
+  width: 100%; max-width: 560px;
+  padding: 28px 20px 32px;
+  position: relative;
+  animation: wl-sheet .25s cubic-bezier(.22,.77,.42,1) both;
+}
+@keyframes wl-sheet {
+  from{transform:translateY(60px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+.modal-content::before,.modal-content::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.modal-content::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.modal-content::after{top:-2px;right:-2px;border-width:2px 2px 0 0}
+
+.modal-handle {
+  width: 36px; height: 4px; background: var(--border);
+  margin: 0 auto 22px;
+}
+
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.modal-title {
+  font-family: var(--font-px); font-size: 0.6rem;
+  color: var(--gold); text-shadow: 1px 1px 0 var(--gold-dark);
+  letter-spacing: 0.06em;
+  display: flex; align-items: center; gap: 10px;
+}
+.modal-close {
+  width: 30px; height: 30px;
+  background: var(--surface3); border: 2px solid var(--border);
+  color: var(--text2); font-size: 1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .07s; font-family: var(--font-body);
+}
+.modal-close:hover { color: var(--red); border-color: rgba(255,77,106,0.4); transform: scale(0.95); }
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block; font-family: var(--font-px); font-size: 0.38rem;
+  color: var(--muted); letter-spacing: 0.14em;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.form-input {
+  width: 100%; background: var(--surface3);
+  border: 2px solid var(--border);
+  box-shadow: inset 2px 2px 0 0 #020205;
+  padding: 12px 14px;
+  font-family: var(--font-body); font-size: 0.88rem;
+  color: var(--text); outline: none;
+  transition: border-color .15s;
+}
+.form-input:focus { border-color: var(--gold-dark); }
+.form-hint { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
+
+.wl-fee-summary {
+  background: var(--surface3);
+  border: 2px solid var(--border);
+  padding: 14px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.wl-fee-row {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wl-fee-row-label { font-size: 0.72rem; color: var(--text2); }
+.wl-fee-row-val { font-family: var(--font-px); font-size: 0.44rem; }
+.wl-fee-row-val.warn  { color: var(--orange); }
+.wl-fee-row-val.good  { color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.3); }
+
+.modal-footer {
+  display: grid; grid-template-columns: 1fr 2fr; gap: 10px;
+}
+.wl-btn-cancel {
+  font-family: var(--font-px); font-size: 0.44rem; letter-spacing: .06em;
+  padding: 14px; background: transparent; color: var(--text2);
+  border: 2px solid var(--border); box-shadow: 2px 2px 0 0 #030308;
+  cursor: pointer; transition: transform .07s, box-shadow .07s;
+}
+.wl-btn-cancel:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 0 #030308; }
+.wl-btn-cancel:active { transform: translate(1px,1px); }
+.wl-btn-confirm {
+  font-family: var(--font-px); font-size: 0.5rem; letter-spacing: .06em;
+  padding: 14px; background: var(--gold); color: #0a0800;
+  border: 2px solid var(--gold2); box-shadow: 3px 3px 0 0 var(--gold-dark);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .07s, box-shadow .07s;
+}
+.wl-btn-confirm:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 0 var(--gold-dark); }
+.wl-btn-confirm:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 var(--gold-dark); }
+.wl-btn-confirm:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+</style>
+
+<div class="wl-shell">
+  <div class="wl-ticker" aria-hidden="true">
+    <span>
+      ★ DOGEQUEST WALLET ★&nbsp;&nbsp;
+      CHECK YOUR DOGE BALANCE &nbsp;★&nbsp;&nbsp;
+      WITHDRAW TO YOUR OWN WALLET &nbsp;★&nbsp;&nbsp;
+      EARN MORE WITH TASKS &amp; REFERRALS &nbsp;★&nbsp;&nbsp;
+      MUCH BALANCE. VERY RICH. SO DOGE. &nbsp;★&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="wl-page">
+
+    <!-- ── BALANCE HERO ── -->
+    <div class="wl-hero">
+      <div class="wl-hero-glow" aria-hidden="true"></div>
+      <div class="wl-hero-icon">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/><path d="M12 6v1m0 10v1" stroke-width="1.5"/></svg></span>
+      </div>
+      <div class="wl-balance-amount">{{ format_doge(user.doge_balance) }}</div>
+      <div class="wl-balance-label">DOGE BALANCE</div>
+      <div class="wl-mini-stats">
+        <div class="wl-mini-stat">
+          <span class="val">{{ format_doge(user.total_earned) }}</span>
+          <span class="lbl">Total Earned</span>
+        </div>
+        <div class="wl-mini-stat">
+          <span class="val">{{ format_doge(user.referral_earnings or 0) }}</span>
+          <span class="lbl">From Referrals</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACTIONS ── -->
+    <div class="wl-card">
+      {% set btn_count = 2 + (1 if ton_enabled else 0) + (1 if ton_withdrawal_enabled else 0) %}
+      <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
+        <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('withdraw-modal')">
+          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
+          WITHDRAW
+        </button>
+        {% if ton_withdrawal_enabled %}
+        <button class="wl-btn wl-btn-ton" id="ton-withdraw-btn">
+          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
+          RETIRAR TON
+        </button>
+        {% endif %}
+        {% if ton_enabled %}
+        <button class="wl-btn wl-btn-ton" id="ton-deposit-btn">
+          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
+          DEPOSIT TON
+        </button>
+        {% endif %}
+        <a href="{{ url_for('tasks') }}" class="wl-btn wl-btn-blue">
+          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          EARN MORE
+        </a>
+      </div>
+      <div class="wl-fee-box">
+        <div class="wl-fee-left">
+          <span class="wl-fee-label">Minimum Withdrawal</span>
+          <span class="wl-fee-value">{{ min_withdrawal }} DOGE</span>
+        </div>
+        <div class="wl-fee-right">
+          <span>Network fee</span>
+          {{ withdrawal_fee }} DOGE
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WITHDRAWAL REQUESTS ── -->
+    {% if withdrawals %}
+    <div class="wl-card">
+      <div class="wl-label">
+        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        Withdrawal Requests
+      </div>
+      <div class="wl-tx-list">
+        {% for wd in withdrawals %}
+        <div class="wl-tx debit">
+          <div class="wl-tx-icon">
+            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
+          </div>
+          <div class="wl-tx-body">
+            <span class="wl-tx-action">{{ wd.withdrawal_id }}</span>
+            <span class="wl-tx-time">{{ wd.created_at | timeago }}</span>
+          </div>
+          <div style="text-align:right">
+            <div class="wl-tx-amount debit">-{{ format_doge(wd.amount) }}</div>
+            <span class="wl-wd-badge {% if wd.status == 'completed' %}completed{% elif wd.status == 'pending' %}pending{% else %}rejected{% endif %}">
+              {{ wd.status | upper }}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── TRANSACTION HISTORY ── -->
+    <div class="wl-card">
+      <div class="wl-label">
+        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
+        Transaction History
+      </div>
+
+      {% if history %}
+      <div class="wl-tx-list">
+        {% for tx in history %}
+        <div class="wl-tx {% if tx.amount > 0 %}credit{% else %}debit{% endif %}">
+          <div class="wl-tx-icon">
+            {% if tx.amount > 0 %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
+            {% else %}
+              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff4d6a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+            {% endif %}
+          </div>
+          <div class="wl-tx-body">
+            <span class="wl-tx-action">{{ tx.action | replace('_', ' ') | title }}</span>
+            <span class="wl-tx-time">{{ tx.created_at | timeago }}</span>
+          </div>
+          <div class="wl-tx-amount {% if tx.amount > 0 %}credit{% else %}debit{% endif %}">
+            {% if tx.amount > 0 %}+{% endif %}{{ format_doge(tx.amount) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="wl-empty">
+        <div class="wl-empty-icon">
+          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#555570" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></span>
+        </div>
+        <div class="wl-empty-title">NO TRANSACTIONS YET</div>
+        <div class="wl-empty-hint">Complete tasks to start earning DOGE!</div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- ── WITHDRAW MODAL ── -->
+<div class="modal-overlay" id="withdraw-modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
+        WITHDRAW DOGE
+      </span>
+      <button class="modal-close" onclick="DogeQuest.closeModal('withdraw-modal')">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Amount (DOGE)</label>
+        <input type="number" id="withdraw-amount" class="form-input"
+               placeholder="Enter amount"
+               min="{{ min_withdrawal }}" step="0.00000001"
+               value="{{ min_withdrawal }}">
+        <div class="form-hint">Available: {{ format_doge(user.doge_balance) }} DOGE</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">DOGE Wallet Address</label>
+        <input type="text" id="withdraw-wallet" class="form-input"
+               placeholder="D..."
+               value="{{ user.wallet_address or '' }}">
+        <div class="form-hint">Must start with "D"</div>
+      </div>
+
+      <div class="wl-fee-summary">
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Network Fee</span>
+          <span class="wl-fee-row-val warn">{{ withdrawal_fee }} DOGE</span>
+        </div>
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">You Receive</span>
+          <span class="wl-fee-row-val good" id="receive-amount">
+            {{ format_doge(min_withdrawal - withdrawal_fee) }} DOGE
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="wl-btn-cancel" onclick="DogeQuest.closeModal('withdraw-modal')">CANCEL</button>
+      <button class="wl-btn-confirm" onclick="DogeQuest.requestWithdrawal()">
+        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
+        WITHDRAW
+      </button>
+    </div>
+  </div>
+</div>
+
+{% if ton_withdrawal_enabled %}
+<!-- ── TON WITHDRAW MODAL ── -->
+<div class="modal-overlay" id="ton-withdraw-modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        RETIRAR TON
+      </span>
+      <button class="modal-close" id="ton-wd-modal-close">×</button>
+    </div>
+
+    <!-- Paso 1: Conectar wallet -->
+    <div id="ton-wd-step-connect">
+      <div style="text-align:center;padding:16px 0 10px">
+        <div style="background:var(--surface3);border:2px solid #0098EA;padding:14px;margin-bottom:18px;font-family:var(--font-px);font-size:0.38rem;color:#0098EA;letter-spacing:.1em">
+          100 DOGE = {{ (100 / doge_to_ton_rate)|round(4) }} TON &nbsp;·&nbsp; MIN: {{ ton_withdrawal_min }} DOGE
+        </div>
+        <p style="font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
+          Conecta tu wallet TON para recibir el retiro. El admin lo procesara manualmente.
+        </p>
+        <button id="ton-wd-btn-connect" style="width:100%;padding:15px;background:#0098EA;color:#fff;border:2px solid #00b4ff;box-shadow:4px 4px 0 #004466;font-family:var(--font-px);font-size:0.5rem;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          CONECTAR WALLET TON
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: Monto -->
+    <div id="ton-wd-step-amount" style="display:none">
+      <div style="background:rgba(0,152,234,0.08);border:2px solid rgba(0,152,234,0.3);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <div style="flex:1;min-width:0;overflow:hidden">
+          <div style="font-family:var(--font-px);font-size:0.34rem;color:var(--muted);margin-bottom:3px">WALLET TON</div>
+          <div id="ton-wd-wallet-display" style="font-size:0.7rem;color:#0098EA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <button id="ton-wd-btn-disconnect" style="background:none;border:1px solid #333;color:#666;padding:3px 8px;cursor:pointer;font-size:0.72rem;flex-shrink:0">x</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Cantidad a retirar (DOGE)</label>
+        <input type="number" id="ton-wd-amount-input" class="form-input"
+               min="{{ ton_withdrawal_min }}" step="1" value="{{ ton_withdrawal_min }}">
+        <div class="form-hint">Disponible: {{ format_doge(user.doge_balance) }} DOGE</div>
+      </div>
+
+      <div class="wl-fee-summary" style="margin-bottom:18px">
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Retiras</span>
+          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ ton_withdrawal_min }} DOGE</span>
+        </div>
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Comision ({{ ton_withdrawal_fee_pct }}%)</span>
+          <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ (ton_withdrawal_min * ton_withdrawal_fee_pct / 100)|round(2) }} DOGE</span>
+        </div>
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Recibes en TON</span>
+          <span class="wl-fee-row-val good" id="ton-wd-preview-ton">{{ ((ton_withdrawal_min * (1 - ton_withdrawal_fee_pct/100)) / doge_to_ton_rate)|round(4) }} TON</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="ton-wd-btn-cancel" class="wl-btn-cancel">CANCELAR</button>
+        <button id="ton-wd-btn-submit" class="wl-btn-confirm" style="background:#0098EA;border-color:#00b4ff;box-shadow:3px 3px 0 0 #004466">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          SOLICITAR RETIRO
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 3: Procesando -->
+    <div id="ton-wd-step-processing" style="display:none;text-align:center;padding:36px 0">
+      <div style="width:52px;height:52px;border:3px solid #0098EA;border-top-color:transparent;border-radius:50%;animation:ton-wd-spin 1s linear infinite;margin:0 auto 20px"></div>
+      <div style="font-family:var(--font-px);font-size:0.46rem;color:#0098EA;letter-spacing:.1em;margin-bottom:12px">PROCESANDO RETIRO...</div>
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">Firmando y enviando la transacción TON.<br>Esto puede tomar unos segundos.</div>
+      <style>@keyframes ton-wd-spin { to { transform:rotate(360deg) } }</style>
+    </div>
+
+    <!-- Paso 4: Exito -->
+    <div id="ton-wd-step-success" style="display:none;text-align:center;padding:30px 0">
+      <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">RETIRO SOLICITADO</div>
+      <div id="ton-wd-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px"></div>
+      <button id="ton-wd-btn-success-close" class="wl-btn-confirm">CERRAR</button>
+    </div>
+
+    <!-- Paso 4: Error -->
+    <div id="ton-wd-step-error" style="display:none;text-align:center;padding:30px 0">
+      <div style="width:52px;height:52px;background:rgba(255,77,106,0.1);border:2px solid rgba(255,77,106,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff4d6a" stroke-width="2.5" width="26"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div style="font-family:var(--font-px);font-size:0.48rem;color:#ff4d6a;margin-bottom:10px">ERROR</div>
+      <div id="ton-wd-error-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5;margin-bottom:18px"></div>
+      <button id="ton-wd-btn-retry" class="wl-btn-confirm" style="background:#1a1a2e;border-color:#333;color:#aaa;box-shadow:none">INTENTAR DE NUEVO</button>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+{% if ton_enabled %}
+<!-- ── TON DEPOSIT MODAL ── -->
+<div class="modal-overlay" id="ton-deposit-modal">
+  <div class="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        DEPOSITAR TON
+      </span>
+      <button class="modal-close" id="ton-modal-close">×</button>
+    </div>
+
+    <!-- PASO 1: Conectar wallet -->
+    <div id="ton-step-connect">
+      <div style="text-align:center;padding:16px 0 10px">
+        <div style="background:var(--surface3);border:2px solid #0098EA;padding:14px;margin-bottom:18px;font-family:var(--font-px);font-size:0.38rem;color:#0098EA;letter-spacing:.1em">
+          1 TON = {{ ton_rate }} DOGE &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
+        </div>
+        <p style="font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
+          Conecta tu wallet TON (Tonkeeper, MyTonWallet, etc.) para depositar TON y recibir DOGE automáticamente.
+        </p>
+        <button id="ton-btn-connect" style="width:100%;padding:15px;background:#0098EA;color:#fff;border:2px solid #00b4ff;box-shadow:4px 4px 0 #004466;font-family:var(--font-px);font-size:0.5rem;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          CONECTAR WALLET
+        </button>
+        <div id="ton-connect-error" style="display:none;margin-top:12px;color:#ff4d6a;font-size:0.78rem"></div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Monto y enviar -->
+    <div id="ton-step-amount" style="display:none">
+      <div style="background:rgba(0,152,234,0.08);border:2px solid rgba(0,152,234,0.3);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <div style="flex:1;min-width:0;overflow:hidden">
+          <div style="font-family:var(--font-px);font-size:0.34rem;color:var(--muted);margin-bottom:3px">WALLET CONECTADA</div>
+          <div id="ton-wallet-display" style="font-size:0.7rem;color:#0098EA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        </div>
+        <button id="ton-btn-disconnect" style="background:none;border:1px solid #333;color:#666;padding:3px 8px;cursor:pointer;font-size:0.72rem;flex-shrink:0">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Cantidad (TON)</label>
+        <input type="number" id="ton-amount-input" class="form-input"
+               min="{{ ton_min }}" step="0.01" value="{{ ton_min }}">
+        <div class="form-hint">Mínimo: {{ ton_min }} TON</div>
+      </div>
+
+      <div class="wl-fee-summary" style="margin-bottom:18px">
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Envías</span>
+          <span class="wl-fee-row-val" id="ton-preview-ton">{{ ton_min }} TON</span>
+        </div>
+        <div class="wl-fee-row">
+          <span class="wl-fee-row-label">Recibes</span>
+          <span class="wl-fee-row-val good" id="ton-preview-doge">{{ (ton_min * ton_rate)|round(2) }} DOGE</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="ton-btn-cancel" class="wl-btn-cancel">CANCELAR</button>
+        <button id="ton-btn-send" class="wl-btn-confirm" style="background:#0098EA;border-color:#00b4ff;box-shadow:3px 3px 0 0 #004466">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          ENVIAR TON
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Verificando -->
+    <div id="ton-step-verifying" style="display:none;text-align:center;padding:30px 0">
+      <div style="width:52px;height:52px;border:3px solid #0098EA;border-top-color:transparent;border-radius:50%;animation:ton-spin 1s linear infinite;margin:0 auto 18px"></div>
+      <div style="font-family:var(--font-px);font-size:0.48rem;color:#0098EA;margin-bottom:10px">VERIFICANDO...</div>
+      <div id="ton-verify-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5">Confirmando tu transacción en la blockchain TON</div>
+    </div>
+
+    <!-- PASO 4: Éxito -->
+    <div id="ton-step-success" style="display:none;text-align:center;padding:30px 0">
+      <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡DOGE ACREDITADO!</div>
+      <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px"></div>
+      <button id="ton-btn-success-close" class="wl-btn-confirm">VER MI BALANCE</button>
+    </div>
+
+    <!-- PASO 5: Error -->
+    <div id="ton-step-error" style="display:none;text-align:center;padding:30px 0">
+      <div style="width:52px;height:52px;background:rgba(255,77,106,0.1);border:2px solid rgba(255,77,106,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff4d6a" stroke-width="2.5" width="26"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div style="font-family:var(--font-px);font-size:0.48rem;color:#ff4d6a;margin-bottom:10px">ERROR</div>
+      <div id="ton-error-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5;margin-bottom:18px"></div>
+      <button id="ton-btn-retry" class="wl-btn-confirm" style="background:#1a1a2e;border-color:#333;color:#aaa;box-shadow:none">INTENTAR DE NUEVO</button>
+    </div>
+
+  </div>
+</div>
+<style>@keyframes ton-spin { to { transform:rotate(360deg) } }</style>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* Withdraw preview */
+document.getElementById('withdraw-amount')?.addEventListener('input', function() {
+  const a = parseFloat(this.value) || 0, fee = {{ withdrawal_fee }};
+  document.getElementById('receive-amount').textContent =
+    Math.max(0, a - fee).toFixed(8).replace(/\.?0+$/, '') + ' DOGE';
+});
+
+{% if ton_withdrawal_enabled %}
+/* ─── TON Withdrawal ──────────────────────────────────────────── */
+(function() {
+  var FEE_PCT      = {{ ton_withdrawal_fee_pct }};
+  var DOGE_TO_TON  = {{ doge_to_ton_rate }};
+  var MIN_DOGE     = {{ ton_withdrawal_min }};
+  var MAX_DOGE     = {{ user.doge_balance|float }};
+
+  var tcWD     = null;   // shared TonConnectUI (reuses deposit instance if loaded)
+  var wdWallet = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  function showWdStep(name) {
+    ['connect','amount','processing','success','error'].forEach(function(s) {
+      var d = el('ton-wd-step-' + s);
+      if (d) d.style.display = (s === name) ? 'block' : 'none';
+    });
+  }
+
+  function shortAddr(addr) {
+    var s = String(addr || '');
+    return s.length > 16 ? s.slice(0,8) + '...' + s.slice(-6) : s;
+  }
+
+  /* Init TonConnect — reuse deposit instance if available */
+  function initWdTC() {
+    if (tcWD) return;
+    // Try to reuse the deposit TC instance
+    if (window._tonConnectUI) { tcWD = window._tonConnectUI; syncWdWallet(); return; }
+    try {
+      tcWD = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: window.location.origin + '/static/tonconnect-manifest.json',
+        buttonRootId: null
+      });
+      window._tonConnectUI = tcWD;
+    } catch(e) { console.error('TON WD init:', e); return; }
+    syncWdWallet();
+    tcWD.onStatusChange(function(w) { wdWallet = w; if (w) { el('ton-wd-wallet-display').textContent = shortAddr(w.account.address); showWdStep('amount'); } else { showWdStep('connect'); } });
+  }
+
+  function syncWdWallet() {
+    if (tcWD && tcWD.wallet) { wdWallet = tcWD.wallet; }
+  }
+
+  /* Preview */
+  el('ton-wd-amount-input') && el('ton-wd-amount-input').addEventListener('input', function() {
+    var d = parseFloat(this.value) || 0;
+    var fee = d * FEE_PCT / 100;
+    var net = d - fee;
+    var ton = net / DOGE_TO_TON;
+    el('ton-wd-preview-doge').textContent = d.toFixed(2) + ' DOGE';
+    el('ton-wd-preview-fee').textContent  = fee.toFixed(2) + ' DOGE';
+    el('ton-wd-preview-ton').textContent  = ton.toFixed(4) + ' TON';
+  });
+
+  /* Open modal */
+  el('ton-withdraw-btn') && el('ton-withdraw-btn').addEventListener('click', function() {
+    showWdStep('connect');
+    DogeQuest.openModal('ton-withdraw-modal');
+    setTimeout(function() {
+      initWdTC();
+      if (wdWallet) { el('ton-wd-wallet-display').textContent = shortAddr(wdWallet.account.address); showWdStep('amount'); }
+    }, 200);
+  });
+
+  /* Connect */
+  el('ton-wd-btn-connect') && el('ton-wd-btn-connect').addEventListener('click', function() {
+    var btn = this; btn.disabled = true; btn.textContent = 'Conectando...';
+    initWdTC();
+    if (!tcWD) { btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; return; }
+    if (wdWallet) { el('ton-wd-wallet-display').textContent = shortAddr(wdWallet.account.address); showWdStep('amount'); btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; return; }
+    tcWD.openModal().catch(function(){}).finally(function(){ btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; });
+  });
+
+  /* Disconnect — limpia wallet en frontend Y en backend */
+  el('ton-wd-btn-disconnect') && el('ton-wd-btn-disconnect').addEventListener('click', async function() {
+    wdWallet = null;
+    // Limpiar en backend también para que pueda conectar wallet nueva
+    try {
+      await fetch('/api/ton/wallet/clear', { method: 'POST' });
+    } catch(e) {}
+    if (tcWD) { try { tcWD.disconnect(); } catch(e) {} }
+    showWdStep('connect');
+    DogeQuest.showToast('Wallet desvinculada. Conecta tu wallet TON.', 'success');
+  });
+
+  /* Cancel */
+  el('ton-wd-btn-cancel') && el('ton-wd-btn-cancel').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); });
+  el('ton-wd-modal-close') && el('ton-wd-modal-close').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); });
+  el('ton-wd-btn-retry') && el('ton-wd-btn-retry').addEventListener('click', function() { showWdStep('amount'); });
+  el('ton-wd-btn-success-close') && el('ton-wd-btn-success-close').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); location.reload(); });
+
+  /* Submit */
+  el('ton-wd-btn-submit') && el('ton-wd-btn-submit').addEventListener('click', async function() {
+    if (!wdWallet) { DogeQuest.showToast('Conecta tu wallet TON primero', 'error'); showWdStep('connect'); return; }
+
+    var dogeAmt = parseFloat(el('ton-wd-amount-input').value || '0');
+    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Minimo ' + MIN_DOGE + ' DOGE', 'error'); return; }
+    if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('Saldo insuficiente', 'error'); return; }
+
+    /* Mostrar pantalla de procesando inmediatamente */
+    showWdStep('processing');
+
+    var data = null;
+    try {
+      var res = await fetch('/api/ton/withdraw/init', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ doge_amount: dogeAmt, ton_wallet: wdWallet.account.address })
+      });
+
+      if (!res.ok) {
+        var errText = 'HTTP ' + res.status;
+        try { var j = await res.json(); errText = j.message || errText; } catch(e){}
+        throw new Error(errText);
+      }
+
+      data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Error al procesar retiro');
+
+      /* Éxito */
+      showWdStep('success');
+      var msg = '';
+      if (data.auto_sent) {
+        msg = '✅ ¡TON enviado automáticamente!\n\n';
+        msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
+        msg += 'A: ' + data.ton_wallet;
+        if (data.tx_hash) msg += '\nTX: ' + data.tx_hash.slice(0, 20) + '...';
+      } else {
+        msg = '⏳ Retiro registrado y en proceso\n\n';
+        msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
+        msg += 'Wallet: ' + data.ton_wallet + '\n\n';
+        msg += 'ID: ' + (data.withdrawal_id || '—') + '\n';
+        msg += 'El envío de TON se procesará en los próximos minutos.';
+      }
+      el('ton-wd-success-msg').textContent = msg;
+
+    } catch(err) {
+      showWdStep('error');
+      var errMsg = err.message || 'Error desconocido';
+      /* Si ya se registró el retiro (DOGE deducido) pero el envío falló, informar */
+      if (data && data.withdrawal_id) {
+        errMsg += '\n\nID de retiro: ' + data.withdrawal_id + '\n(Tu DOGE fue reservado, el TON se enviará manualmente por el admin)';
+      }
+      el('ton-wd-error-msg').textContent = errMsg;
+    }
+  });
+
+})();
+{% endif %}
+</script>
+
+{% if ton_enabled %}
+<script src="https://unpkg.com/@tonconnect/ui@2.0.7/dist/tonconnect-ui.min.js"></script>
+<script>
+(function() {
+  /* ─── Config ─────────────────────────────── */
+  var RATE     = {{ ton_rate }};
+  var MIN_TON  = {{ ton_min }};
+  var RECEIVER = "{{ ton_wallet_address }}";
+  var MANIFEST = window.location.origin + "/static/tonconnect-manifest.json";
+
+  /* ─── State ──────────────────────────────── */
+  var tc        = null;   // TonConnectUI instance
+  var wallet    = null;   // connected wallet
+  var depId     = null;   // current deposit ID
+  var dogeAmt   = 0;      // expected DOGE
+  var pollTimer = null;
+
+  /* ─── UI helpers ─────────────────────────── */
+  function el(id) { return document.getElementById(id); }
+
+  function showStep(name) {
+    ['connect','amount','verifying','success','error'].forEach(function(s) {
+      var d = el('ton-step-' + s);
+      if (d) d.style.display = (s === name) ? 'block' : 'none';
+    });
+  }
+
+  function shortAddr(addr) {
+    var s = String(addr || '');
+    return s.length > 16 ? s.slice(0,8) + '…' + s.slice(-6) : s;
+  }
+
+  /* ─── Init TON Connect (lazy) ────────────── */
+  function initTC() {
+    if (tc) return;
+    try {
+      tc = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: MANIFEST,
+        buttonRootId: null
+      });
+      window._tonConnectUI = tc;  // share instance with withdraw modal
+      tc.onStatusChange(function(w) {
+        wallet = w;
+        if (w) {
+          el('ton-wallet-display').textContent = shortAddr(w.account.address);
+          showStep('amount');
+        } else {
+          showStep('connect');
+        }
+      });
+    } catch(e) {
+      console.error('TonConnect init:', e);
+      el('ton-connect-error').style.display = 'block';
+      el('ton-connect-error').textContent = 'Error al cargar TON Connect. Recarga la página.';
+    }
+  }
+
+  /* ─── Amount preview ─────────────────────── */
+  el('ton-amount-input') && el('ton-amount-input').addEventListener('input', function() {
+    var v = parseFloat(this.value) || 0;
+    el('ton-preview-ton').textContent  = v.toFixed(2) + ' TON';
+    el('ton-preview-doge').textContent = (v * RATE).toFixed(2) + ' DOGE';
+  });
+
+  /* ─── Button: Conectar wallet ────────────── */
+  el('ton-btn-connect') && el('ton-btn-connect').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Cargando...';
+    initTC();
+    if (!tc) { btn.disabled = false; btn.textContent = 'CONECTAR WALLET'; return; }
+    // Already connected?
+    if (wallet) { showStep('amount'); btn.disabled = false; btn.textContent = 'CONECTAR WALLET'; return; }
+    tc.openModal().catch(function(e) {
+      console.warn('openModal:', e);
+    }).finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'CONECTAR WALLET';
+    });
+  });
+
+  /* ─── Button: Desconectar ────────────────── */
+  el('ton-btn-disconnect') && el('ton-btn-disconnect').addEventListener('click', async function() {
+    if (tc) { try { tc.disconnect(); } catch(e) {} }
+    wallet = null;
+    try { await fetch('/api/ton/wallet/clear', { method: 'POST' }); } catch(e) {}
+    showStep('connect');
+    DogeQuest.showToast('Wallet desvinculada. Conecta tu wallet TON.', 'success');
+  });
+
+  /* ─── Button: Cancelar ───────────────────── */
+  el('ton-btn-cancel') && el('ton-btn-cancel').addEventListener('click', function() {
+    DogeQuest.closeModal('ton-deposit-modal');
+  });
+
+  /* ─── Button: Cerrar modal ───────────────── */
+  el('ton-modal-close') && el('ton-modal-close').addEventListener('click', function() {
+    DogeQuest.closeModal('ton-deposit-modal');
+  });
+
+  /* ─── Button: Éxito → recargar ───────────── */
+  el('ton-btn-success-close') && el('ton-btn-success-close').addEventListener('click', function() {
+    DogeQuest.closeModal('ton-deposit-modal');
+    location.reload();
+  });
+
+  /* ─── Button: Reintentar ─────────────────── */
+  el('ton-btn-retry') && el('ton-btn-retry').addEventListener('click', function() {
+    showStep('amount');
+  });
+
+  /* ─── Button: ENVIAR TON ─────────────────── */
+  el('ton-btn-send') && el('ton-btn-send').addEventListener('click', function() {
+    sendTon();
+  });
+
+  /* ─── Abrir modal → init TC ──────────────── */
+  el('ton-deposit-btn') && el('ton-deposit-btn').addEventListener('click', function() {
+    showStep('connect');
+    DogeQuest.openModal('ton-deposit-modal');   // ← FIX: faltaba abrir el modal
+    setTimeout(function() {
+      initTC();
+      if (wallet) {
+        el('ton-wallet-display').textContent = shortAddr(wallet.account.address);
+        showStep('amount');
+      }
+    }, 200);
+  });
+
+  /* ─── Envío principal ────────────────────── */
+  async function sendTon() {
+    if (!wallet) {
+      DogeQuest.showToast('Conecta tu wallet TON primero', 'error');
+      showStep('connect');
+      return;
+    }
+
+    var tonAmt = parseFloat(el('ton-amount-input').value || '0');
+    if (isNaN(tonAmt) || tonAmt < MIN_TON) {
+      DogeQuest.showToast('Mínimo ' + MIN_TON + ' TON', 'error');
+      return;
+    }
+    if (!RECEIVER || RECEIVER.includes('AQUI')) {
+      DogeQuest.showToast('Wallet destino no configurada. Contacta al admin.', 'error');
+      return;
+    }
+
+    var btn = el('ton-btn-send');
+    btn.disabled = true;
+    btn.textContent = 'Preparando...';
+
+    try {
+      /* 1. Registrar depósito en backend */
+      var initRes = await fetch('/api/ton/deposit/init', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ ton_wallet: wallet.account.address, ton_amount: tonAmt })
+      });
+      var initData = await initRes.json();
+      if (!initData.success) throw new Error(initData.message || 'Error al iniciar depósito');
+
+      depId   = initData.deposit_id;
+      dogeAmt = initData.doge_credited;
+
+      /* 2. Firmar y enviar tx con TON Connect */
+      btn.textContent = 'Esperando firma...';
+      var nanotons = String(Math.round(tonAmt * 1e9));
+
+      var txResult;
+      try {
+        txResult = await tc.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 600,
+          messages: [{ address: RECEIVER, amount: nanotons, text: depId }]
+        });
+      } catch(txErr) {
+        var msg = (txErr && txErr.message) ? txErr.message.toLowerCase() : '';
+        if (msg.includes('cancel') || msg.includes('reject') || msg.includes('close') || (txErr && txErr.code === 300)) {
+          btn.disabled = false;
+          btn.textContent = 'ENVIAR TON';
+          DogeQuest.showToast('Transacción cancelada', 'error');
+          return;
+        }
+        throw txErr;
+      }
+
+      /* 3. Enviar BOC al backend para verificación automática */
+      showStep('verifying');
+      el('ton-verify-msg').textContent = 'TX enviada. Verificando en la blockchain (puede tomar hasta 30 seg)...';
+
+      var boc = (txResult && txResult.boc) ? txResult.boc : '';
+      var verRes = await fetch('/api/ton/deposit/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ deposit_id: depId, boc: boc })
+      });
+      var verData = await verRes.json();
+
+      if (verData.success) {
+        /* Acreditado inmediatamente */
+        clearInterval(pollTimer);
+        showStep('success');
+        el('ton-success-msg').textContent =
+          tonAmt + ' TON → ' + dogeAmt.toFixed(2) + ' DOGE acreditados en tu cuenta. ✅';
+      } else {
+        /* Polling hasta confirmar */
+        el('ton-verify-msg').textContent = verData.message || 'Verificando en la red TON...';
+        startPolling();
+      }
+
+    } catch(err) {
+      console.error('sendTon error:', err);
+      showStep('error');
+      el('ton-error-msg').textContent = (err && err.message)
+        ? err.message
+        : 'Error al procesar. Si enviaste TON, guarda el ID: ' + (depId || '?');
+      btn.disabled = false;
+      btn.textContent = 'ENVIAR TON';
+    }
+  }
+
+  /* ─── Polling cada 8s × 15 intentos ─────── */
+  function startPolling() {
+    var attempts = 0;
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async function() {
+      attempts++;
+      try {
+        var r = await fetch('/api/ton/deposit/status/' + depId);
+        var d = await r.json();
+        if (d.status === 'credited') {
+          clearInterval(pollTimer);
+          showStep('success');
+          el('ton-success-msg').textContent =
+            d.doge_credited.toFixed(2) + ' DOGE acreditados en tu cuenta. ✅';
+        } else if (d.status === 'failed') {
+          clearInterval(pollTimer);
+          showStep('error');
+          el('ton-error-msg').textContent = 'No se pudo verificar. Contacta soporte con ID: ' + depId;
+        } else if (attempts >= 15) {
+          clearInterval(pollTimer);
+          el('ton-verify-msg').textContent =
+            'TX enviada (ID: ' + depId + '). El DOGE se acreditará en minutos. Puedes cerrar esta ventana.';
+        }
+      } catch(e) { /* ignorar errores de red, seguir intentando */ }
+    }, 8000);
+  }
+
+})();
+</script>
+{% endif %}
+{% endblock %}

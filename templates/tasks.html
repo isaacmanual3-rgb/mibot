@@ -1,0 +1,1086 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - Doge Pixel{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+/* ═══════════════════════════════════════
+   ROOT
+═══════════════════════════════════════ */
+:root {
+  --bg:          #08080f;
+  --surface:     #0d0d1a;
+  --surface2:    #111122;
+  --surface3:    #070710;
+  --gold:        #ffd700;
+  --gold2:       #ffb300;
+  --gold-dark:   #5a3a00;
+  --gold-dim:    rgba(255,215,0,0.08);
+  --green:       #00e676;
+  --blue:        #40c4ff;
+  --red:         #ff4d6a;
+  --border:      #1e1e34;
+  --text:        #e0e2f0;
+  --text2:       #9090b8;
+  --muted:       #4a4a6e;
+  --font-pixel:  'Press Start 2P', monospace;
+  --font-body:   'Inter', sans-serif;
+}
+
+/* ═══════════════════════════════════════
+   SHELL
+═══════════════════════════════════════ */
+.tq-shell {
+  font-family: var(--font-body);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  position: relative;
+  overflow-x: hidden;
+}
+/* pixel grid */
+.tq-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.011) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.011) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+/* scanlines */
+.tq-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════
+   TICKER
+═══════════════════════════════════════ */
+.tq-ticker {
+  position: relative;
+  z-index: 20;
+  background: var(--gold);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-bottom: 3px solid var(--gold-dark);
+}
+.tq-ticker span {
+  display: inline-block;
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 0.42rem;
+  color: #0a0800;
+  letter-spacing: 0.08em;
+  animation: tq-tick 30s linear infinite;
+}
+@keyframes tq-tick {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+
+/* ═══════════════════════════════════════
+   PAGE
+═══════════════════════════════════════ */
+.tq-page {
+  position: relative;
+  z-index: 5;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 14px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL CARD BASE
+═══════════════════════════════════════ */
+.tq-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 0 #030308;
+  position: relative;
+  animation: tq-up 0.3s ease both;
+}
+.tq-card::before, .tq-card::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.tq-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.tq-card::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+@keyframes tq-up {
+  from { opacity:0; transform: translateY(10px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.tq-card:nth-child(1){animation-delay:.04s}
+.tq-card:nth-child(2){animation-delay:.09s}
+.tq-card:nth-child(3){animation-delay:.14s}
+
+/* ═══════════════════════════════════════
+   HEADER STATS CARD
+═══════════════════════════════════════ */
+.tq-stats-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 0 #030308;
+  position: relative;
+  padding: 0;
+  animation: tq-up .3s .04s ease both;
+}
+.tq-stats-card::before, .tq-stats-card::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.tq-stats-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.tq-stats-card::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+.tq-stats-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.tq-stat {
+  padding: 18px 10px;
+  text-align: center;
+  position: relative;
+}
+.tq-stat + .tq-stat::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 1px;
+  background: var(--border);
+}
+.tq-stat-val {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 0.82rem;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 var(--gold-dark), 0 0 12px rgba(255,215,0,0.25);
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tq-stat-lbl {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════ */
+.tq-section-lbl {
+  font-family: var(--font-pixel);
+  font-size: 0.42rem;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+.tq-section-lbl::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ═══════════════════════════════════════
+   CATEGORY FILTER
+═══════════════════════════════════════ */
+.tq-cats-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 0 #030308;
+  padding: 14px;
+  position: relative;
+  animation: tq-up .3s .09s ease both;
+}
+.tq-cats-card::before, .tq-cats-card::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.tq-cats-card::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.tq-cats-card::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+.tq-cats {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.tq-cats::-webkit-scrollbar { display: none; }
+
+.tq-cat {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  font-family: var(--font-pixel);
+  font-size: 0.44rem;
+  letter-spacing: 0.06em;
+  border: 2px solid var(--border);
+  background: var(--surface3);
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 #030308;
+  transition: transform .07s, box-shadow .07s, color .1s, border-color .1s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tq-cat:hover {
+  color: var(--text2);
+  border-color: #2e2e50;
+  transform: translate(-1px,-1px);
+  box-shadow: 3px 3px 0 0 #030308;
+}
+.tq-cat.active {
+  background: var(--gold);
+  color: #0a0800;
+  border-color: var(--gold2);
+  box-shadow: 3px 3px 0 0 var(--gold-dark);
+}
+.tq-cat.active:hover {
+  transform: translate(-1px,-1px);
+  box-shadow: 4px 4px 0 0 var(--gold-dark);
+}
+
+/* ═══════════════════════════════════════
+   TASK LIST
+═══════════════════════════════════════ */
+.tq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: tq-up .3s .14s ease both;
+}
+
+/* ── TASK CARD ── */
+.tq-task {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 3px 3px 0 0 #030308;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 17px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .1s, box-shadow .1s, border-color .15s;
+}
+.tq-task:hover:not(.tq-task-done):not(.tq-task-locked) {
+  transform: translate(-1px,-1px);
+  box-shadow: 4px 4px 0 0 #030308;
+  border-color: #2e2e50;
+}
+
+/* left accent bar */
+.tq-task::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--gold);
+}
+.tq-task-done::before  { background: var(--green); }
+.tq-task-locked::before{ background: var(--muted); }
+
+/* ═══════════════════════════════════════
+   CSS PIXEL ART ICONS
+═══════════════════════════════════════ */
+
+/* Icon wrapper box */
+.tq-task-icon {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  min-width: 44px;
+  background: var(--surface3);
+  border: 2px solid var(--border);
+  box-shadow: 2px 2px 0 0 #020205;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.tq-task-icon.done  { background: rgba(0,230,118,0.07);  border-color: rgba(0,230,118,0.28); }
+.tq-task-icon.locked{ background: rgba(255,255,255,0.025); border-color: var(--border); }
+
+/* The inner pixel canvas — 16×16 logical px, scaled via font-size trick */
+.px-icon {
+  display: block;
+  position: relative;
+  /* each "pixel" is 3px × 3px */
+  width: 3px; height: 3px;
+  /* icon drawn entirely with box-shadow */
+  image-rendering: pixelated;
+}
+
+/* ── CHECKMARK (done) ──────────────────
+   . . . . . . X
+   . . . . . X .
+   X . . . X . .
+   . X . X . . .
+   . . X . . . .
+   ──────────────────────────────────── */
+.px-icon-check {
+  transform: translate(-9px, -7.5px);
+  box-shadow:
+    18px  3px 0 0 var(--green),
+    15px  6px 0 0 var(--green),
+    12px  9px 0 0 var(--green),
+     9px 12px 0 0 var(--green),
+     6px 12px 0 0 var(--green),
+     3px  9px 0 0 var(--green),
+     0px  6px 0 0 var(--green);
+}
+
+/* ── PADLOCK (locked) ──────────────────
+   . X X X .
+   X . . . X
+   X . . . X
+   X X X X X
+   X . . . X
+   X . . . X
+   X X X X X
+   ──────────────────────────────────── */
+.px-icon-lock {
+  transform: translate(-6px, -9px);
+  box-shadow:
+    /* shackle top */
+     3px  0px 0 0 var(--muted),
+     6px  0px 0 0 var(--muted),
+     9px  0px 0 0 var(--muted),
+     0px  3px 0 0 var(--muted),
+    12px  3px 0 0 var(--muted),
+     0px  6px 0 0 var(--muted),
+    12px  6px 0 0 var(--muted),
+    /* body */
+     0px  9px 0 0 var(--muted),
+     3px  9px 0 0 var(--muted),
+     6px  9px 0 0 var(--muted),
+     9px  9px 0 0 var(--muted),
+    12px  9px 0 0 var(--muted),
+     0px 12px 0 0 var(--muted),
+    12px 12px 0 0 var(--muted),
+     6px 12px 0 0 #444466,
+     0px 15px 0 0 var(--muted),
+    12px 15px 0 0 var(--muted),
+     0px 18px 0 0 var(--muted),
+     3px 18px 0 0 var(--muted),
+     6px 18px 0 0 var(--muted),
+     9px 18px 0 0 var(--muted),
+    12px 18px 0 0 var(--muted);
+}
+
+/* ── LIGHTNING BOLT (default/social) ───
+   . . X X .
+   . X X . .
+   X X X X X
+   . . X X .
+   . . X . .
+   ──────────────────────────────────── */
+.px-icon-bolt {
+  transform: translate(-6px, -6px);
+  box-shadow:
+     6px  0px 0 0 var(--gold),
+     9px  0px 0 0 var(--gold),
+     3px  3px 0 0 var(--gold),
+     6px  3px 0 0 var(--gold),
+     0px  6px 0 0 var(--gold),
+     3px  6px 0 0 var(--gold),
+     6px  6px 0 0 var(--gold),
+     9px  6px 0 0 var(--gold),
+    12px  6px 0 0 var(--gold),
+     6px  9px 0 0 var(--gold),
+     9px  9px 0 0 var(--gold),
+     6px 12px 0 0 var(--gold);
+}
+
+/* ── STAR (special) ─────────────────────
+     . . X . .
+     X X X X X
+     . X X X .
+     X . X . X
+     ──────────────────────────────────── */
+.px-icon-star {
+  transform: translate(-6px, -4.5px);
+  box-shadow:
+     6px  0px 0 0 var(--gold),
+     0px  3px 0 0 var(--gold),
+     3px  3px 0 0 var(--gold),
+     6px  3px 0 0 var(--gold),
+     9px  3px 0 0 var(--gold),
+    12px  3px 0 0 var(--gold),
+     3px  6px 0 0 var(--gold),
+     6px  6px 0 0 var(--gold),
+     9px  6px 0 0 var(--gold),
+     0px  9px 0 0 var(--gold),
+     6px  9px 0 0 var(--gold),
+    12px  9px 0 0 var(--gold);
+}
+
+/* ── CALENDAR (daily) ──────────────────
+   X X X X X
+   X . X . X   ← header
+   X X X X X
+   X . X . X
+   X . X . X
+   X X X X X
+   ──────────────────────────────────── */
+.px-icon-calendar {
+  transform: translate(-6px, -7.5px);
+  box-shadow:
+     0px  0px 0 0 var(--blue),
+     3px  0px 0 0 var(--blue),
+     6px  0px 0 0 var(--blue),
+     9px  0px 0 0 var(--blue),
+    12px  0px 0 0 var(--blue),
+     0px  3px 0 0 var(--blue),
+     6px  3px 0 0 var(--blue),
+    12px  3px 0 0 var(--blue),
+     0px  6px 0 0 var(--blue),
+     3px  6px 0 0 var(--blue),
+     6px  6px 0 0 var(--blue),
+     9px  6px 0 0 var(--blue),
+    12px  6px 0 0 var(--blue),
+     0px  9px 0 0 var(--blue),
+     6px  9px 0 0 var(--blue),
+    12px  9px 0 0 var(--blue),
+     0px 12px 0 0 var(--blue),
+     6px 12px 0 0 var(--blue),
+    12px 12px 0 0 var(--blue),
+     0px 15px 0 0 var(--blue),
+     3px 15px 0 0 var(--blue),
+     6px 15px 0 0 var(--blue),
+     9px 15px 0 0 var(--blue),
+    12px 15px 0 0 var(--blue);
+}
+
+/* ── PERSON/USERS (social invite) ──────
+   . X X X .
+   . X X X .
+   X X X X X
+   . X . X .
+   X X . X X
+   ──────────────────────────────────── */
+.px-icon-user {
+  transform: translate(-6px, -6px);
+  box-shadow:
+     3px  0px 0 0 var(--gold),
+     6px  0px 0 0 var(--gold),
+     9px  0px 0 0 var(--gold),
+     3px  3px 0 0 var(--gold),
+     6px  3px 0 0 var(--gold),
+     9px  3px 0 0 var(--gold),
+     0px  6px 0 0 var(--gold),
+     3px  6px 0 0 var(--gold),
+     6px  6px 0 0 var(--gold),
+     9px  6px 0 0 var(--gold),
+    12px  6px 0 0 var(--gold),
+     3px  9px 0 0 var(--gold),
+     9px  9px 0 0 var(--gold),
+     0px 12px 0 0 var(--gold),
+     3px 12px 0 0 var(--gold),
+     9px 12px 0 0 var(--gold),
+    12px 12px 0 0 var(--gold);
+}
+
+/* Info */
+.tq-task-body {
+  flex: 1;
+  min-width: 0;
+}
+.tq-task-title {
+  font-family: var(--font-pixel);
+  font-size: 0.52rem;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+.tq-task-locked .tq-task-title { color: var(--muted); }
+.tq-task-desc {
+  font-size: 0.76rem;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.tq-task-channel {
+  display: inline-block;
+  font-size: 0.68rem;
+  color: var(--blue);
+  background: rgba(64,196,255,0.07);
+  border: 1px solid rgba(64,196,255,0.2);
+  padding: 2px 8px;
+}
+
+/* Right side */
+.tq-task-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.tq-reward {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tq-reward-icon {
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+.tq-reward-val {
+  font-family: var(--font-pixel);
+  font-size: 0.52rem;
+  color: var(--gold);
+  text-shadow: 1px 1px 0 var(--gold-dark);
+}
+
+/* Status badges */
+.tq-badge {
+  font-family: var(--font-pixel);
+  font-size: 0.38rem;
+  letter-spacing: 0.08em;
+  padding: 5px 8px;
+  border: 2px solid;
+}
+.tq-badge-done {
+  color: var(--green);
+  border-color: rgba(0,230,118,0.35);
+  background: rgba(0,230,118,0.06);
+  text-shadow: 0 0 8px rgba(0,230,118,0.4);
+}
+.tq-badge-locked {
+  color: var(--muted);
+  border-color: var(--border);
+  background: transparent;
+}
+
+/* START button */
+.tq-btn-start {
+  font-family: var(--font-pixel);
+  font-size: 0.44rem;
+  letter-spacing: 0.06em;
+  padding: 8px 12px;
+  background: var(--gold);
+  color: #0a0800;
+  border: 2px solid var(--gold2);
+  box-shadow: 3px 3px 0 0 var(--gold-dark);
+  cursor: pointer;
+  transition: transform .07s, box-shadow .07s;
+  white-space: nowrap;
+}
+.tq-btn-start:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 0 var(--gold-dark); }
+.tq-btn-start:active { transform: translate(2px,2px);  box-shadow: 1px 1px 0 0 var(--gold-dark); }
+
+/* ── DONE / LOCKED task overlay ── */
+.tq-task-done  { opacity: 0.75; }
+.tq-task-locked{ opacity: 0.55; }
+
+/* ── EMPTY STATE ── */
+.tq-empty {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  box-shadow: 3px 3px 0 0 #030308;
+  padding: 48px 24px;
+  text-align: center;
+  position: relative;
+}
+.tq-empty::before, .tq-empty::after {
+  content: '';
+  position: absolute;
+  width: 9px; height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.tq-empty::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.tq-empty::after  { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+
+.tq-empty-icon {
+  display: block;
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  animation: tq-bounce .9s steps(1) infinite;
+}
+@keyframes tq-bounce {
+  0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}
+}
+.tq-empty-title {
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  color: var(--text2);
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.tq-empty-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.tq-modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(4,4,10,0.88);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+.tq-modal-bg.show {
+  display: flex;
+  animation: tq-modal-in .22s ease;
+}
+@keyframes tq-modal-in {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+.tq-modal {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-bottom: none;
+  box-shadow: 0 -6px 40px rgba(0,0,0,0.6), -4px 0 0 0 #030308;
+  width: 100%;
+  max-width: 560px;
+  padding: 28px 20px 32px;
+  position: relative;
+  animation: tq-sheet-up .25s cubic-bezier(.22,.77,.42,1) both;
+}
+@keyframes tq-sheet-up {
+  from { transform: translateY(60px); opacity:0; }
+  to   { transform: translateY(0); opacity:1; }
+}
+/* corner accents on modal */
+.tq-modal::before, .tq-modal::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+.tq-modal::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+.tq-modal::after  { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+
+.tq-modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  margin: 0 auto 24px;
+}
+
+.tq-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px; height: 52px;
+  background: var(--gold-dim);
+  border: 2px solid var(--gold-dark);
+  margin: 0 auto 16px;
+  font-family: var(--font-pixel);
+  font-size: 1.2rem;
+  color: var(--gold);
+  box-shadow: 3px 3px 0 0 #020201;
+}
+
+.tq-modal-title {
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.tq-modal-desc {
+  font-size: 0.82rem;
+  color: var(--text2);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Steps */
+.tq-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.tq-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.tq-step-num {
+  width: 28px; height: 28px;
+  background: var(--gold);
+  color: #0a0800;
+  font-family: var(--font-pixel);
+  font-size: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 0 var(--gold-dark);
+}
+.tq-step-lbl {
+  font-size: 0.68rem;
+  color: var(--text2);
+  text-align: center;
+  max-width: 60px;
+  line-height: 1.4;
+}
+.tq-step-arrow {
+  font-family: var(--font-pixel);
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* Modal buttons */
+.tq-modal-btns {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+}
+.tq-modal-cancel {
+  font-family: var(--font-pixel);
+  font-size: 0.48rem;
+  letter-spacing: 0.06em;
+  padding: 14px;
+  background: transparent;
+  color: var(--text2);
+  border: 2px solid var(--border);
+  box-shadow: 2px 2px 0 0 #030308;
+  cursor: pointer;
+  transition: transform .07s, box-shadow .07s;
+}
+.tq-modal-cancel:hover  { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 0 #030308; }
+.tq-modal-cancel:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 0 #030308; }
+
+.tq-modal-verify {
+  font-family: var(--font-pixel);
+  font-size: 0.52rem;
+  letter-spacing: 0.06em;
+  padding: 14px;
+  background: var(--gold);
+  color: #0a0800;
+  border: 2px solid var(--gold2);
+  box-shadow: 3px 3px 0 0 var(--gold-dark);
+  cursor: pointer;
+  transition: transform .07s, box-shadow .07s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.tq-modal-verify:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 0 var(--gold-dark); }
+.tq-modal-verify:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 var(--gold-dark); }
+.tq-modal-verify:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* pixel spinner */
+.tq-spinner {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 2px solid rgba(0,0,0,0.3);
+  border-top-color: #0a0800;
+  border-radius: 0;
+  animation: tq-spin .5s steps(4) infinite;
+}
+@keyframes tq-spin {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+</style>
+
+<div class="tq-shell">
+
+  <!-- Ticker -->
+  <div class="tq-ticker" aria-hidden="true">
+    <span>
+      ★ DOGEQUEST TASKS ★&nbsp;&nbsp;&nbsp;
+      COMPLETE QUESTS TO EARN DOGE &nbsp;★&nbsp;&nbsp;&nbsp;
+      DAILY TASKS RESET EVERY 24H &nbsp;★&nbsp;&nbsp;&nbsp;
+      SPECIAL QUESTS = BIG REWARDS &nbsp;★&nbsp;&nbsp;&nbsp;
+      MUCH TASK. VERY DOGE. SO EARN. &nbsp;★&nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="tq-page">
+
+    <!-- ── STATS ── -->
+    <div class="tq-stats-card">
+      <div class="tq-stats-inner">
+        <div class="tq-stat">
+          <span class="tq-stat-val">{{ completed_tasks }}</span>
+          <span class="tq-stat-lbl">Completed</span>
+        </div>
+        <div class="tq-stat">
+          <span class="tq-stat-val">{{ format_doge(total_earned) }}</span>
+          <span class="tq-stat-lbl">Earned</span>
+        </div>
+        <div class="tq-stat">
+          <span class="tq-stat-val">{{ available_tasks }}</span>
+          <span class="tq-stat-lbl">Available</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CATEGORIES ── -->
+    <div class="tq-cats-card">
+      <div class="tq-cats">
+        <button class="tq-cat active" data-category="all">◈ All</button>
+        <button class="tq-cat" data-category="social">◉ Social</button>
+        <button class="tq-cat" data-category="daily">◎ Daily</button>
+        <button class="tq-cat" data-category="special">★ Special</button>
+      </div>
+    </div>
+
+    <!-- ── TASKS LIST ── -->
+    <div class="tq-list">
+      {% if tasks %}
+        {% for task in tasks %}
+        <div class="tq-task {% if task.completed %}tq-task-done{% elif task.locked %}tq-task-locked{% endif %}"
+             data-task-id="{{ task.id }}"
+             data-category="{{ task.category|default('social') }}">
+
+          <!-- CSS Pixel Icon -->
+          <div class="tq-task-icon {% if task.completed %}done{% elif task.locked %}locked{% endif %}">
+            {% if task.completed %}
+              <i class="px-icon px-icon-check"></i>
+            {% elif task.locked %}
+              <i class="px-icon px-icon-lock"></i>
+            {% elif task.category == 'daily' %}
+              <i class="px-icon px-icon-calendar"></i>
+            {% elif task.category == 'special' %}
+              <i class="px-icon px-icon-star"></i>
+            {% elif task.category == 'social' %}
+              <i class="px-icon px-icon-user"></i>
+            {% else %}
+              <i class="px-icon px-icon-bolt"></i>
+            {% endif %}
+          </div>
+
+          <!-- Info -->
+          <div class="tq-task-body">
+            <div class="tq-task-title">{{ task.title }}</div>
+            <div class="tq-task-desc">{{ task.description }}</div>
+            {% if task.channel_username %}
+            <span class="tq-task-channel">@{{ task.channel_username }}</span>
+            {% endif %}
+          </div>
+
+          <!-- Right -->
+          <div class="tq-task-right">
+            <div class="tq-reward">
+              <span class="tq-reward-icon">Ð</span>
+              <span class="tq-reward-val">+{{ format_doge(task.reward) }}</span>
+            </div>
+            {% if task.completed %}
+              <span class="tq-badge tq-badge-done">CLAIMED</span>
+            {% elif task.locked %}
+              <span class="tq-badge tq-badge-locked">LOCKED</span>
+            {% else %}
+              <button class="tq-btn-start" onclick="startTask({{ task.id }}, '{{ task.link|default('#') }}', '{{ task.channel_id|default('') }}')">
+                START ▶
+              </button>
+            {% endif %}
+          </div>
+
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="tq-empty">
+          <span class="tq-empty-icon">◇</span>
+          <div class="tq-empty-title">NO TASKS AVAILABLE</div>
+          <div class="tq-empty-hint">Check back soon for new quests!</div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     VERIFY MODAL (bottom sheet)
+═══════════════════════════════════════ -->
+<div id="verifyModal" class="tq-modal-bg">
+  <div class="tq-modal">
+    <div class="tq-modal-handle"></div>
+    <div class="tq-modal-icon">◈</div>
+    <div class="tq-modal-title">VERIFY MEMBERSHIP</div>
+    <p class="tq-modal-desc" id="verifyMessage">
+      Join the channel and click verify to claim your reward!
+    </p>
+
+    <!-- Steps -->
+    <div class="tq-steps">
+      <div class="tq-step">
+        <div class="tq-step-num">1</div>
+        <div class="tq-step-lbl">Join channel</div>
+      </div>
+      <div class="tq-step-arrow">→</div>
+      <div class="tq-step">
+        <div class="tq-step-num">2</div>
+        <div class="tq-step-lbl">Click verify</div>
+      </div>
+      <div class="tq-step-arrow">→</div>
+      <div class="tq-step">
+        <div class="tq-step-num">3</div>
+        <div class="tq-step-lbl">Get reward!</div>
+      </div>
+    </div>
+
+    <div class="tq-modal-btns">
+      <button class="tq-modal-cancel" onclick="closeVerifyModal()">CANCEL</button>
+      <button class="tq-modal-verify" id="verifyBtn" onclick="verifyTask()">
+        <span>✓</span> VERIFY
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTaskId = null;
+let currentChannelId = null;
+
+function startTask(taskId, link, channelId) {
+  currentTaskId = taskId;
+  currentChannelId = channelId;
+  if (link && link !== '#') {
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(link);
+    } else {
+      window.open(link, '_blank');
+    }
+  }
+  if (channelId) {
+    setTimeout(() => {
+      document.getElementById('verifyModal').classList.add('show');
+    }, 1500);
+  } else {
+    completeTaskDirect(taskId);
+  }
+}
+
+function closeVerifyModal() {
+  document.getElementById('verifyModal').classList.remove('show');
+  currentTaskId = null;
+  currentChannelId = null;
+}
+
+async function verifyTask() {
+  if (!currentTaskId) return;
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="tq-spinner"></span> CHECKING...';
+  try {
+    const response = await fetch('/api/task/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_id: currentTaskId, channel_id: currentChannelId })
+    });
+    const data = await response.json();
+    if (data.success) {
+      closeVerifyModal();
+      showToast('Quest completed! +' + data.reward + ' DOGE', 'success');
+      const taskCard = document.querySelector(`[data-task-id="${currentTaskId}"]`);
+      if (taskCard) {
+        taskCard.classList.add('tq-task-done');
+        taskCard.querySelector('.tq-task-icon').classList.add('done');
+        taskCard.querySelector('.tq-task-icon').innerHTML = '<i class="px-icon px-icon-check"></i>';
+        taskCard.querySelector('.tq-task-right').innerHTML =
+          '<div class="tq-reward"><span class="tq-reward-icon">Ð</span><span class="tq-reward-val">+' + data.reward + '</span></div>' +
+          '<span class="tq-badge tq-badge-done">CLAIMED</span>';
+      }
+      if (data.new_balance) updateBalance(data.new_balance);
+      createPixelExplosion(taskCard);
+    } else {
+      showToast(data.message || 'Verification failed', 'error');
+    }
+  } catch (error) {
+    showToast('Connection error', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>✓</span> VERIFY';
+}
+
+async function completeTaskDirect(taskId) {
+  try {
+    const response = await fetch('/api/task/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_id: taskId })
+    });
+    const data = await response.json();
+    if (data.success) {
+      showToast('Quest completed! +' + data.reward + ' DOGE', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast(data.message || 'Task failed', 'error');
+    }
+  } catch (error) {
+    showToast('Connection error', 'error');
+  }
+}
+
+// Category filter
+document.querySelectorAll('.tq-cat').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tq-cat').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const cat = this.dataset.category;
+    document.querySelectorAll('.tq-task').forEach(card => {
+      card.style.display = (cat === 'all' || card.dataset.category === cat) ? 'flex' : 'none';
+    });
+  });
+});
+
+// Close modal on backdrop click
+document.getElementById('verifyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeVerifyModal();
+});
+</script>
+{% endblock %}

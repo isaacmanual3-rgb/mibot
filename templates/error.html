@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Error - Doge Pixel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .pixel-border {
+            border: 3px solid #ffaa00;
+            background: #111111;
+            box-shadow: 
+                inset -3px -3px 0 #886600,
+                inset 3px 3px 0 #ffcc44;
+        }
+        
+        .card {
+            padding: 32px 24px;
+        }
+        
+        .icon-container {
+            margin-bottom: 24px;
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            color: #ffaa00;
+            display: block;
+            animation: pixel-glitch 2s steps(6) infinite;
+        }
+        
+        @keyframes pixel-glitch {
+            0%, 90%, 100% { opacity: 1; transform: translateX(0); }
+            92% { opacity: 0.8; transform: translateX(-4px); }
+            94% { opacity: 1; transform: translateX(4px); }
+            96% { opacity: 0.8; transform: translateX(-2px); }
+            98% { opacity: 1; transform: translateX(0); }
+        }
+        
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1rem;
+            color: #ffaa00;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .error-code {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 2rem;
+            color: #ffaa00;
+            margin-bottom: 16px;
+        }
+        
+        p {
+            font-size: 1.3rem;
+            color: #aaaaaa;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+        
+        .btn-retry {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: #ffaa00;
+            color: #0a0a0a;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            text-decoration: none;
+            border: 3px solid #ffcc44;
+            box-shadow: 
+                inset -2px -2px 0 #886600,
+                inset 2px 2px 0 #ffcc44;
+            cursor: pointer;
+            transition: transform 0.1s steps(2);
+        }
+        
+        .btn-retry:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-retry:active {
+            transform: translateY(2px);
+        }
+        
+        .btn-home {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 10px 20px;
+            background: transparent;
+            color: #00aaff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.6rem;
+            text-decoration: none;
+            border: 2px solid #00aaff;
+            transition: background 0.1s steps(2);
+        }
+        
+        .btn-home:hover {
+            background: #00aaff22;
+        }
+        
+        .tech-info {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #222;
+        }
+        
+        .tech-info p {
+            font-size: 0.9rem;
+            color: #444;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card pixel-border">
+            <div class="icon-container">
+                <span class="error-icon">!</span>
+            </div>
+            
+            <div class="error-code">{{ error_code|default('500') }}</div>
+            
+            <h1>{{ error_title|default('SOMETHING WENT WRONG') }}</h1>
+            
+            <p>{{ error_message|default("Don't worry, it's not your fault. Our system encountered an unexpected issue.") }}</p>
+            
+            <button class="btn-retry" onclick="location.reload()">
+                <span>↻</span> TRY AGAIN
+            </button>
+            
+            <br>
+            
+            <a href="/" class="btn-home">← BACK TO HOME</a>
+            
+            {% if error_details %}
+            <div class="tech-info">
+                <p>Error ID: {{ error_details }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

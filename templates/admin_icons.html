@@ -1,0 +1,376 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Icon Management - Admin{% endblock %}
+
+{% block content %}
+<div class="admin-icons-page">
+    <div class="page-header">
+        <h1>🎨 Icon Management</h1>
+        <p>Upload PNG images to customize app icons. Leave empty to use emoji fallback.</p>
+    </div>
+    
+    <!-- Upload Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>📤 Upload Icon</h3>
+        </div>
+        <div class="card-body">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" id="uploadCategory" class="form-control">
+                            <option value="menu">Menu</option>
+                            <option value="currency">Currency</option>
+                            <option value="tiers">Tiers</option>
+                            <option value="status">Status</option>
+                            <option value="actions">Actions</option>
+                            <option value="misc">Misc</option>
+                            <option value="arrows">Arrows</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-grow">
+                        <label>Icon File (PNG, GIF, SVG, WEBP)</label>
+                        <input type="file" name="icon_file" id="iconFile" accept=".png,.gif,.svg,.webp" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Icons Configuration -->
+    {% for category, icons in icons_config.items() if not category.startswith('_') %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>{{ category|title }}</h3>
+            <span class="badge">{{ icons|length }} icons</span>
+        </div>
+        <div class="card-body">
+            <div class="icons-grid">
+                {% for name, data in icons.items() %}
+                <div class="icon-item" data-category="{{ category }}" data-name="{{ name }}">
+                    <div class="icon-preview">
+                        {{ icon(category, name, 'xl') }}
+                    </div>
+                    <div class="icon-info">
+                        <span class="icon-name">{{ name }}</span>
+                        <span class="icon-fallback">Fallback: {{ data.fallback }}</span>
+                        {% if data.image %}
+                        <span class="icon-file">File: {{ data.image }}</span>
+                        {% else %}
+                        <span class="icon-file text-muted">No image set</span>
+                        {% endif %}
+                    </div>
+                    <div class="icon-actions">
+                        <select class="form-control form-control-sm icon-file-select" 
+                                onchange="updateIcon('{{ category }}', '{{ name }}', this.value)">
+                            <option value="">Use Emoji</option>
+                            {% for file in uploaded_icons.get(category, []) %}
+                            <option value="{{ file }}" {% if data.image == file %}selected{% endif %}>
+                                {{ file }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Uploaded Files -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>📁 Uploaded Files</h3>
+            <button class="btn btn-sm btn-secondary" onclick="reloadIcons()">↻ Reload Config</button>
+        </div>
+        <div class="card-body">
+            {% for category, files in uploaded_icons.items() %}
+            {% if files %}
+            <div class="uploaded-category mb-3">
+                <h4>{{ category|title }}</h4>
+                <div class="files-grid">
+                    {% for file in files %}
+                    <div class="file-item">
+                        <img src="{{ url_for('static', filename='icons/' + category + '/' + file) }}" 
+                             alt="{{ file }}" class="file-preview">
+                        <span class="file-name">{{ file }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-icons-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.card {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 2px solid #333;
+    background: #111;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group.flex-grow {
+    flex: 1;
+}
+
+.form-control {
+    background: #222;
+    border: 2px solid #444;
+    color: #fff;
+    padding: 8px 12px;
+    font-family: inherit;
+}
+
+.icons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.icon-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #222;
+    border: 2px solid #333;
+}
+
+.icon-preview {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    border: 2px solid #444;
+}
+
+.icon-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.85rem;
+}
+
+.icon-name {
+    font-weight: bold;
+    color: #00aaff;
+}
+
+.icon-fallback {
+    color: #888;
+}
+
+.icon-file {
+    color: #666;
+    font-size: 0.75rem;
+}
+
+.icon-actions {
+    width: 140px;
+}
+
+.icon-file-select {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+}
+
+.files-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.file-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px;
+    background: #222;
+    border: 1px solid #333;
+}
+
+.file-preview {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.file-name {
+    font-size: 0.7rem;
+    color: #888;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: 2px solid;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background: #00aaff;
+    border-color: #00aaff;
+    color: #000;
+}
+
+.btn-secondary {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+}
+
+.badge {
+    background: #333;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+}
+
+.mb-3 { margin-bottom: 15px; }
+.mb-4 { margin-bottom: 20px; }
+.text-muted { color: #666; }
+
+.uploaded-category h4 {
+    font-size: 0.9rem;
+    color: #00aaff;
+    margin-bottom: 10px;
+    text-transform: capitalize;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .icons-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/admin/icons/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Upload failed: ' + error.message);
+    }
+});
+
+async function updateIcon(category, name, imageFile) {
+    try {
+        const response = await fetch('/api/icons/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                category: category,
+                name: name,
+                image: imageFile || null
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reload to see changes
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('Update failed: ' + error.message);
+    }
+}
+
+async function reloadIcons() {
+    try {
+        const response = await fetch('/api/icons/reload', {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        alert(data.message);
+        location.reload();
+    } catch (error) {
+        alert('Reload failed: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

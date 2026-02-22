@@ -1,0 +1,338 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Withdrawals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">WITHDRAWAL MANAGEMENT</h1>
+        <p class="page-subtitle">Process and track withdrawal requests</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-warning">{{ pending_count }}</span>
+        <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-success">{{ approved_count }}</span>
+        <span class="stat-label">Approved</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-danger">{{ rejected_count }}</span>
+        <span class="stat-label">Rejected</span>
+    </div>
+    <div class="stat-card pixel-border">
+        <span class="stat-value text-gold">{{ format_doge(total_withdrawn) }}</span>
+        <span class="stat-label">Total Withdrawn</span>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card pixel-border">
+    <div class="flex gap-4 items-center">
+        <span class="text-muted">Filter:</span>
+        <a href="/admin/withdrawals" class="btn {% if not filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+        <a href="/admin/withdrawals?filter=pending" class="btn {% if filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
+        <a href="/admin/withdrawals?filter=approved" class="btn {% if filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">Approved</a>
+        <a href="/admin/withdrawals?filter=rejected" class="btn {% if filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
+    </div>
+</div>
+
+<!-- Withdrawals Table -->
+<div class="card pixel-border">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Fee</th>
+                <th>Net</th>
+                <th>Wallet</th>
+                <th>Status</th>
+                <th>Requested</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in withdrawals %}
+            <tr {% if w.get('withdrawal_type') == 'ton' %}style="border-left:3px solid #0098EA"{% endif %}>
+                <td class="text-muted">#{{ w.id }}</td>
+                <td>
+                    <strong>{{ w.username or 'Anonymous' }}</strong>
+                    <br><small class="text-muted">#{{ w.telegram_id }}</small>
+                </td>
+                <td>
+                    {{ format_doge(w.amount) }}
+                    {% if w.get('withdrawal_type') == 'ton' and w.get('ton_amount') %}
+                    <br><small style="color:#0098EA">= {{ '%.4f'|format(w.ton_amount|float) }} TON</small>
+                    {% endif %}
+                </td>
+                <td class="text-muted">{{ format_doge(w.fee) }}</td>
+                <td class="text-gold">{{ format_doge(w.net_amount) }}</td>
+                <td>
+                    {% if w.get('withdrawal_type') == 'ton' %}
+                    <span class="badge" style="background:#0098EA;color:#000;margin-bottom:4px;display:inline-block">◈ TON</span><br>
+                    {% set ton_addr = w.ton_wallet_address or w.wallet_address %}
+                    <code style="font-size:0.85rem;color:#0098EA;word-break:break-all">{{ ton_addr[:20] }}...</code>
+                    <button class="btn btn-secondary ml-2" onclick="copyWallet('{{ ton_addr }}')" style="padding:4px 8px;font-size:0.4rem">COPY</button>
+                    {% else %}
+                    <code style="font-size:0.9rem;word-break:break-all">{{ w.wallet_address[:20] }}...</code>
+                    <button class="btn btn-secondary ml-2" onclick="copyWallet('{{ w.wallet_address }}')" style="padding:4px 8px;font-size:0.4rem">COPY</button>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if w.status == 'pending' %}
+                        <span class="badge badge-warning">PENDING</span>
+                    {% elif w.status == 'completed' or w.status == 'approved' %}
+                        <span class="badge badge-success">DONE</span>
+                    {% elif w.status == 'rejected' %}
+                        <span class="badge badge-danger">REJECTED</span>
+                    {% endif %}
+                </td>
+                <td class="text-muted">{{ w.created_at }}</td>
+                <td>
+                    {% if w.status == 'pending' %}
+                    <div class="flex gap-2">
+                        <button class="btn btn-success" onclick="approveWithdrawal({{ w.id }})">APPROVE</button>
+                        <button class="btn btn-danger" onclick="rejectWithdrawal({{ w.id }})">REJECT</button>
+                    </div>
+                    {% else %}
+                    <button class="btn btn-secondary" onclick="viewDetails({{ w.id }})">DETAILS</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-muted">No withdrawal requests</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">← PREV</a>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+                <span class="page-btn active">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                <a href="?page={{ p }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">{{ p }}</a>
+            {% elif p == 4 or p == total_pages - 2 %}
+                <span class="page-btn">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if filter %}&filter={{ filter }}{% endif %}" class="page-btn">NEXT →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="modal">
+    <div class="modal-content pixel-border">
+        <div class="modal-header">
+            <h3 class="modal-title">APPROVE WITHDRAWAL</h3>
+        </div>
+        <form id="approveForm">
+            <input type="hidden" name="withdrawal_id" id="approveId">
+            <div class="form-group">
+                <label class="form-label">Transaction Hash (optional)</label>
+                <input type="text" name="tx_hash" class="form-input" placeholder="Enter DOGE transaction hash">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <textarea name="notes" class="form-input" rows="2" placeholder="Admin notes"></textarea>
+            </div>
+        </form>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('approveModal')">CANCEL</button>
+            <button class="btn btn-success" onclick="submitApproval()">CONFIRM APPROVAL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content pixel-border">
+        <div class="modal-header">
+            <h3 class="modal-title">REJECT WITHDRAWAL</h3>
+        </div>
+        <form id="rejectForm">
+            <input type="hidden" name="withdrawal_id" id="rejectId">
+            <div class="form-group">
+                <label class="form-label">Reason *</label>
+                <select name="reason" class="form-input" required>
+                    <option value="">Select reason</option>
+                    <option value="Invalid wallet address">Invalid wallet address</option>
+                    <option value="Suspicious activity">Suspicious activity</option>
+                    <option value="Minimum not met">Minimum not met</option>
+                    <option value="Account verification required">Account verification required</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Additional Notes</label>
+                <textarea name="notes" class="form-input" rows="2" placeholder="Details..."></textarea>
+            </div>
+            <p class="text-warning" style="font-size: 0.9rem;">⚠ The amount will be refunded to the user's balance.</p>
+        </form>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('rejectModal')">CANCEL</button>
+            <button class="btn btn-danger" onclick="submitRejection()">CONFIRM REJECTION</button>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content pixel-border">
+        <div class="modal-header">
+            <h3 class="modal-title">WITHDRAWAL DETAILS</h3>
+        </div>
+        <div id="detailsContent">
+            <!-- Populated by JS -->
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('detailsModal')">CLOSE</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyWallet(address) {
+    navigator.clipboard.writeText(address);
+    showToast('Wallet address copied', 'success');
+}
+
+function approveWithdrawal(id) {
+    document.getElementById('approveId').value = id;
+    openModal('approveModal');
+}
+
+function rejectWithdrawal(id) {
+    document.getElementById('rejectId').value = id;
+    openModal('rejectModal');
+}
+
+async function submitApproval() {
+    const form = document.getElementById('approveForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/admin/api/withdrawal/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Withdrawal approved', 'success');
+            closeModal('approveModal');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to approve', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function submitRejection() {
+    const form = document.getElementById('rejectForm');
+    const formData = new FormData(form);
+    
+    if (!formData.get('reason')) {
+        showToast('Please select a reason', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/withdrawal/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Withdrawal rejected and refunded', 'success');
+            closeModal('rejectModal');
+            location.reload();
+        } else {
+            showToast(data.message || 'Failed to reject', 'error');
+        }
+    } catch (error) {
+        showToast('Connection error', 'error');
+    }
+}
+
+async function viewDetails(id) {
+    try {
+        const response = await fetch(`/admin/api/withdrawal/${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const w = data.withdrawal;
+            document.getElementById('detailsContent').innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">User</label>
+                    <p>${w.username || 'Anonymous'} (#${w.telegram_id})</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <p class="text-gold">${w.amount} DOGE (Net: ${w.net_amount} DOGE)</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wallet Address</label>
+                    <p style="word-break: break-all;"><code>${w.wallet_address}</code></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <p>${w.status.toUpperCase()}</p>
+                </div>
+                ${w.tx_hash ? `
+                <div class="form-group">
+                    <label class="form-label">Transaction Hash</label>
+                    <p style="word-break: break-all;"><code>${w.tx_hash}</code></p>
+                </div>
+                ` : ''}
+                ${w.rejection_reason ? `
+                <div class="form-group">
+                    <label class="form-label">Rejection Reason</label>
+                    <p class="text-danger">${w.rejection_reason}</p>
+                </div>
+                ` : ''}
+                <div class="form-group">
+                    <label class="form-label">Requested</label>
+                    <p>${w.created_at}</p>
+                </div>
+                ${w.processed_at ? `
+                <div class="form-group">
+                    <label class="form-label">Processed</label>
+                    <p>${w.processed_at}</p>
+                </div>
+                ` : ''}
+            `;
+            openModal('detailsModal');
+        }
+    } catch (error) {
+        showToast('Failed to load details', 'error');
+    }
+}
+</script>
+{% endblock %}

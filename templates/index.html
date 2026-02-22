@@ -1,1 +1,1638 @@
+{% extends "base.html" %}
 
+{% block title %}DogeQuest - Daily Rewards{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ═══════════════════════════════════════
+   ROOT VARIABLES
+═══════════════════════════════════════ */
+:root {
+  --px-bg:         #08080f;
+  --px-panel:      #0d0d1a;
+  --px-panel2:     #070710;
+  --px-gold:       #ffd700;
+  --px-gold2:      #ffb300;
+  --px-gold-dark:  #5a3a00;
+  --px-green:      #00e676;
+  --px-blue:       #40c4ff;
+  --px-red:        #ff3d71;
+  --px-text:       #dde0f0;
+  --px-muted:      #4a4a6e;
+  --px-border:     #1e1e3a;
+}
+
+/* ═══════════════════════════════════════
+   BASE RESET
+═══════════════════════════════════════ */
+.px-wrap *, .px-wrap *::before, .px-wrap *::after {
+  box-sizing: border-box;
+}
+
+/* ═══════════════════════════════════════
+   PAGE SHELL
+═══════════════════════════════════════ */
+.px-wrap {
+  font-family: 'Press Start 2P', monospace;
+  background: var(--px-bg);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pixel grid bg */
+.px-wrap::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* CRT scanlines */
+.px-wrap::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════
+   TICKER BAR
+═══════════════════════════════════════ */
+.px-ticker {
+  position: relative;
+  z-index: 20;
+  background: var(--px-gold);
+  overflow: hidden;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  border-bottom: 4px solid var(--px-gold-dark);
+}
+.px-ticker span {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 0.45rem;
+  color: #0a0800;
+  animation: ticker-move 28s linear infinite;
+  letter-spacing: 0.08em;
+}
+@keyframes ticker-move {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+
+/* ═══════════════════════════════════════
+   PAGE CONTAINER
+═══════════════════════════════════════ */
+.px-page {
+  position: relative;
+  z-index: 5;
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 22px 16px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ═══════════════════════════════════════
+   PIXEL CARD
+═══════════════════════════════════════ */
+.px-card {
+  background: var(--px-panel);
+  border: 2px solid var(--px-border);
+  padding: 20px;
+  position: relative;
+  /* pixel-style drop shadow */
+  box-shadow: 4px 4px 0 0 #030308, 0 0 0 1px #0a0a18;
+  animation: card-in 0.35s ease both;
+}
+.px-card:nth-child(1) { animation-delay: 0.04s; }
+.px-card:nth-child(2) { animation-delay: 0.10s; }
+.px-card:nth-child(3) { animation-delay: 0.16s; }
+.px-card:nth-child(4) { animation-delay: 0.22s; }
+.px-card:nth-child(5) { animation-delay: 0.28s; }
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Corner accents */
+.px-card::before,
+.px-card::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  border-color: var(--px-gold);
+  border-style: solid;
+}
+.px-card::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+.px-card::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+
+/* Gold card variant */
+.px-card-gold {
+  background: #08080e;
+  border-color: var(--px-gold-dark);
+  box-shadow: 4px 4px 0 0 #020201, 0 0 0 1px #2a1800, 0 0 40px rgba(255,215,0,0.06);
+}
+.px-card-gold::before,
+.px-card-gold::after { border-color: var(--px-gold) !important; }
+
+/* ═══════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════ */
+.px-label {
+  font-size: 0.42rem;
+  color: var(--px-muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.px-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--px-border);
+}
+
+/* ═══════════════════════════════════════
+   WELCOME CARD
+═══════════════════════════════════════ */
+.px-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.px-welcome-left { flex: 1; }
+.px-welcome-eyebrow {
+  font-size: 0.38rem;
+  color: var(--px-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.px-welcome-name {
+  font-size: 0.9rem;
+  color: var(--px-gold);
+  text-shadow: 2px 2px 0 var(--px-gold-dark), 0 0 16px rgba(255,215,0,0.25);
+  line-height: 1.5;
+}
+.px-welcome-sub {
+  font-size: 0.36rem;
+  color: var(--px-muted);
+  margin-top: 8px;
+  letter-spacing: 0.06em;
+  line-height: 2;
+}
+
+/* CSS pixel dog */
+.px-doge-art {
+  font-size: 2.4rem;
+  line-height: 1;
+  animation: doge-bounce 0.9s steps(1) infinite;
+}
+@keyframes doge-bounce {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* ═══════════════════════════════════════
+   MINING DASHBOARD — ULTRA PRO
+═══════════════════════════════════════ */
+@keyframes flicker {
+  0%,91%,93%,95%,100% { opacity: 1; }
+  92%,94% { opacity: 0.55; }
+}
+
+/* ── WRAPPER ──────────────────────────── */
+.mdb-card {
+  background: #05050d;
+  border: 2px solid #1a1a2e;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  box-shadow: 4px 4px 0 0 #020204, 0 0 0 1px #0e0e20, 0 0 60px rgba(255,215,0,0.04);
+  animation: card-in 0.35s .10s ease both;
+}
+/* Corner accents gold */
+.mdb-card::before,.mdb-card::after {
+  content:''; position:absolute; width:12px; height:12px;
+  border-color:var(--px-gold); border-style:solid; z-index:10;
+}
+.mdb-card::before { top:-2px; left:-2px; border-width:3px 0 0 3px; }
+.mdb-card::after  { bottom:-2px; right:-2px; border-width:0 3px 3px 0; }
+
+/* ambient glow behind card */
+.mdb-ambglow {
+  position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+  width:340px; height:220px;
+  background:radial-gradient(ellipse,rgba(255,215,0,0.055) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+  animation: mdb-glow-pulse 3s ease-in-out infinite;
+}
+.mdb-ambglow.green {
+  background:radial-gradient(ellipse,rgba(0,230,118,0.07) 0%,transparent 70%);
+}
+@keyframes mdb-glow-pulse {
+  0%,100%{ opacity:0.6; transform:translateX(-50%) scaleY(1); }
+  50%    { opacity:1;   transform:translateX(-50%) scaleY(1.15); }
+}
+
+/* ── TOP HEADER BAR ─────────────────── */
+.mdb-header {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px;
+  background:linear-gradient(90deg,rgba(255,215,0,0.05) 0%,transparent 60%);
+  border-bottom:1px solid #1a1a2e;
+}
+.mdb-header-left { display:flex; align-items:center; gap:10px; }
+.mdb-tier-badge {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.34rem; letter-spacing:0.12em;
+  padding:4px 10px;
+  border:1px solid;
+}
+.mdb-tier-badge.basic    { color:#9090b8; border-color:#2a2a4a; background:rgba(144,144,184,0.06); }
+.mdb-tier-badge.bronze   { color:#ff8a65; border-color:rgba(255,138,101,0.35); background:rgba(255,138,101,0.06); }
+.mdb-tier-badge.silver   { color:#b0bec5; border-color:rgba(176,190,197,0.35); background:rgba(176,190,197,0.06); }
+.mdb-tier-badge.gold     { color:var(--px-gold); border-color:rgba(255,215,0,0.35); background:rgba(255,215,0,0.06); }
+.mdb-tier-badge.diamond  { color:#80deea; border-color:rgba(128,222,234,0.35); background:rgba(128,222,234,0.06); }
+.mdb-tier-badge.legendary{ color:#ce93d8; border-color:rgba(206,147,216,0.35); background:rgba(206,147,216,0.07); text-shadow:0 0 10px rgba(206,147,216,0.5); }
+
+.mdb-header-title {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.52rem; color:var(--px-text); letter-spacing:0.05em;
+}
+
+.mdb-status-pill {
+  display:flex; align-items:center; gap:6px;
+  font-family:'Press Start 2P',monospace;
+  font-size:0.32rem; letter-spacing:0.1em;
+  padding:5px 10px;
+  border:1px solid;
+}
+.mdb-status-pill.on  { color:#00e676; border-color:rgba(0,230,118,0.3); background:rgba(0,230,118,0.06); }
+.mdb-status-pill.off { color:#4a4a6e; border-color:#1a1a2e; background:transparent; }
+.mdb-led {
+  width:7px; height:7px;
+  border-radius:0;
+  background:#00e676;
+  box-shadow:0 0 8px rgba(0,230,118,0.9);
+  animation:mdb-blink 1s steps(1) infinite;
+}
+.mdb-led.off { background:#2a2a3e; box-shadow:none; animation:none; }
+@keyframes mdb-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── CANVAS ZONE ─────────────────────── */
+.mdb-canvas-zone {
+  position:relative; z-index:2;
+  padding:16px 18px 0;
+  display:flex; gap:14px; align-items:stretch;
+}
+
+/* GPU Rig visual */
+.mdb-rig {
+  flex-shrink:0;
+  width:96px;
+  display:flex; flex-direction:column; gap:5px;
+  padding:10px 8px;
+  background:#030308;
+  border:2px solid #1a1a2e;
+  position:relative;
+}
+.mdb-rig::before {
+  content:'RIG'; position:absolute; top:-1px; left:6px;
+  font-family:'Press Start 2P',monospace; font-size:0.26rem;
+  color:#2a2a4a; letter-spacing:0.1em;
+}
+/* GPU slot */
+.mdb-gpu-slot {
+  background:#07070f;
+  border:1px solid #1a1a2e;
+  padding:5px 6px;
+  display:flex; align-items:center; gap:5px;
+  position:relative;
+}
+.mdb-gpu-body {
+  flex:1; height:8px;
+  background:linear-gradient(90deg,#0a0a1a 0%,#12121f 100%);
+  border:1px solid #1e1e3a;
+  position:relative; overflow:hidden;
+}
+.mdb-gpu-heat {
+  position:absolute; left:0; top:0; bottom:0;
+  background:linear-gradient(90deg,transparent,var(--px-gold));
+  animation:mdb-heat var(--hd,2s) ease-in-out var(--hdel,0s) infinite alternate;
+}
+@keyframes mdb-heat { from{width:20%} to{width:85%} }
+/* fan */
+.mdb-gpu-fan {
+  width:10px; height:10px; flex-shrink:0;
+  border:1px solid #2a2a4a;
+  display:flex; align-items:center; justify-content:center;
+  font-size:8px; line-height:1;
+  animation:mdb-fan-spin var(--fs,0.4s) linear infinite;
+}
+.mdb-gpu-fan.fast { animation-duration:0.18s; }
+@keyframes mdb-fan-spin { to{transform:rotate(360deg)} }
+/* LEDs on slot */
+.mdb-slot-led {
+  width:4px; height:4px;
+  background:var(--px-green);
+  box-shadow:0 0 4px rgba(0,230,118,0.8);
+  flex-shrink:0;
+  animation:mdb-blink var(--ld,1.3s) steps(1) var(--ldel,0s) infinite;
+}
+
+/* Power supply unit at bottom */
+.mdb-psu {
+  margin-top:2px;
+  background:#030308;
+  border:1px solid #1a1a2e;
+  padding:4px 6px;
+  display:flex; align-items:center; gap:4px;
+}
+.mdb-psu-bar {
+  flex:1; height:4px; background:#0a0a18; border:1px solid #1a1a2e;
+  overflow:hidden;
+}
+.mdb-psu-fill {
+  height:100%;
+  background:linear-gradient(90deg,#00c853,#00e676);
+  animation:mdb-psu-pulse 2s ease-in-out infinite;
+}
+@keyframes mdb-psu-pulse {
+  0%,100%{width:70%;opacity:0.7} 50%{width:95%;opacity:1}
+}
+.mdb-psu-lbl {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.22rem; color:#2a3a2e; letter-spacing:0.08em;
+}
+
+/* ── LIVE EARNINGS PANEL ─────────────── */
+.mdb-live-panel {
+  flex:1; display:flex; flex-direction:column; gap:8px;
+}
+
+/* Big live counter */
+.mdb-live-counter {
+  background:#030308;
+  border:2px solid #1a1a2e;
+  padding:14px 12px;
+  text-align:center;
+  position:relative; overflow:hidden;
+}
+/* scan line */
+.mdb-live-counter::before {
+  content:''; position:absolute; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,230,118,0.4),transparent);
+  animation:mdb-scan 2.5s linear infinite;
+}
+@keyframes mdb-scan { from{top:-2px} to{top:102%} }
+.mdb-live-lbl {
+  display:block; font-family:'Press Start 2P',monospace;
+  font-size:0.28rem; color:#4a4a6e; letter-spacing:0.14em;
+  margin-bottom:6px;
+}
+.mdb-live-amount {
+  display:block; font-family:'Press Start 2P',monospace;
+  font-size:0.9rem;
+  color:var(--px-green);
+  text-shadow:0 0 20px rgba(0,230,118,0.6), 2px 2px 0 #003318;
+  letter-spacing:0.04em; line-height:1.2;
+}
+.mdb-live-unit {
+  display:block; font-family:'Press Start 2P',monospace;
+  font-size:0.3rem; color:#3a4a3e; letter-spacing:0.1em; margin-top:5px;
+}
+
+/* Rate pill */
+.mdb-rate-row {
+  display:flex; gap:6px;
+}
+.mdb-rate-cell {
+  flex:1; background:#030308; border:1px solid #1a1a2e;
+  padding:8px 6px; text-align:center;
+}
+.mdb-rate-val {
+  display:block; font-family:'Press Start 2P',monospace;
+  font-size:0.46rem; color:var(--px-gold);
+  text-shadow:1px 1px 0 var(--px-gold-dark);
+  margin-bottom:4px;
+}
+.mdb-rate-val.blue { color:var(--px-blue); text-shadow:0 0 8px rgba(64,196,255,0.4); }
+.mdb-rate-lbl {
+  font-size:0.26rem; color:#4a4a6e; letter-spacing:0.1em;
+}
+
+/* ── PROGRESS / HASHRATE SECTION ──────── */
+.mdb-progress-section {
+  position:relative; z-index:2;
+  padding:14px 18px;
+  border-top:1px solid #0e0e1a;
+}
+.mdb-progress-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:8px;
+}
+.mdb-progress-title {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.3rem; color:#4a4a6e; letter-spacing:0.12em;
+}
+.mdb-progress-pct {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.36rem; color:var(--px-gold);
+}
+.mdb-progress-track {
+  height:12px;
+  background:#030308;
+  border:1px solid #1a1a2e;
+  overflow:hidden; position:relative;
+}
+/* segmented fill */
+.mdb-progress-fill {
+  height:100%;
+  background:linear-gradient(90deg,#003318 0%,#00c853 60%,#00e676 100%);
+  position:relative;
+  transition:width 1s ease;
+}
+/* shimmer */
+.mdb-progress-fill::after {
+  content:''; position:absolute;
+  top:0; bottom:0; width:30px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+  animation:mdb-shimmer 1.4s ease-in-out infinite;
+  right:-30px;
+}
+@keyframes mdb-shimmer { from{right:-30px} to{right:110%} }
+/* pixel blocks overlay */
+.mdb-progress-blocks {
+  position:absolute; inset:0; display:flex; gap:2px; padding:2px;
+  pointer-events:none;
+}
+.mdb-pb {
+  flex:1; height:100%;
+  background:rgba(0,0,0,0.25);
+}
+
+/* ── HASHRATE OSCILLOSCOPE ───────────── */
+.mdb-osc-wrap {
+  position:relative; z-index:2;
+  padding:0 18px 14px;
+}
+.mdb-osc-header {
+  display:flex; justify-content:space-between; margin-bottom:6px;
+}
+.mdb-osc-lbl {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.28rem; color:#4a4a6e; letter-spacing:0.12em;
+}
+.mdb-osc-val {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.32rem; color:var(--px-green);
+  text-shadow:0 0 8px rgba(0,230,118,0.5);
+}
+.mdb-osc {
+  height:36px;
+  background:#030308;
+  border:1px solid #1a1a2e;
+  overflow:hidden; position:relative;
+}
+/* horizontal grid lines */
+.mdb-osc::before {
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(
+    0deg, transparent, transparent 11px,
+    rgba(255,255,255,0.03) 11px, rgba(255,255,255,0.03) 12px
+  );
+}
+canvas#oscCanvas {
+  display:block; width:100%; height:36px;
+}
+
+/* ── TERMINAL LOG ────────────────────── */
+.mdb-terminal {
+  position:relative; z-index:2;
+  margin:0 18px 14px;
+  background:#020208;
+  border:1px solid #0e0e1a;
+}
+.mdb-terminal-bar {
+  background:#0a0a18; padding:4px 10px;
+  display:flex; align-items:center; gap:6px;
+  border-bottom:1px solid #0e0e1a;
+}
+.mdb-terminal-dot {
+  width:5px; height:5px;
+}
+.mdb-terminal-dot:nth-child(1){ background:#ff5f56; }
+.mdb-terminal-dot:nth-child(2){ background:#ffbd2e; }
+.mdb-terminal-dot:nth-child(3){ background:#27c93f; }
+.mdb-terminal-title {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.24rem; color:#2a2a4a; letter-spacing:0.1em; flex:1; text-align:center;
+}
+.mdb-terminal-body {
+  height:56px; overflow:hidden; padding:6px 10px;
+  position:relative;
+}
+.mdb-log-stream {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.28rem; line-height:2.2;
+  letter-spacing:0.04em;
+}
+.mdb-log-line { display:block; }
+.mdb-log-line.ok    { color:#00e676; }
+.mdb-log-line.info  { color:#40c4ff; }
+.mdb-log-line.warn  { color:var(--px-gold); }
+.mdb-log-line.hash  { color:#9090b8; }
+
+/* ── MACHINES LIST ───────────────────── */
+.mdb-machines {
+  position:relative; z-index:2;
+  padding:0 18px 14px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.mdb-machine-row {
+  background:#030308; border:1px solid #1a1a2e;
+  display:flex; align-items:center; gap:10px; padding:8px 10px;
+  position:relative;
+}
+.mdb-machine-row::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:2px; background:var(--px-green);
+  box-shadow:0 0 6px rgba(0,230,118,0.5);
+}
+.mdb-machine-icon {
+  width:28px; height:28px; flex-shrink:0;
+  background:#07070f; border:1px solid #1a1a2e;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+}
+.mdb-machine-name {
+  flex:1; font-family:'Press Start 2P',monospace;
+  font-size:0.36rem; color:var(--px-text);
+  letter-spacing:0.04em;
+}
+.mdb-machine-rate {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.36rem; color:var(--px-green);
+  text-shadow:0 0 6px rgba(0,230,118,0.4);
+}
+
+/* ── FOOTER / CLAIM AREA ─────────────── */
+.mdb-footer {
+  position:relative; z-index:2;
+  padding:14px 18px 18px;
+  border-top:1px solid #0e0e1a;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+/* Claim button */
+.mdb-claim-btn {
+  width:100%; padding:18px 16px;
+  font-family:'Press Start 2P',monospace;
+  font-size:0.52rem; letter-spacing:0.08em;
+  background:var(--px-green); color:#020f06;
+  border:2px solid #00c853;
+  box-shadow:5px 5px 0 0 #002a12;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
+  position:relative; overflow:hidden;
+  transition:transform .07s, box-shadow .07s;
+  animation:mdb-claim-pulse 2.5s ease-in-out infinite;
+}
+@keyframes mdb-claim-pulse {
+  0%,100%{ box-shadow:5px 5px 0 0 #002a12, 0 0 0 0 rgba(0,230,118,0); }
+  50%    { box-shadow:5px 5px 0 0 #002a12, 0 0 20px 4px rgba(0,230,118,0.18); }
+}
+.mdb-claim-btn::before {
+  content:''; position:absolute; top:-2px; left:-100%; width:60%; height:calc(100%+4px);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
+  animation:mdb-claim-shine 3s ease-in-out infinite;
+}
+@keyframes mdb-claim-shine { to{left:150%} }
+.mdb-claim-btn:hover  { transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 #002a12; animation:none; }
+.mdb-claim-btn:active { transform:translate(3px,3px);  box-shadow:1px 1px 0 0 #002a12; }
+.mdb-claim-btn:disabled { opacity:.45; cursor:not-allowed; transform:none; animation:none; }
+
+/* Sub link */
+.mdb-sub-link {
+  display:block; width:100%; padding:12px;
+  font-family:'Press Start 2P',monospace;
+  font-size:0.4rem; letter-spacing:0.07em;
+  background:transparent; color:var(--px-gold);
+  border:1px solid rgba(255,215,0,0.2);
+  text-decoration:none; text-align:center;
+  transition:transform .07s, border-color .1s, box-shadow .07s;
+}
+.mdb-sub-link:hover {
+  transform:translate(-1px,-1px);
+  border-color:rgba(255,215,0,0.5);
+  box-shadow:3px 3px 0 0 var(--px-gold-dark);
+  color:var(--px-gold);
+}
+
+/* ── NO PLAN STATE ───────────────────── */
+.mdb-noplan {
+  padding:24px 18px 20px;
+  position:relative; z-index:2;
+  text-align:center;
+}
+.mdb-noplan-rig {
+  width:64px; height:64px;
+  background:#030308; border:2px solid #1a1a2e;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 16px;
+  font-size:2rem; filter:grayscale(1) opacity(0.35);
+}
+.mdb-noplan-title {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.52rem; color:#4a4a6e; letter-spacing:0.06em;
+  margin-bottom:10px;
+}
+.mdb-noplan-sub {
+  font-size:0.32rem; color:#2a2a4a;
+  letter-spacing:0.06em; line-height:2.4; margin-bottom:20px;
+}
+/* mini plan preview table */
+.mdb-plan-preview {
+  display:flex; flex-direction:column; gap:5px; margin-bottom:18px;
+}
+.mdb-plan-preview-row {
+  display:flex; align-items:center; gap:8px;
+  background:#030308; border:1px solid #1a1a2e;
+  padding:7px 10px;
+}
+.mdb-plan-preview-tier {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.3rem; min-width:54px; letter-spacing:0.08em;
+}
+.mdb-plan-preview-rate {
+  flex:1; font-family:'Press Start 2P',monospace;
+  font-size:0.3rem; color:#4a4a6e;
+}
+.mdb-plan-preview-earn {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.3rem; color:var(--px-green);
+  text-shadow:0 0 6px rgba(0,230,118,0.4);
+}
+/* CTA */
+.mdb-cta-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:18px;
+  font-family:'Press Start 2P',monospace;
+  font-size:0.52rem; letter-spacing:0.07em;
+  background:var(--px-gold); color:#040300;
+  border:2px solid var(--px-gold2);
+  box-shadow:5px 5px 0 0 var(--px-gold-dark), 0 0 30px rgba(255,215,0,0.2);
+  text-decoration:none;
+  position:relative; overflow:hidden;
+  transition:transform .07s, box-shadow .07s;
+}
+.mdb-cta-btn::before {
+  content:''; position:absolute; top:0; left:-80%; width:50%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+  animation:mdb-cta-shine 2.5s ease-in-out infinite;
+}
+@keyframes mdb-cta-shine { to{left:130%} }
+.mdb-cta-btn:hover  { transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 var(--px-gold-dark), 0 0 40px rgba(255,215,0,0.35); color:#040300; }
+.mdb-cta-btn:active { transform:translate(3px,3px); box-shadow:1px 1px 0 0 var(--px-gold-dark); }
+
+/* ── UPTIME DISPLAY ──────────────────── */
+.mdb-uptime-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 18px;
+  border-top:1px solid #0a0a18;
+  position:relative; z-index:2;
+}
+.mdb-uptime-item {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.mdb-uptime-val {
+  font-family:'Press Start 2P',monospace;
+  font-size:0.42rem; color:var(--px-text);
+}
+.mdb-uptime-lbl {
+  font-size:0.26rem; color:#3a3a5a; letter-spacing:0.1em;
+}
+.mdb-uptime-sep {
+  width:1px; height:24px; background:#1a1a2e;
+}
+
+/* ── BUTTONS ─────────────────────────── */
+
+/* (legacy day/reward classes — kept for compat) */
+.px-days {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.px-day {
+  width: 38px; height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.38rem;
+  font-family: 'Press Start 2P', monospace;
+}
+.px-day.completed {
+  background: var(--px-gold);
+  border: 2px solid var(--px-gold2);
+  box-shadow: 3px 3px 0 0 var(--px-gold-dark), 0 0 14px rgba(255,215,0,0.35);
+  color: #000;
+  font-size: 0.65rem;
+}
+.px-day.current {
+  background: #120e00;
+  border: 2px solid var(--px-gold);
+  color: var(--px-gold);
+  animation: blink-border 1.1s steps(1) infinite;
+}
+@keyframes blink-border {
+  0%,100% { box-shadow: 0 0 0 0 transparent, 0 0 10px rgba(255,215,0,0.5); border-color: var(--px-gold); }
+  50%      { box-shadow: 0 0 0 3px rgba(255,215,0,0.25), 0 0 20px rgba(255,215,0,0.6); border-color: var(--px-gold2); }
+}
+.px-day.locked {
+  background: var(--px-panel2);
+  border: 2px solid var(--px-border);
+  color: var(--px-muted);
+}
+
+/* Reward display */
+.px-reward-display {
+  background: #050509;
+  border: 2px solid var(--px-border);
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.4);
+  padding: 20px 16px;
+  text-align: center;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+/* scanning line */
+.px-reward-display::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), transparent);
+  animation: scan-line 3s linear infinite;
+}
+@keyframes scan-line {
+  from { top: -4px; }
+  to   { top: 110%; }
+}
+
+.px-reward-amount {
+  display: block;
+  font-size: 1.35rem;
+  color: var(--px-gold);
+  text-shadow: 0 0 18px rgba(255,215,0,0.55), 4px 4px 0 var(--px-gold-dark);
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+.px-reward-unit {
+  display: block;
+  font-size: 0.4rem;
+  color: var(--px-muted);
+  letter-spacing: 0.18em;
+}
+.px-bonus-pill {
+  display: inline-block;
+  margin-top: 12px;
+  background: #001a0b;
+  border: 2px solid var(--px-green);
+  color: var(--px-green);
+  font-size: 0.38rem;
+  padding: 5px 10px;
+  text-shadow: 0 0 8px rgba(0,230,118,0.5);
+  letter-spacing: 0.08em;
+}
+
+/* ═══════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════ */
+.px-btn {
+  width: 100%;
+  padding: 17px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.07em;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  transition: transform 0.07s, box-shadow 0.07s;
+  line-height: 1;
+}
+.px-btn-gold {
+  background: var(--px-gold);
+  color: #050400;
+  border: 2px solid var(--px-gold2);
+  box-shadow: 4px 4px 0 0 var(--px-gold-dark), 0 0 20px rgba(255,215,0,0.28);
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.25);
+}
+.px-btn-gold:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 0 var(--px-gold-dark), 0 0 30px rgba(255,215,0,0.45); }
+.px-btn-gold:active { transform: translate(3px,3px);  box-shadow: 1px 1px 0 0 var(--px-gold-dark); }
+
+.px-btn-disabled {
+  background: var(--px-panel2);
+  color: var(--px-muted);
+  border: 2px solid var(--px-border);
+  box-shadow: 3px 3px 0 0 #030306;
+  cursor: not-allowed;
+}
+.px-btn-blue {
+  background: #001e3a;
+  color: var(--px-blue);
+  border: 2px solid #004a7a;
+  box-shadow: 4px 4px 0 0 #000d1a, 0 0 14px rgba(64,196,255,0.12);
+  text-shadow: 0 0 8px rgba(64,196,255,0.4);
+  text-decoration: none;
+}
+.px-btn-blue:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 0 #000d1a, 0 0 24px rgba(64,196,255,0.28); color: #fff; }
+.px-btn-blue:active { transform: translate(3px,3px);  box-shadow: 1px 1px 0 0 #000d1a; }
+
+.px-btn-ghost {
+  background: transparent;
+  color: var(--px-text);
+  border: 2px solid var(--px-border);
+  box-shadow: 3px 3px 0 0 #030308;
+  text-decoration: none;
+}
+.px-btn-ghost:hover  { transform: translate(-2px,-2px); color: var(--px-gold); border-color: var(--px-gold-dark); box-shadow: 5px 5px 0 0 #030308; }
+.px-btn-ghost:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 #030308; }
+
+.px-claimed-msg {
+  text-align: center;
+  font-size: 0.36rem;
+  color: var(--px-muted);
+  margin-top: 14px;
+  letter-spacing: 0.06em;
+  line-height: 2.4;
+}
+
+/* ═══════════════════════════════════════
+   STATS GRID
+═══════════════════════════════════════ */
+.px-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.px-stat-box {
+  background: var(--px-panel2);
+  border: 2px solid var(--px-border);
+  box-shadow: 3px 3px 0 0 #020205;
+  padding: 16px 10px;
+  text-align: center;
+}
+.px-stat-val {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--px-gold);
+  text-shadow: 2px 2px 0 var(--px-gold-dark), 0 0 10px rgba(255,215,0,0.2);
+  margin-bottom: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.px-stat-lbl {
+  display: block;
+  font-size: 0.36rem;
+  color: var(--px-muted);
+  letter-spacing: 0.12em;
+}
+
+/* ═══════════════════════════════════════
+   ACTIONS
+═══════════════════════════════════════ */
+.px-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ═══════════════════════════════════════
+   QUEST LOG
+═══════════════════════════════════════ */
+.px-quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.px-quest-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--px-panel2);
+  border: 2px solid var(--px-border);
+  padding: 12px;
+  position: relative;
+}
+.px-quest-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--px-gold);
+}
+.px-quest-num {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  background: var(--px-gold);
+  color: #0a0800;
+  font-size: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 0 var(--px-gold-dark);
+}
+.px-quest-text {
+  font-size: 0.4rem;
+  color: #7070a0;
+  line-height: 2.4;
+  letter-spacing: 0.04em;
+}
+.px-quest-text strong { color: var(--px-text); }
+
+/* ═══════════════════════════════════════
+   FLOATING PIXEL SPARKLES
+═══════════════════════════════════════ */
+.px-sparkles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.px-sp {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: var(--px-gold);
+  opacity: 0;
+  animation: sparkle-float var(--d) ease-in-out var(--del) infinite;
+}
+@keyframes sparkle-float {
+  0%      { opacity: 0;   transform: translateY(0) scale(1); }
+  20%     { opacity: 0.5; }
+  80%     { opacity: 0.3; }
+  100%    { opacity: 0;   transform: translateY(-40px) scale(0.5); }
+}
+
+@media (max-width: 400px) {
+  .px-welcome-name { font-size: 0.7rem; }
+  .px-ci-title { font-size: 0.58rem; }
+  .px-reward-amount { font-size: 1rem; }
+  .px-day { width: 32px; height: 32px; }
+}
+</style>
+
+<!-- Sparkles -->
+<div class="px-sparkles" aria-hidden="true">
+  <div class="px-sp" style="top:12%;left:10%;--d:4s;--del:0s;"></div>
+  <div class="px-sp" style="top:25%;left:88%;--d:5s;--del:1s;"></div>
+  <div class="px-sp" style="top:50%;left:5%;--d:3.5s;--del:0.5s;"></div>
+  <div class="px-sp" style="top:65%;left:75%;--d:4.5s;--del:2s;"></div>
+  <div class="px-sp" style="top:80%;left:40%;--d:3s;--del:1.5s;background:#40c4ff;"></div>
+  <div class="px-sp" style="top:35%;left:55%;--d:6s;--del:0.3s;background:#00e676;"></div>
+  <div class="px-sp" style="top:8%;left:65%;--d:4s;--del:2.5s;"></div>
+  <div class="px-sp" style="top:90%;left:20%;--d:5s;--del:0.8s;background:#40c4ff;"></div>
+</div>
+
+<div class="px-wrap">
+
+  <!-- Ticker -->
+  <div class="px-ticker" aria-hidden="true">
+    <span>
+      ★ DOGEQUEST DAILY REWARDS ★&nbsp;&nbsp;&nbsp;&nbsp;
+      EARN DOGE EVERY DAY &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      COMPLETE QUESTS FOR BONUS DOGE &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      INVITE FRIENDS &amp; MULTIPLY YOUR EARNINGS &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+      MUCH WOW. VERY EARN. SO DOGE. &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <div class="px-page">
+
+    <!-- WELCOME -->
+    <div class="px-card">
+      <div class="px-welcome">
+        <div class="px-welcome-left">
+          <div class="px-welcome-eyebrow">▶ PLAYER ONLINE</div>
+          <div class="px-welcome-name">{{ user.first_name or 'PLAYER' }}!</div>
+          <div class="px-welcome-sub">READY FOR YOUR DAILY QUEST?</div>
+        </div>
+        <div class="px-doge-art" aria-hidden="true">🐕</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MINING DASHBOARD — ULTRA PRO
+    ══════════════════════════════════════ -->
+    <div class="mdb-card" id="miningCard">
+      <div class="mdb-ambglow" id="mdbAmbglow"></div>
+
+      <!-- ── HEADER BAR ── -->
+      <div class="mdb-header">
+        <div class="mdb-header-left">
+          <div class="mdb-tier-badge" id="mdbTierBadge">LOADING</div>
+          <span class="mdb-header-title">MINING RIG</span>
+        </div>
+        <div class="mdb-status-pill off" id="mdbStatusPill">
+          <div class="mdb-led off" id="mdbLed"></div>
+          <span id="mdbStatusTxt">OFFLINE</span>
+        </div>
+      </div>
+
+      <!-- ══ ACTIVE STATE ══ -->
+      <div id="mdbActiveZone" style="display:none">
+
+        <!-- ── RIG VISUAL + LIVE COUNTER ── -->
+        <div class="mdb-canvas-zone">
+          <!-- GPU Rig -->
+          <div class="mdb-rig" id="mdbRig">
+            <div class="mdb-gpu-slot">
+              <div class="mdb-slot-led" style="--ld:1.1s;--ldel:0s"></div>
+              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:1.8s;--hdel:0s"></div></div>
+              <div class="mdb-gpu-fan fast">✦</div>
+            </div>
+            <div class="mdb-gpu-slot">
+              <div class="mdb-slot-led" style="--ld:0.9s;--ldel:0.3s"></div>
+              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:2.2s;--hdel:0.4s"></div></div>
+              <div class="mdb-gpu-fan fast">✦</div>
+            </div>
+            <div class="mdb-gpu-slot">
+              <div class="mdb-slot-led" style="--ld:1.3s;--ldel:0.6s"></div>
+              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:1.6s;--hdel:0.2s"></div></div>
+              <div class="mdb-gpu-fan">✦</div>
+            </div>
+            <div class="mdb-psu">
+              <div class="mdb-psu-bar"><div class="mdb-psu-fill"></div></div>
+              <span class="mdb-psu-lbl">PSU</span>
+            </div>
+          </div>
+
+          <!-- Live earnings + rate -->
+          <div class="mdb-live-panel">
+            <div class="mdb-live-counter">
+              <span class="mdb-live-lbl">⛏ TOTAL PENDING</span>
+              <span class="mdb-live-amount" id="mdbLiveAmount">0.00000000</span>
+              <span class="mdb-live-unit">DOGE</span>
+            </div>
+            <div class="mdb-rate-row">
+              <div class="mdb-rate-cell">
+                <span class="mdb-rate-val" id="mdbRateHr">—</span>
+                <span class="mdb-rate-lbl">PER HOUR</span>
+              </div>
+              <div class="mdb-rate-cell">
+                <span class="mdb-rate-val blue" id="mdbRateDay">—</span>
+                <span class="mdb-rate-lbl">PER DAY</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PROGRESS BAR ── -->
+        <div class="mdb-progress-section">
+          <div class="mdb-progress-header">
+            <span class="mdb-progress-title">⚡ MINING PROGRESS</span>
+            <span class="mdb-progress-pct" id="mdbPct">0%</span>
+          </div>
+          <div class="mdb-progress-track">
+            <div class="mdb-progress-fill" id="mdbProgressFill" style="width:0%">
+              <div class="mdb-progress-blocks">
+                <div class="mdb-pb"></div><div class="mdb-pb"></div><div class="mdb-pb"></div>
+                <div class="mdb-pb"></div><div class="mdb-pb"></div><div class="mdb-pb"></div>
+                <div class="mdb-pb"></div><div class="mdb-pb"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── OSCILLOSCOPE ── -->
+        <div class="mdb-osc-wrap">
+          <div class="mdb-osc-header">
+            <span class="mdb-osc-lbl">HASHRATE MONITOR</span>
+            <span class="mdb-osc-val" id="mdbHashVal">0 MH/s</span>
+          </div>
+          <div class="mdb-osc">
+            <canvas id="oscCanvas" height="36"></canvas>
+          </div>
+        </div>
+
+        <!-- ── UPTIME ROW ── -->
+        <div class="mdb-uptime-row">
+          <div class="mdb-uptime-item">
+            <span class="mdb-uptime-val" id="mdbUptimeMachines">1</span>
+            <span class="mdb-uptime-lbl">MACHINES</span>
+          </div>
+          <div class="mdb-uptime-sep"></div>
+          <div class="mdb-uptime-item">
+            <span class="mdb-uptime-val" id="mdbUptimePlan">—</span>
+            <span class="mdb-uptime-lbl">PLAN</span>
+          </div>
+          <div class="mdb-uptime-sep"></div>
+          <div class="mdb-uptime-item">
+            <span class="mdb-uptime-val" id="mdbUptimeExp">—</span>
+            <span class="mdb-uptime-lbl">EXPIRES</span>
+          </div>
+          <div class="mdb-uptime-sep"></div>
+          <div class="mdb-uptime-item">
+            <span class="mdb-uptime-val" id="mdbUptimeSince">—</span>
+            <span class="mdb-uptime-lbl">UPTIME</span>
+          </div>
+        </div>
+
+        <!-- ── TERMINAL LOG ── -->
+        <div class="mdb-terminal">
+          <div class="mdb-terminal-bar">
+            <div class="mdb-terminal-dot"></div>
+            <div class="mdb-terminal-dot"></div>
+            <div class="mdb-terminal-dot"></div>
+            <span class="mdb-terminal-title">MINING CONSOLE</span>
+          </div>
+          <div class="mdb-terminal-body">
+            <div class="mdb-log-stream" id="mdbLogStream"></div>
+          </div>
+        </div>
+
+        <!-- ── FOOTER ACTIONS ── -->
+        <div class="mdb-footer">
+          <button class="mdb-claim-btn" id="mdbClaimBtn" onclick="MDB.claim()" disabled>
+            ⏳ LOADING REWARDS...
+          </button>
+          <a class="mdb-sub-link" href="/mining">⛏ MANAGE MINING PLANS →</a>
+        </div>
+
+      </div>
+
+      <!-- ══ NO PLAN STATE ══ -->
+      <div id="mdbNoplanZone">
+        <div class="mdb-noplan">
+          <div class="mdb-noplan-rig">⛏</div>
+          <div class="mdb-noplan-title">RIG OFFLINE</div>
+          <div class="mdb-noplan-sub">PURCHASE A PLAN TO START<br>EARNING DOGE AUTOMATICALLY</div>
+
+          <!-- Plan preview -->
+          <div class="mdb-plan-preview">
+            <div class="mdb-plan-preview-row">
+              <span class="mdb-plan-preview-tier" style="color:#ff8a65">🔥 BRONZE</span>
+              <span class="mdb-plan-preview-rate">STARTER TIER</span>
+              <span class="mdb-plan-preview-earn">EARN DOGE/HR</span>
+            </div>
+            <div class="mdb-plan-preview-row">
+              <span class="mdb-plan-preview-tier" style="color:#b0bec5">🛡 SILVER</span>
+              <span class="mdb-plan-preview-rate">INTERMEDIATE</span>
+              <span class="mdb-plan-preview-earn">2× FASTER</span>
+            </div>
+            <div class="mdb-plan-preview-row">
+              <span class="mdb-plan-preview-tier" style="color:var(--px-gold)">★ GOLD</span>
+              <span class="mdb-plan-preview-rate">ADVANCED</span>
+              <span class="mdb-plan-preview-earn">5× FASTER</span>
+            </div>
+            <div class="mdb-plan-preview-row">
+              <span class="mdb-plan-preview-tier" style="color:#ce93d8">♛ LEGENDARY</span>
+              <span class="mdb-plan-preview-rate">MAXIMUM POWER</span>
+              <span class="mdb-plan-preview-earn">🔥 MAX DOGE</span>
+            </div>
+          </div>
+
+          <a class="mdb-cta-btn" href="/mining">
+            ⛏ GET STARTED NOW
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATS -->
+    <div class="px-card">
+      <div class="px-label">📊 &nbsp;YOUR STATS</div>
+      <div class="px-stats">
+        <div class="px-stat-box">
+          <span class="px-stat-val">{{ format_doge(user.doge_balance) }}</span>
+          <span class="px-stat-lbl">BALANCE</span>
+        </div>
+        <div class="px-stat-box">
+          <span class="px-stat-val">{{ format_doge(user.total_earned) }}</span>
+          <span class="px-stat-lbl">TOTAL EARNED</span>
+        </div>
+        <div class="px-stat-box">
+          <span class="px-stat-val" id="statMachines">—</span>
+          <span class="px-stat-lbl">MACHINES</span>
+        </div>
+        <div class="px-stat-box">
+          <span class="px-stat-val">{{ user.referral_count or 0 }}</span>
+          <span class="px-stat-lbl">REFERRALS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="px-card">
+      <div class="px-label">⚡ &nbsp;QUICK ACTIONS</div>
+      <div class="px-actions">
+        <a href="{{ url_for('mining') }}" class="px-btn px-btn-gold">⛏ MINING</a>
+        <a href="{{ url_for('tasks') }}" class="px-btn px-btn-blue">📋 TASKS</a>
+        <a href="{{ url_for('referrals') }}" class="px-btn px-btn-ghost">👥 INVITE</a>
+        <a href="{{ url_for('wallet') }}" class="px-btn px-btn-ghost">💰 WALLET</a>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="px-card">
+      <div class="px-label">💡 &nbsp;QUEST LOG</div>
+      <div class="px-quest-list">
+        <div class="px-quest-item">
+          <div class="px-quest-num">1</div>
+          <div class="px-quest-text"><strong>BUY A MINING PLAN</strong> to start auto-earning DOGE</div>
+        </div>
+        <div class="px-quest-item">
+          <div class="px-quest-num">2</div>
+          <div class="px-quest-text"><strong>COMPLETE TASKS</strong> for bonus earnings</div>
+        </div>
+        <div class="px-quest-item">
+          <div class="px-quest-num">3</div>
+          <div class="px-quest-text"><strong>INVITE FRIENDS</strong> to earn referral bonuses</div>
+        </div>
+        <div class="px-quest-item">
+          <div class="px-quest-num">4</div>
+          <div class="px-quest-text"><strong>WITHDRAW</strong> your DOGE to your wallet</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   MINING DASHBOARD ENGINE — ULTRA PRO
+   MDB = Mining Dashboard namespace
+═══════════════════════════════════════════════ */
+const MDB = (() => {
+  'use strict';
+
+  /* ── State ─────────────────────────────────── */
+  let state = {
+    active: false,
+    pending: 0,
+    hourlyRate: 0,
+    dailyRate: 0,
+    planName: '',
+    tier: '',
+    expires: '',
+    machines: 0,
+    uptimeStart: null
+  };
+
+  /* realtime ticker: how much earned since last page load */
+  let localEarned = 0;
+  let localBase   = 0;
+  let loadTime    = Date.now();
+  let tickTimer   = null;
+
+  /* ── Helpers ────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const fmt = (n, d=8) => {
+    const v = parseFloat(n)||0;
+    return v.toFixed(d).replace(/\.?0+$/,'') || '0';
+  };
+  const fmtShort = n => {
+    const v = parseFloat(n)||0;
+    if (v === 0) return '0';
+    if (v < 0.001) return v.toFixed(8);
+    if (v < 1) return v.toFixed(6).replace(/0+$/,'');
+    return v.toFixed(4).replace(/\.?0+$/,'');
+  };
+
+  /* ── Oscilloscope Canvas ────────────────────── */
+  const oscBuf = new Array(80).fill(0);
+  let oscAnim = null;
+
+  function initOsc() {
+    const canvas = $('oscCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.offsetWidth; const H = 36;
+    canvas.width = W; canvas.height = H;
+
+    function drawOsc() {
+      /* add new sample with noise */
+      const base = 0.55 + (parseFloat(state.hourlyRate) / Math.max(1, parseFloat(state.hourlyRate)) * 0.3);
+      const noise = (Math.random() - 0.5) * 0.3;
+      oscBuf.shift();
+      oscBuf.push(Math.max(0.05, Math.min(0.95, base + noise)));
+
+      ctx.clearRect(0, 0, W, H);
+
+      /* grid */
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 20) {
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+      }
+
+      /* glow line */
+      const grad = ctx.createLinearGradient(0,0,W,0);
+      grad.addColorStop(0,'rgba(0,230,118,0)');
+      grad.addColorStop(0.5,'rgba(0,230,118,0.9)');
+      grad.addColorStop(1,'rgba(0,230,118,0.4)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = '#00e676';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      oscBuf.forEach((v, i) => {
+        const x = (i / (oscBuf.length-1)) * W;
+        const y = H - v * H;
+        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      /* fill under line */
+      ctx.fillStyle = 'rgba(0,230,118,0.04)';
+      ctx.beginPath();
+      oscBuf.forEach((v, i) => {
+        const x = (i / (oscBuf.length-1)) * W;
+        const y = H - v * H;
+        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      });
+      ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+      oscAnim = requestAnimationFrame(drawOsc);
+    }
+    if (oscAnim) cancelAnimationFrame(oscAnim);
+    drawOsc();
+
+    /* hashrate label */
+    setInterval(() => {
+      const base = parseFloat(state.hourlyRate)||0;
+      const mhs = (base * 1000 + (Math.random()-0.5)*base*200).toFixed(1);
+      const el = $('mdbHashVal');
+      if (el) el.textContent = `${mhs} MH/s`;
+    }, 800);
+  }
+
+  /* ── Terminal Log ──────────────────────────── */
+  const LOG_TEMPLATES = [
+    { t:'ok',   msgs: [
+        () => `BLOCK #${(Math.floor(Math.random()*9000000)+1000000)} FOUND`,
+        () => `HASH ${randHex(8)}...${randHex(4)} VERIFIED ✓`,
+        () => `+${fmtShort(state.hourlyRate/3600)} DOGE AWARDED`,
+        () => `SHARE ACCEPTED BY POOL`,
+      ]},
+    { t:'info', msgs: [
+        () => `NETWORK DIFF ${(Math.random()*20+5).toFixed(2)}T`,
+        () => `PING TO POOL: ${Math.floor(Math.random()*30+8)}ms`,
+        () => `HASHRATE STABLE @ ${((parseFloat(state.hourlyRate)||1)*1000).toFixed(0)} MH/s`,
+      ]},
+    { t:'warn', msgs: [
+        () => `STALE SHARE DETECTED — RETRYING`,
+        () => `RECONNECTING TO POOL...`,
+      ]},
+    { t:'hash', msgs: [
+        () => `${randHex(32)}`,
+        () => `nonce:${randHex(8)} target:${randHex(6)}ff`,
+      ]},
+  ];
+
+  function randHex(n) {
+    return Array.from({length:n},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+  }
+
+  const LOG_MAX = 6;
+  let logLines = [];
+
+  function pushLog() {
+    const pool = LOG_TEMPLATES;
+    const group = pool[Math.floor(Math.random()*pool.length)];
+    const msg = group.msgs[Math.floor(Math.random()*group.msgs.length)]();
+    logLines.push({ t: group.t, msg });
+    if (logLines.length > LOG_MAX) logLines.shift();
+
+    const stream = $('mdbLogStream');
+    if (!stream) return;
+    stream.innerHTML = logLines.map(l =>
+      `<span class="mdb-log-line ${l.t}">&gt; ${l.msg}</span>`
+    ).join('');
+    /* scroll to bottom */
+    const body = stream.closest('.mdb-terminal-body');
+    if (body) body.scrollTop = body.scrollHeight;
+  }
+
+  /* ── Live Earning Ticker ────────────────────── */
+  function startTicker() {
+    if (tickTimer) clearInterval(tickTimer);
+    loadTime = Date.now();
+    localBase = parseFloat(state.pending) || 0;
+    localEarned = 0;
+    const ratePerMs = (parseFloat(state.hourlyRate)||0) / 3600000;
+
+    tickTimer = setInterval(() => {
+      const elapsed = Date.now() - loadTime;
+      localEarned = elapsed * ratePerMs;
+      const total = localBase + localEarned;
+
+      const el = $('mdbLiveAmount');
+      if (el) el.textContent = total.toFixed(8);
+
+      /* update progress % (target = 0.1 DOGE = 1 claim threshold) */
+      const threshold = Math.max(0.001, parseFloat(state.hourlyRate) * 0.5);
+      const pct = Math.min(100, (total / threshold) * 100);
+      const fill = $('mdbProgressFill');
+      const pctEl = $('mdbPct');
+      if (fill) fill.style.width = pct.toFixed(1)+'%';
+      if (pctEl) pctEl.textContent = pct.toFixed(0)+'%';
+
+      /* update claim button */
+      const btn = $('mdbClaimBtn');
+      if (btn && !btn.disabled) {
+        btn.innerHTML = `💰 CLAIM ${total.toFixed(6)} DOGE`;
+      }
+    }, 250);
+  }
+
+  /* ── Uptime timer ────────────────────────── */
+  function startUptime() {
+    state.uptimeStart = Date.now();
+    setInterval(() => {
+      const secs = Math.floor((Date.now() - state.uptimeStart) / 1000);
+      const h = Math.floor(secs/3600);
+      const m = Math.floor((secs%3600)/60);
+      const s = secs%60;
+      const el = $('mdbUptimeSince');
+      if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  /* ── Render Active ──────────────────────────── */
+  function renderActive(data) {
+    state.active       = true;
+    state.pending      = data.pending_rewards || 0;
+    state.hourlyRate   = data.total_hourly_rate || 0;
+    state.dailyRate    = state.hourlyRate * 24;
+    state.planName     = (data.plan_name || 'CUSTOM').toUpperCase();
+    state.tier         = (data.tier || guessTier(state.planName)).toLowerCase();
+    state.expires      = data.expires_at ? data.expires_at.split('T')[0] : '—';
+    state.machines     = data.total_machines || 1;
+
+    /* header */
+    const badge = $('mdbTierBadge');
+    if (badge) {
+      badge.textContent = state.tier.toUpperCase();
+      badge.className = `mdb-tier-badge ${state.tier}`;
+    }
+    const pill = $('mdbStatusPill');
+    const led  = $('mdbLed');
+    const txt  = $('mdbStatusTxt');
+    if (pill) pill.className = 'mdb-status-pill on';
+    if (led)  led.className  = 'mdb-led';
+    if (txt)  txt.textContent = 'ONLINE';
+
+    /* ambient glow — green when active */
+    const glow = $('mdbAmbglow');
+    if (glow) glow.className = 'mdb-ambglow green';
+
+    /* uptime row */
+    if ($('mdbUptimeMachines')) $('mdbUptimeMachines').textContent = state.machines;
+    if ($('mdbUptimePlan'))     $('mdbUptimePlan').textContent     = state.planName.substring(0,8);
+    if ($('mdbUptimeExp'))      $('mdbUptimeExp').textContent      = state.expires;
+
+    /* rate cells */
+    if ($('mdbRateHr'))  $('mdbRateHr').textContent  = fmtShort(state.hourlyRate);
+    if ($('mdbRateDay')) $('mdbRateDay').textContent  = fmtShort(state.dailyRate);
+
+    /* stat box in summary */
+    if ($('statMachines')) $('statMachines').textContent = state.machines;
+
+    /* show active, hide noplan */
+    $('mdbActiveZone').style.display = '';
+    $('mdbNoplanZone').style.display = 'none';
+
+    /* enable claim btn */
+    const btn = $('mdbClaimBtn');
+    if (btn) {
+      btn.disabled = state.pending <= 0;
+      btn.innerHTML = state.pending > 0
+        ? `💰 CLAIM ${fmtShort(state.pending)} DOGE`
+        : `⛏ MINING... REWARDS ACCUMULATING`;
+    }
+
+    /* start subsystems */
+    startTicker();
+    startUptime();
+    initOsc();
+
+    /* log push every 2.5s */
+    pushLog();
+    setInterval(pushLog, 2500);
+  }
+
+  function guessTier(name) {
+    if (/legendary/i.test(name)) return 'legendary';
+    if (/diamond/i.test(name))   return 'diamond';
+    if (/gold/i.test(name))      return 'gold';
+    if (/silver/i.test(name))    return 'silver';
+    if (/bronze/i.test(name))    return 'bronze';
+    return 'basic';
+  }
+
+  /* ── Render Inactive ────────────────────────── */
+  function renderInactive() {
+    state.active = false;
+
+    const badge = $('mdbTierBadge');
+    if (badge) { badge.textContent = 'OFFLINE'; badge.className = 'mdb-tier-badge basic'; }
+    const pill = $('mdbStatusPill');
+    const led  = $('mdbLed');
+    const txt  = $('mdbStatusTxt');
+    if (pill) pill.className = 'mdb-status-pill off';
+    if (led)  led.className  = 'mdb-led off';
+    if (txt)  txt.textContent = 'OFFLINE';
+
+    if ($('statMachines')) $('statMachines').textContent = '0';
+
+    $('mdbActiveZone').style.display = 'none';
+    $('mdbNoplanZone').style.display = '';
+  }
+
+  /* ── Claim ──────────────────────────────────── */
+  async function claim() {
+    const btn = $('mdbClaimBtn');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span style="animation:mdb-blink .4s steps(1) infinite;display:inline-block">⏳</span> PROCESSING...';
+    try {
+      const res  = await fetch('/api/mining/claim', {method:'POST',headers:{'Content-Type':'application/json'}});
+      const data = await res.json();
+      if (data.success) {
+        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message, 'success');
+        if (window.DogeQuest?.createCoinRain) DogeQuest.createCoinRain(16);
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message || 'Claim failed', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '💰 CLAIM REWARDS';
+      }
+    } catch(e) {
+      if (window.DogeQuest?.showToast) DogeQuest.showToast('Connection error', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '💰 CLAIM REWARDS';
+    }
+  }
+
+  /* ── Load & Poll ──────────────────────────── */
+  async function load() {
+    try {
+      const res  = await fetch('/api/mining/stats');
+      const data = await res.json();
+      if (data.success && data.total_machines > 0) renderActive(data);
+      else renderInactive();
+    } catch(e) { renderInactive(); }
+  }
+
+  /* silent poll every 30s — only update pending */
+  setInterval(async () => {
+    try {
+      const res  = await fetch('/api/mining/stats');
+      const data = await res.json();
+      if (data.success && data.total_machines > 0) {
+        /* reset base so ticker stays accurate */
+        localBase   = data.pending_rewards || 0;
+        localEarned = 0;
+        loadTime    = Date.now();
+        state.pending = localBase;
+      }
+    } catch(e) {}
+  }, 30000);
+
+  /* boot */
+  load();
+
+  return { claim };
+})();
+</script>
+{% endblock %}

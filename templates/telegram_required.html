@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Required - Doge Pixel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .pixel-border {
+            border: 3px solid #00aaff;
+            background: #111111;
+            box-shadow: 
+                inset -3px -3px 0 #005580,
+                inset 3px 3px 0 #00ddff;
+        }
+        
+        .card {
+            padding: 32px 24px;
+        }
+        
+        .icon-container {
+            margin-bottom: 24px;
+        }
+        
+        .telegram-icon {
+            font-size: 64px;
+            color: #00aaff;
+            display: block;
+            animation: pixel-float 1s steps(4) infinite;
+        }
+        
+        @keyframes pixel-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1rem;
+            color: #00aaff;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        p {
+            font-size: 1.3rem;
+            color: #aaaaaa;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+        
+        .steps {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+        
+        .step:last-child {
+            border-bottom: none;
+        }
+        
+        .step-num {
+            width: 28px;
+            height: 28px;
+            background: #00aaff;
+            color: #0a0a0a;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .step-text {
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+        
+        .btn-telegram {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: #00aaff;
+            color: #0a0a0a;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            text-decoration: none;
+            border: 3px solid #00ddff;
+            box-shadow: 
+                inset -2px -2px 0 #005580,
+                inset 2px 2px 0 #00ddff;
+            transition: transform 0.1s steps(2);
+        }
+        
+        .btn-telegram:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-telegram:active {
+            transform: translateY(2px);
+        }
+        
+        .footer-text {
+            margin-top: 24px;
+            font-size: 1rem;
+            color: #666666;
+        }
+        
+        .doge-text {
+            color: #c9a227;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card pixel-border">
+            <div class="icon-container">
+                <span class="telegram-icon">►</span>
+            </div>
+            
+            <h1>TELEGRAM REQUIRED</h1>
+            
+            <p>Doge Pixel must be opened from inside the Telegram app to verify your account.</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <span class="step-num">1</span>
+                    <span class="step-text">Open Telegram</span>
+                </div>
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <span class="step-text">Search for @Dogepixelbot</span>
+                </div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-text">Tap START to launch the app</span>
+                </div>
+            </div>
+            
+            <a href="https://t.me/Dogepixelbot" class="btn-telegram">
+                <span>►</span> OPEN TELEGRAM
+            </a>
+            
+            <p class="footer-text">Earn free <span class="doge-text">DOGE</span> by completing quests!</p>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+    // Si se abre desde Telegram WebApp, autenticar automáticamente (una sola vez)
+    (function() {
+        if (!window.Telegram || !window.Telegram.WebApp) return;
+        if (sessionStorage.getItem('tg_auth_done')) return;
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        const initData = tg.initData;
+        if (!initData) return;
+        sessionStorage.setItem('tg_auth_done', '1');
+        const startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
+        fetch('/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ initData: initData, start_param: startParam })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.replace('/');
+            }
+        })
+        .catch(() => {});
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>{% block title %}DOGEPIXEL{% endblock %}</title>
+
+    <!-- Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    <!-- ════ LOADING SCREEN ════ -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">{{ icon('currency', 'doge', 'xxl')|safe }}</div>
+        <h1 class="loading-title">DOGEPIXEL</h1>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <p class="loading-text">LOADING QUEST DATA...</p>
+    </div>
+
+    <!-- ════ APP ════ -->
+    <div class="app-container">
+
+        <!-- ════ HEADER ════ -->
+        <header class="header">
+
+            <!-- IZQUIERDA: Avatar + Nombre + ID -->
+            <div class="hdr-user">
+                <div class="hdr-avatar">
+                    {{ (user.first_name or 'P')[0] | upper if user else 'P' }}
+                </div>
+                <div class="hdr-user-info">
+                    <span class="hdr-user-name">{{ user.first_name or 'PLAYER' if user else 'PLAYER' }}</span>
+                    <span class="hdr-user-id">#{{ user.telegram_id if user else '000000' }}</span>
+                </div>
+            </div>
+
+            <!-- DERECHA: Balance premium -->
+            <div class="hdr-balance">
+                <div class="hdr-balance-inner">
+                    <div class="hdr-balance-top">
+                        <span class="hdr-balance-sym">Ð</span>
+                        <span class="hdr-balance-amt">{{ format_doge(user.doge_balance if user else 0) }}</span>
+                    </div>
+                    <span class="hdr-balance-lbl">DOGE BALANCE</span>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- ════ SIDE MENU (kept for JS compat, hidden) ════ -->
+        <nav class="side-menu" id="sideMenu" style="display:none;">
+            <div class="menu-header">
+                <button class="menu-close" id="menuClose" aria-label="Cerrar menú">✕</button>
+                <div class="menu-user">
+                    <div class="menu-avatar">
+                        {{ (user.first_name or 'P')[0] | upper if user else 'P' }}
+                    </div>
+                    <div class="menu-user-info">
+                        <h3>{{ user.first_name or 'PLAYER' if user else 'PLAYER' }}</h3>
+                        <p>Ð {{ format_doge(user.doge_balance if user else 0) }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-nav">
+                <a href="{{ url_for('index') }}" class="menu-item {% if request.endpoint == 'index' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
+                    </svg></i>
+                    <span>HOME</span>
+                </a>
+
+                <a href="{{ url_for('wallet') }}" class="menu-item {% if request.endpoint == 'wallet' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <rect x="2" y="5" width="20" height="14" rx="1"/><path d="M16 12a1 1 0 100 2 1 1 0 000-2z" fill="currentColor" stroke="none"/><path d="M2 9h20"/>
+                    </svg></i>
+                    <span>WALLET</span>
+                </a>
+
+                <a href="{{ url_for('mining') }}" class="menu-item {% if request.endpoint == 'mining' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <path d="M14 2l8 8-10 10-2-2 2-2-6-6 2-2-2-2z"/><path d="M3 21l4-4"/><path d="M12 6l6 6"/>
+                    </svg></i>
+                    <span>MINING</span>
+                </a>
+
+                <a href="{{ url_for('tasks') }}" class="menu-item {% if request.endpoint == 'tasks' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 12l2 2 4-4"/><path d="M8 7h8M8 17h5"/>
+                    </svg></i>
+                    <span>TASKS</span>
+                </a>
+
+                <a href="{{ url_for('referrals') }}" class="menu-item {% if request.endpoint == 'referrals' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <circle cx="8" cy="8" r="3"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M11 8.5l3.5-2M11 9l3.5 7.5"/>
+                    </svg></i>
+                    <span>REFERRALS</span>
+                </a>
+
+                <a href="{{ url_for('explore') }}" class="menu-item {% if request.endpoint == 'explore' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M15 9l-4.5 1.5L9 15l4.5-1.5z" fill="currentColor" stroke="none"/>
+                    </svg></i>
+                    <span>EXPLORE</span>
+                </a>
+
+                <a href="{{ url_for('promo') }}" class="menu-item {% if request.endpoint == 'promo' %}active{% endif %}">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <rect x="2" y="7" width="20" height="10" rx="1"/><circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none"/><path d="M11 9.5h7M11 12.5h5M11 15h7" stroke-width="1.5"/><path d="M5 7V5M19 7V5"/>
+                    </svg></i>
+                    <span>PROMO CODE</span>
+                </a>
+            </div>
+
+            <!-- Soporte -->
+            <div class="menu-nav" style="flex:0 0 auto;border-top:2px solid #1e1e34;padding-top:8px;padding-bottom:16px;">
+                <a href="https://t.me/DogePixelSupport" target="_blank" class="menu-item">
+                    <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M12 8v4M12 16h.01" stroke-width="2.5"/>
+                    </svg></i>
+                    <span>SUPPORT</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Overlay -->
+        <div class="menu-overlay" id="menuOverlay"></div>
+
+        <!-- ════ CONTENT ════ -->
+        <main class="main-content" id="mainContent">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- ════ BOTTOM NAV — PROFESSIONAL ════ -->
+        <nav class="bottom-nav">
+
+            <a href="{{ url_for('index') }}" class="bnav-item {% if request.endpoint == 'index' %}active{% endif %}" title="Home">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>
+                        <path d="M9 21V12h6v9"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">HOME</span>
+            </a>
+
+            <a href="{{ url_for('mining') }}" class="bnav-item {% if request.endpoint == 'mining' %}active{% endif %}" title="Mining">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                        <path d="M14 2l8 8-10 10-2-2 2-2-6-6 2-2-2-2z"/>
+                        <path d="M3 21l4-4"/>
+                        <path d="M12 6l6 6"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">MINE</span>
+            </a>
+
+            <a href="{{ url_for('referrals') }}" class="bnav-item {% if request.endpoint == 'referrals' %}active{% endif %}" title="Invite">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">INVITE</span>
+            </a>
+
+            <a href="{{ url_for('tasks') }}" class="bnav-item bnav-center {% if request.endpoint == 'tasks' %}active{% endif %}" title="Tasks">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">TASKS</span>
+            </a>
+
+            <a href="{{ url_for('explore') }}" class="bnav-item {% if request.endpoint == 'explore' %}active{% endif %}" title="Explore">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M15 9l-4.5 1.5L9 15l4.5-1.5z" fill="currentColor" stroke="none"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">TOP</span>
+            </a>
+
+            <a href="{{ url_for('wallet') }}" class="bnav-item {% if request.endpoint == 'wallet' %}active{% endif %}" title="Wallet">
+                <div class="bnav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
+                        <rect x="2" y="5" width="20" height="14" rx="1"/>
+                        <path d="M16 12a1 1 0 100 2 1 1 0 000-2z" fill="currentColor" stroke="none"/>
+                        <path d="M2 9h20"/>
+                    </svg>
+                </div>
+                <span class="bnav-label">WALLET</span>
+            </a>
+
+        </nav>
+
+    </div><!-- .app-container -->
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+        /* ── Menu ─────────────────────────── */
+        const menuToggle  = document.getElementById('menuToggle');
+        const menuClose   = document.getElementById('menuClose');
+        const sideMenu    = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const mainContent = document.getElementById('mainContent');
+
+        function openMenu() {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('visible');
+            menuToggle.classList.add('active');
+        }
+        function closeMenu() {
+            sideMenu.classList.remove('open');
+            menuOverlay.classList.remove('visible');
+            menuToggle.classList.remove('active');
+        }
+
+        menuToggle?.addEventListener('click', () => sideMenu.classList.contains('open') ? closeMenu() : openMenu());
+        menuClose?.addEventListener('click', closeMenu);
+        menuOverlay?.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+        /* Botón X (compatibilidad con JS antiguo) */
+        document.querySelector('.menu-close')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeMenu();
+        });
+
+        /* ── Loading Screen ─────────────────── */
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const ls = document.getElementById('loadingScreen');
+                if (!ls) return;
+                ls.style.transition = 'opacity 0.25s steps(5)';
+                ls.style.opacity = '0';
+                setTimeout(() => ls.remove(), 300);
+            }, 1800);
+        });
+
+        /* ── Telegram Mini App Auth ─────────── */
+        (function() {
+            if (!window.Telegram || !window.Telegram.WebApp) return;
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            if (sessionStorage.getItem('tg_auth_done')) return;
+            const initData = tg.initData;
+            if (!initData) return;
+            sessionStorage.setItem('tg_auth_done', '1');
+            const startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
+            fetch('/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ initData: initData, start_param: startParam })
+            })
+            .then(r => r.json())
+            .then(data => { if (data.success) window.location.reload(); })
+            .catch(() => {});
+        })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
