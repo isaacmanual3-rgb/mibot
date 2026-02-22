@@ -206,18 +206,25 @@ def _tc_post(method, payload, api_key=''):
 
 
 def _get_network_time(api_key=''):
-    """Tiempo actual desde la red TON (evita desfase del reloj del servidor)."""
-    try:
-        hdrs = {}
-        if api_key:
-            hdrs['X-API-Key'] = api_key
-        r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=5)
-        data = r.json()
-        if data.get('ok'):
-            return data['result'].get('last', {}).get('utime', int(time.time()))
-    except Exception:
-        pass
-    return int(time.time())
+    """Tiempo actual desde la red TON con reintentos."""
+    for attempt in range(3):
+        try:
+            hdrs = {}
+            if api_key:
+                hdrs['X-API-Key'] = api_key
+            r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=8)
+            data = r.json()
+            if data.get('ok'):
+                utime = data['result'].get('last', {}).get('utime', 0)
+                if utime > 0:
+                    logger.info(f'TON net_time obtenido: {utime}')
+                    return utime
+        except Exception as e:
+            logger.warning(f'_get_network_time intento {attempt+1} fallo: {e}')
+            time.sleep(1)
+    local = int(time.time())
+    logger.warning(f'Usando tiempo local como fallback: {local}')
+    return local
 
 
 def _get_seqno(wallet_addr, api_key=''):
@@ -340,7 +347,7 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         steps.append(f'Destino OK wc={to_wc}')
 
         net_time  = _get_network_time(api_key)
-        expire_at = net_time + 60
+        expire_at = net_time + 300  # 5 minutos para mayor tolerancia a latencia
         logger.info(f'net_time={net_time} expire_at={expire_at}')
 
         nanotons = int(float(ton_amount) * 1_000_000_000)
