@@ -1,8 +1,10 @@
 """
-ton_wallet.py — v11
-Firma transacciones TON con Ed25519.
-La dirección del sender se obtiene consultando TonCenter con la clave pública
-(no se calcula localmente — evita errores de CODE_HASH).
+ton_wallet.py — v13 FINAL
+Fix crítico: hash() de Cell ahora incluye depth de refs
+según el estándar TON (TVM whitepaper).
+
+Hash correcto:
+  SHA256(d1 || d2 || data_augmented || depth(ref)*2bytes || hash(ref)*32bytes ...)
 """
 
 import base64
@@ -19,7 +21,7 @@ SUBWALLET_ID = 698983191
 
 
 # ══════════════════════════════════════════════════════════════
-#  MNEMONIC → SEED (algoritmo Tonkeeper / tonweb-mnemonic)
+#  MNEMONIC → SEED (algoritmo Tonkeeper)
 # ══════════════════════════════════════════════════════════════
 
 def mnemonic_to_seed(words):
@@ -89,6 +91,7 @@ class _BB:
 
 # ══════════════════════════════════════════════════════════════
 #  CELL + BOC
+#  FIX: hash() incluye depth(ref) como 2 bytes antes de hash(ref)
 # ══════════════════════════════════════════════════════════════
 
 class Cell:
@@ -101,11 +104,25 @@ class Cell:
         part = 1 if self.b.bit_len % 8 else 0
         return bytes([len(self.refs), full * 2 + part])
 
+    def depth(self):
+        """Profundidad máxima de árbol de refs + 1."""
+        if not self.refs:
+            return 0
+        return max(r.depth() for r in self.refs) + 1
+
     def hash(self):
-        return hashlib.sha256(
-            self._desc() + self.b.augmented() +
-            b''.join(r.hash() for r in self.refs)
-        ).digest()
+        """
+        Hash estándar TON (TVM whitepaper):
+          SHA256(d1 || d2 || data || depth(ref1)[2] || hash(ref1)[32] || ...)
+        """
+        buf = self._desc() + self.b.augmented()
+        # Primero todos los depths (2 bytes cada uno, big-endian)
+        for r in self.refs:
+            buf += r.depth().to_bytes(2, 'big')
+        # Luego todos los hashes
+        for r in self.refs:
+            buf += r.hash()
+        return hashlib.sha256(buf).digest()
 
     def boc_b64(self):
         cells = []
@@ -153,7 +170,6 @@ def _crc16xmodem(data):
 
 
 def friendly_to_raw(addr):
-    """Parsea cualquier formato de dirección TON → (workchain, hash_bytes)."""
     addr = addr.strip()
     if ':' in addr:
         wc_str, hex_str = addr.split(':', 1)
@@ -170,7 +186,6 @@ def friendly_to_raw(addr):
 
 
 def _addr_friendly(wc, h):
-    """Codifica dirección como EQ... (bounceable)."""
     wc_byte = struct.pack('b', wc)
     prefix  = bytes([0x11]) + wc_byte + h
     crc     = _crc16xmodem(prefix)
@@ -179,51 +194,8 @@ def _addr_friendly(wc, h):
 
 
 # ══════════════════════════════════════════════════════════════
-#  OBTENER DIRECCIÓN REAL DESDE TONCENTER (con la clave pública)
+#  TONCENTER
 # ══════════════════════════════════════════════════════════════
-
-def _get_wallet_address_from_pubkey(pub_hex, api_key=''):
-    """
-    Pregunta a TonCenter cuál es la dirección wallet-v4r2
-    para esta clave pública. Así evitamos calcularla localmente.
-    """
-    hdrs = {'Content-Type': 'application/json'}
-    if api_key:
-        hdrs['X-API-Key'] = api_key
-    try:
-        resp = requests.get(
-            f'{TONCENTER}/getWalletInformation',
-            params={'address': pub_hex},
-            headers=hdrs,
-            timeout=10
-        )
-        # Este endpoint no acepta pubkey directamente.
-        # Usamos el método correcto: detectWallet
-        return None
-    except Exception:
-        return None
-
-
-# ══════════════════════════════════════════════════════════════
-#  TONCENTER HELPERS
-# ══════════════════════════════════════════════════════════════
-
-def _get_network_time(api_key=''):
-    """Obtiene el tiempo actual desde TonCenter para evitar desfase de reloj."""
-    try:
-        hdrs = {}
-        if api_key:
-            hdrs['X-API-Key'] = api_key
-        r = requests.get(f'{TONCENTER}/getMasterchainInfo',
-                         headers=hdrs, timeout=5)
-        data = r.json()
-        if data.get('ok'):
-            # utime del último bloque como referencia
-            return data['result'].get('last', {}).get('utime', int(time.time()))
-    except Exception:
-        pass
-    return int(time.time())
-
 
 def _tc_post(method, payload, api_key=''):
     hdrs = {'Content-Type': 'application/json'}
@@ -233,12 +205,19 @@ def _tc_post(method, payload, api_key=''):
     return r.json()
 
 
-def _tc_get(method, params, api_key=''):
-    hdrs = {}
-    if api_key:
-        hdrs['X-API-Key'] = api_key
-    r = requests.get(f'{TONCENTER}/{method}', params=params, headers=hdrs, timeout=10)
-    return r.json()
+def _get_network_time(api_key=''):
+    """Tiempo actual desde la red TON (evita desfase del reloj del servidor)."""
+    try:
+        hdrs = {}
+        if api_key:
+            hdrs['X-API-Key'] = api_key
+        r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=5)
+        data = r.json()
+        if data.get('ok'):
+            return data['result'].get('last', {}).get('utime', int(time.time()))
+    except Exception:
+        pass
+    return int(time.time())
 
 
 def _get_seqno(wallet_addr, api_key=''):
@@ -285,7 +264,7 @@ def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
         cmt.b.uint(0, 32).raw(memo.encode('utf-8')[:120])
         int_msg.refs.append(cmt)
 
-    # Cuerpo wallet-v4r2
+    # Cuerpo wallet-v4r2: subwallet_id | valid_until | seqno | op | send_mode
     body = Cell()
     (body.b
         .uint(SUBWALLET_ID, 32)
@@ -295,7 +274,9 @@ def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
         .uint(3, 8))
     body.refs.append(int_msg)
 
+    # Firmar hash del body (ahora correcto con depth incluido)
     sig = priv.sign(body.hash())
+    logger.info(f'Body hash: {body.hash().hex()[:16]}... seqno={seqno} expire={expire_at}')
 
     # Mensaje externo
     ext = Cell()
@@ -304,8 +285,8 @@ def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
         .addr_none()
         .addr_std(sender_wc, sender_hash)
         .grams(0)
-        .uint(0, 1)   # no state_init
-        .uint(1, 1))  # body as ref
+        .uint(0, 1)
+        .uint(1, 1))
 
     signed = Cell()
     signed.b.raw(sig)
@@ -323,23 +304,11 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
              bot_wallet_address='UQCqD6yy4uQvbmsZ792ScmyfynK6GnlLkkaE6T-xBSWAKtJN'):
     """
     Envía TON desde la wallet del bot.
-
-    PARÁMETROS:
-      mnemonic           : 24 palabras del mnemonic
-      to_addr            : dirección destino
-      ton_amount         : cantidad en TON (float)
-      memo               : comentario opcional
-      api_key            : TonCenter API key
-      bot_wallet_address : dirección EQ... de la wallet del bot (Tonkeeper).
-                           Se puede configurar en el panel admin como
-                           'ton_bot_wallet_address'. Si se provee, se usa
-                           directamente sin calcularla.
-
     Retorna: (success, tx_hash, error)
     """
     steps = []
     try:
-        logger.info('TON WALLET v12 - usando tiempo de red TON')
+        logger.info('TON WALLET v13 - hash con depth corregido')
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
@@ -353,29 +322,9 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 
         steps.append('Derivando seed...')
         seed = mnemonic_to_seed(words)
-        priv = Ed25519PrivateKey.from_private_bytes(seed)
-        pub  = priv.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
 
-        # ── Obtener dirección del sender ──────────────────────────
-        if bot_wallet_address and bot_wallet_address.strip():
-            sender_addr = bot_wallet_address.strip()
-            steps.append(f'Wallet bot (config): {sender_addr}')
-        else:
-            # Intentar obtener desde TonCenter con la pubkey
-            pub_hex = pub.hex()
-            steps.append(f'Consultando dirección para pubkey {pub_hex[:16]}...')
-            resp = _tc_get('getAddressInformation',
-                           {'address': pub_hex}, api_key=api_key)
-            if resp.get('ok'):
-                sender_addr = resp.get('result', {}).get('address', '')
-            else:
-                return False, None, (
-                    'No se pudo determinar la dirección de la wallet del bot. '
-                    'Configura "ton_bot_wallet_address" en el panel admin con '
-                    'la dirección EQ... de tu Tonkeeper.'
-                )
-            steps.append(f'Wallet bot (TonCenter): {sender_addr}')
-
+        sender_addr = bot_wallet_address.strip()
+        steps.append(f'Wallet bot: {sender_addr}')
         logger.info(f'TON sender wallet: {sender_addr}')
 
         sender_wc, sender_hash = friendly_to_raw(sender_addr)
@@ -383,25 +332,22 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         steps.append('Obteniendo seqno...')
         seqno = _get_seqno(sender_addr, api_key)
         if seqno is None:
-            return False, None, 'No se pudo obtener seqno. La wallet debe tener saldo y estar activa.'
+            return False, None, 'No se pudo obtener seqno.'
         steps.append(f'Seqno: {seqno}')
 
         steps.append(f'Parseando destino: {to_addr}')
         to_wc, to_hash = friendly_to_raw(to_addr)
         steps.append(f'Destino OK wc={to_wc}')
 
-        # Usar tiempo de la red TON para evitar errores de valid_until
         net_time  = _get_network_time(api_key)
-        expire_at = net_time + 60  # 60 segundos desde ahora según la red
-        logger.info(f'Tiempo red TON: {net_time}, expire_at: {expire_at}, time.time(): {int(__import__("time").time())}')
-        nanotons  = int(float(ton_amount) * 1_000_000_000)
+        expire_at = net_time + 60
+        logger.info(f'net_time={net_time} expire_at={expire_at}')
 
+        nanotons = int(float(ton_amount) * 1_000_000_000)
         steps.append(f'Firmando BOC: {ton_amount} TON -> {to_addr}')
-        boc_b64 = _build_boc(
-            seed, sender_wc, sender_hash,
-            to_wc, to_hash,
-            nanotons, seqno, memo, expire_at
-        )
+        boc_b64 = _build_boc(seed, sender_wc, sender_hash,
+                              to_wc, to_hash,
+                              nanotons, seqno, memo, expire_at)
         steps.append(f'BOC OK ({len(boc_b64)} chars, prefijo={boc_b64[:8]})')
 
         steps.append('Transmitiendo a toncenter...')
