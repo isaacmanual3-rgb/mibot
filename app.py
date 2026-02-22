@@ -555,7 +555,6 @@ def api_ton_withdraw_init(user):
 def _auto_send_ton(destination, ton_amount, memo=''):
     """
     Enviar TON automáticamente desde la wallet del bot.
-    Usa ton_wallet.py (sin dependencias externas, solo cryptography + requests).
     Returns: (success: bool, tx_hash: str|None, error_msg: str|None)
     """
     try:
@@ -565,13 +564,18 @@ def _auto_send_ton(destination, ton_amount, memo=''):
 
         api_key = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
 
+        # Dirección real de la wallet del bot (la de Tonkeeper)
+        # Configúrala en el panel admin: ton_bot_wallet_address
+        bot_wallet = get_config('ton_bot_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', '')
+
         from ton_wallet import send_ton
         return send_ton(
-            mnemonic   = mnemonic_str,
-            to_addr    = destination,
-            ton_amount = float(ton_amount),
-            memo       = str(memo)[:50],
-            api_key    = api_key,
+            mnemonic           = mnemonic_str,
+            to_addr            = destination,
+            ton_amount         = float(ton_amount),
+            memo               = str(memo)[:50],
+            api_key            = api_key,
+            bot_wallet_address = bot_wallet,
         )
 
     except Exception as exc:
