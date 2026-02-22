@@ -114,32 +114,35 @@
    BALANCE HERO CARD
 ═══════════════════════════════ */
 .wl-hero {
-  background: linear-gradient(160deg, #09091a 0%, #0c0c20 100%);
-  border: 2px solid var(--gold-dark);
-  box-shadow: 4px 4px 0 0 #020201, 0 0 50px rgba(255,215,0,0.07);
+  background: linear-gradient(160deg, #06080f 0%, #080c18 60%, #050a14 100%);
+  border: 1px solid rgba(0,152,234,0.35);
+  box-shadow: 0 0 0 1px rgba(0,152,234,0.08), 0 8px 40px rgba(0,152,234,0.12), inset 0 1px 0 rgba(0,152,234,0.1);
   padding: 28px 20px 24px;
   text-align: center; position: relative; overflow: hidden;
   animation: wl-up .3s .04s ease both;
 }
+/* corner accents */
 .wl-hero::before,.wl-hero::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--gold); border-style:solid;
+  content:''; position:absolute; width:12px; height:12px;
+  border-color:rgba(0,152,234,0.6); border-style:solid;
 }
-.wl-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.wl-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.wl-hero::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.wl-hero::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
 
 .wl-hero-glow {
-  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
-  width:200px; height:200px;
-  background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 68%);
+  position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+  width:280px; height:280px;
+  background:radial-gradient(circle,rgba(0,152,234,0.13) 0%,transparent 65%);
   pointer-events:none;
 }
 
+/* TON icon container */
 .wl-hero-icon {
-  width: 54px; height: 54px;
-  background: var(--gold-dim);
-  border: 2px solid var(--gold-dark);
-  box-shadow: 3px 3px 0 0 #020201;
+  width: 64px; height: 64px;
+  background: linear-gradient(145deg, #0a1628, #0d1e38);
+  border: 1px solid rgba(0,152,234,0.4);
+  box-shadow: 0 0 20px rgba(0,152,234,0.25), inset 0 1px 0 rgba(0,152,234,0.15);
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 18px;
 }
@@ -147,9 +150,9 @@
 .wl-balance-amount {
   font-family: var(--font-px);
   font-size: 1.4rem;
-  color: var(--gold);
-  text-shadow: 3px 3px 0 var(--gold-dark), 0 0 20px rgba(255,215,0,0.35);
-  margin-bottom: 8px;
+  color: #0098EA;
+  text-shadow: 0 0 30px rgba(0,152,234,0.5), 0 0 60px rgba(0,152,234,0.2);
+  margin-bottom: 6px;
   line-height: 1.2;
   animation: wl-flicker 5s ease infinite;
 }
@@ -157,69 +160,83 @@
   0%,91%,93%,95%,100%{opacity:1} 92%,94%{opacity:0.55}
 }
 .wl-balance-label {
-  font-family: var(--font-px); font-size: 0.42rem;
-  color: var(--muted); letter-spacing: 0.15em; margin-bottom: 20px;
+  font-family: var(--font-px); font-size: 0.38rem;
+  color: rgba(0,152,234,0.7); letter-spacing: 0.2em; margin-bottom: 20px;
 }
 
 .wl-mini-stats {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
 }
 .wl-mini-stat {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  padding: 12px 8px; text-align: center;
+  background: rgba(0,152,234,0.04);
+  border: 1px solid rgba(0,152,234,0.15);
+  padding: 10px 8px; text-align: center;
+  border-radius: 2px;
 }
 .wl-mini-stat .val {
-  display: block; font-family: var(--font-px); font-size: 0.6rem;
-  color: var(--text); margin-bottom: 6px;
+  display: block; font-family: var(--font-px); font-size: 0.56rem;
+  color: rgba(0,152,234,0.9); margin-bottom: 4px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .wl-mini-stat .lbl {
-  display: block; font-size: 0.62rem; color: var(--muted);
-  letter-spacing: 0.07em; text-transform: uppercase;
+  display: block; font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
 }
 
 /* ═══════════════════════════════
    ACTION BUTTONS
 ═══════════════════════════════ */
-.wl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.wl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 
 .wl-btn {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 15px 12px;
-  font-family: var(--font-px); font-size: 0.5rem;
-  letter-spacing: 0.06em; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 18px 12px 14px;
+  font-family: var(--font-px); font-size: 0.44rem;
+  letter-spacing: 0.1em; border: none; cursor: pointer;
   text-align: center; text-decoration: none;
-  transition: transform .07s, box-shadow .07s;
+  transition: transform .08s, box-shadow .08s, background .12s;
+  position: relative; overflow: hidden;
 }
-.wl-btn:hover  { transform: translate(-1px,-1px); }
-.wl-btn:active { transform: translate(2px,2px); }
+.wl-btn::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+  pointer-events:none;
+}
+.wl-btn:hover  { transform: translateY(-2px); }
+.wl-btn:active { transform: translateY(1px); }
 
+/* WITHDRAW — gold premium */
 .wl-btn-gold {
-  background: var(--gold); color: #0a0800;
-  border: 2px solid var(--gold2);
-  box-shadow: 4px 4px 0 0 var(--gold-dark), 0 0 16px rgba(255,215,0,0.2);
+  background: linear-gradient(160deg, #2a1f00, #1a1300);
+  color: #ffd700;
+  border: 1px solid rgba(255,215,0,0.5);
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.1), 0 4px 20px rgba(255,165,0,0.2), inset 0 1px 0 rgba(255,215,0,0.15);
 }
-.wl-btn-gold:hover  { box-shadow: 5px 5px 0 0 var(--gold-dark), 0 0 24px rgba(255,215,0,0.35); }
-.wl-btn-gold:active { box-shadow: 1px 1px 0 0 var(--gold-dark); }
-
-.wl-btn-blue {
-  background: #001e3a; color: var(--blue);
-  border: 2px solid #004a7a;
-  box-shadow: 4px 4px 0 0 #000d1a;
-  text-shadow: 0 0 8px rgba(64,196,255,0.3);
+.wl-btn-gold .px-icon svg { filter: drop-shadow(0 0 6px rgba(255,215,0,0.6)); }
+.wl-btn-gold:hover {
+  background: linear-gradient(160deg, #352700, #221a00);
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.2), 0 6px 28px rgba(255,165,0,0.35), inset 0 1px 0 rgba(255,215,0,0.2);
 }
-.wl-btn-blue:hover  { box-shadow: 5px 5px 0 0 #000d1a; color: #fff; }
-.wl-btn-blue:active { box-shadow: 1px 1px 0 0 #000d1a; }
+.wl-btn-gold:active { transform: translateY(1px); box-shadow: 0 0 0 1px rgba(255,215,0,0.15), 0 2px 10px rgba(255,165,0,0.2); }
 
+/* DEPOSIT TON — blue TON style */
 .wl-btn-ton {
-  background: #001a2e; color: #0098EA;
-  border: 2px solid #0098EA;
-  box-shadow: 4px 4px 0 0 #000810;
-  text-shadow: 0 0 8px rgba(0,152,234,0.3);
+  background: linear-gradient(160deg, #001a30, #001020);
+  color: #0098EA;
+  border: 1px solid rgba(0,152,234,0.45);
+  box-shadow: 0 0 0 1px rgba(0,152,234,0.08), 0 4px 20px rgba(0,152,234,0.18), inset 0 1px 0 rgba(0,152,234,0.12);
 }
-.wl-btn-ton:hover  { box-shadow: 5px 5px 0 0 #000810; color: #fff; background: #002244; }
-.wl-btn-ton:active { box-shadow: 1px 1px 0 0 #000810; }
+.wl-btn-ton .px-icon svg { filter: drop-shadow(0 0 6px rgba(0,152,234,0.7)); }
+.wl-btn-ton:hover {
+  background: linear-gradient(160deg, #002040, #001528);
+  color: #40c4ff;
+  box-shadow: 0 0 0 1px rgba(0,152,234,0.2), 0 6px 28px rgba(0,152,234,0.3), inset 0 1px 0 rgba(0,152,234,0.18);
+}
+.wl-btn-ton:active { transform: translateY(1px); box-shadow: 0 0 0 1px rgba(0,152,234,0.15), 0 2px 10px rgba(0,152,234,0.2); }
+
+/* label under icon */
+.wl-btn .btn-label { display:block; }
+.wl-btn .btn-sub { display:block; font-size:0.32rem; opacity:0.55; margin-top:2px; letter-spacing:0.08em; }
 
 /* Min withdrawal info */
 .wl-fee-box {
@@ -436,19 +453,20 @@
     <div class="wl-hero">
       <div class="wl-hero-glow" aria-hidden="true"></div>
       <div class="wl-hero-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
+        <!-- Logo TON real: círculo azul + triángulo redondeado invertido con T -->
+        <svg viewBox="0 0 56 56" fill="none" width="40" height="40"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
       </div>
-      <div class="wl-balance-amount" style="color:#0098EA;text-shadow:3px 3px 0 #004466,0 0 20px rgba(0,152,234,0.4)">
-        {{ "%.4f"|format(user.doge_balance / doge_to_ton_rate) }}
+      <div class="wl-balance-amount">
+        {{ "%.4f"|format(user.doge_balance|float / doge_to_ton_rate) }}
       </div>
-      <div class="wl-balance-label" style="color:#0098EA">TON BALANCE</div>
+      <div class="wl-balance-label">TON BALANCE</div>
       <div class="wl-mini-stats">
         <div class="wl-mini-stat">
-          <span class="val">{{ "%.4f"|format(user.total_earned / doge_to_ton_rate) }} TON</span>
+          <span class="val">{{ "%.4f"|format(user.total_earned|float / doge_to_ton_rate) }} TON</span>
           <span class="lbl">Total Earned</span>
         </div>
         <div class="wl-mini-stat">
-          <span class="val">{{ "%.4f"|format((user.referral_earnings or 0) / doge_to_ton_rate) }} TON</span>
+          <span class="val">{{ "%.4f"|format((user.referral_earnings|float or 0) / doge_to_ton_rate) }} TON</span>
           <span class="lbl">From Referrals</span>
         </div>
       </div>
@@ -458,14 +476,26 @@
     <div class="wl-card">
       {% set btn_count = 1 + (1 if ton_enabled else 0) %}
       <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
+
         <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('ton-withdraw-modal')">
-          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
-          WITHDRAW
+          <span class="px-icon">
+            <svg viewBox="0 0 56 56" fill="none" width="26" height="26">
+              <circle cx="28" cy="28" r="28" fill="#0098EA"/>
+              <path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/>
+              <line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="btn-label">WITHDRAW</span>
+          <span class="btn-sub">Send TON out</span>
         </button>
+
         {% if ton_enabled %}
         <button class="wl-btn wl-btn-ton" id="ton-deposit-btn">
-          <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>
-          DEPOSIT TON
+          <span class="px-icon">
+            <svg viewBox="0 0 56 56" fill="none" width="26" height="26"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
+          </span>
+          <span class="btn-label">DEPOSIT</span>
+          <span class="btn-sub">Receive TON</span>
         </button>
         {% endif %}
       <div class="wl-fee-box">
@@ -638,7 +668,7 @@
         <label class="form-label">Cantidad a retirar</label>
         <input type="number" id="ton-wd-amount-input" class="form-input"
                min="{{ ton_withdrawal_min }}" step="1" value="{{ ton_withdrawal_min }}">
-        <div class="form-hint">Disponible: {{ "%.4f"|format(user.doge_balance / doge_to_ton_rate) }} TON</div>
+        <div class="form-hint">Disponible: {{ "%.4f"|format(user.doge_balance|float / doge_to_ton_rate) }} TON</div>
       </div>
 
       <div class="wl-fee-summary" style="margin-bottom:18px">
@@ -706,7 +736,7 @@
     <div class="modal-handle"></div>
     <div class="modal-header">
       <span class="modal-title">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <svg viewBox="0 0 56 56" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
         DEPOSITAR TON
       </span>
       <button class="modal-close" id="ton-modal-close">×</button>
