@@ -564,9 +564,8 @@ def _auto_send_ton(destination, ton_amount, memo=''):
 
         api_key = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
 
-        # Dirección real de la wallet del bot (la de Tonkeeper)
-        # Configúrala en el panel admin: ton_bot_wallet_address
-        bot_wallet = get_config('ton_bot_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', '')
+        # Dirección real de la wallet del bot (Tonkeeper)
+        bot_wallet = get_config('ton_bot_wallet_address', 'UQCqD6yy4uQvbmsZ792ScmyfynK6GnlLkkaE6T-xBSWAKtJN') or os.getenv('TON_BOT_WALLET_ADDRESS', 'UQCqD6yy4uQvbmsZ792ScmyfynK6GnlLkkaE6T-xBSWAKtJN')
 
         from ton_wallet import send_ton
         return send_ton(

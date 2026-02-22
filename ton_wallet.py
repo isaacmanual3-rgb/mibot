@@ -303,7 +303,7 @@ def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
 # ══════════════════════════════════════════════════════════════
 
 def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
-             bot_wallet_address=''):
+             bot_wallet_address='UQCqD6yy4uQvbmsZ792ScmyfynK6GnlLkkaE6T-xBSWAKtJN'):
     """
     Envía TON desde la wallet del bot.
 
