@@ -498,16 +498,6 @@
           <span class="btn-sub">Receive TON</span>
         </button>
         {% endif %}
-      <div class="wl-fee-box">
-        <div class="wl-fee-left">
-          <span class="wl-fee-label">Minimum Withdrawal</span>
-          <span class="wl-fee-value">{{ min_withdrawal }} TON</span>
-        </div>
-        <div class="wl-fee-right">
-          <span>Network fee</span>
-          {{ withdrawal_fee }} TON
-        </div>
-      </div>
     </div>
 
     <!-- ── WITHDRAWAL REQUESTS ── -->
@@ -667,7 +657,7 @@
       <div class="form-group">
         <label class="form-label">Cantidad a retirar</label>
         <input type="number" id="ton-wd-amount-input" class="form-input"
-               min="{{ ton_withdrawal_min }}" step="1" value="{{ ton_withdrawal_min }}">
+               min="{{ ton_withdrawal_min }}" step="0.0001" value="{{ ton_withdrawal_min }}">
         <div class="form-hint">Disponible: {{ format_ton(user.doge_balance) }} TON</div>
       </div>
 
@@ -824,8 +814,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
 {% if ton_withdrawal_enabled %}
 /* ─── TON Withdrawal ──────────────────────────────────────────── */
 (function() {
-  var FEE_PCT     = {{ ton_withdrawal_fee_pct }};
-  var DOGE_TO_TON = {{ doge_to_ton_rate }};
+  var FEE_PCT     = 3;
   var MIN_DOGE    = {{ ton_withdrawal_min }};
   var MAX_DOGE = {{ user.doge_balance|float }};
 
@@ -849,10 +838,9 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     var d   = parseFloat(this.value) || 0;
     var fee = d * FEE_PCT / 100;
     var net = d - fee;
-    var ton = net / DOGE_TO_TON;
     el('ton-wd-preview-doge').textContent = d.toFixed(4) + ' TON';
     el('ton-wd-preview-fee').textContent  = fee.toFixed(4) + ' TON';
-    el('ton-wd-preview-ton').textContent  = ton.toFixed(4) + ' TON';
+    el('ton-wd-preview-ton').textContent  = net.toFixed(4) + ' TON';
   });
 
   /* Validar dirección en tiempo real */
@@ -886,7 +874,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
 
     if (!addr) { DogeQuest.showToast('Ingresa tu dirección TON', 'error'); return; }
     if (!isValidTonAddr(addr)) { DogeQuest.showToast('Dirección TON inválida', 'error'); return; }
-    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Mínimo ' + MIN_DOGE + ' DOGE', 'error'); return; }
+    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Mínimo ' + MIN_DOGE + ' TON', 'error'); return; }
     if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('Saldo insuficiente', 'error'); return; }
 
     showWdStep('processing');
