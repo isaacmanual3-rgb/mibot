@@ -1,39 +1,13 @@
 """
-ton_wallet.py — Wallet V4R2 usando tonutils
-Librería: https://github.com/nessshon/tonutils
-Instalar: pip install tonutils
+ton_wallet.py — WalletV4R2 via tonutils
+Soporta: Toncenter (con API key) y TON API (sin key)
 """
 import asyncio
 import logging
 import requests
 import time
-from email.utils import parsedate_to_datetime
 
 logger = logging.getLogger(__name__)
-TONCENTER = 'https://toncenter.com/api/v2'
-
-
-def _get_time(api_key=''):
-    for key in ([api_key, ''] if api_key else ['']):
-        try:
-            hdrs = {'X-API-Key': key} if key else {}
-            r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=8)
-            data = r.json()
-            if data.get('ok'):
-                t = data.get('result', {}).get('last', {}).get('utime', 0)
-                if t > 1_000_000_000:
-                    return t
-            extra = str(data.get('@extra', ''))
-            if ':' in extra:
-                try:
-                    t = int(extra.split(':')[0])
-                    if t > 1_000_000_000:
-                        return t
-                except Exception:
-                    pass
-        except Exception:
-            pass
-    return int(time.time())
 
 
 def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
@@ -46,15 +20,17 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
             words = list(mnemonic)
         if len(words) != 24:
             return False, None, f'Mnemonic necesita 24 palabras (tiene {len(words)})'
-        
-        # Intentar con tonutils (async)
+
         try:
-            return asyncio.run(_send_tonutils(words, to_addr, float(ton_amount), memo, api_key))
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                raise RuntimeError
+            return loop.run_until_complete(_send(words, to_addr, float(ton_amount), memo, api_key))
         except RuntimeError:
-            # Si hay un loop corriendo (ej. dentro de Flask con async), crear nuevo
             loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             try:
-                return loop.run_until_complete(_send_tonutils(words, to_addr, float(ton_amount), memo, api_key))
+                return loop.run_until_complete(_send(words, to_addr, float(ton_amount), memo, api_key))
             finally:
                 loop.close()
     except Exception as e:
@@ -62,36 +38,46 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         return False, None, str(e)
 
 
-async def _send_tonutils(words, to_addr, ton_amount, memo, api_key):
+async def _send(words, to_addr, ton_amount, memo, api_key):
+    from tonutils.wallet import WalletV4R2
+
+    # ── Intentar con Toncenter (requiere API key para sendBoc) ──────────
+    if api_key:
+        try:
+            from tonutils.client import ToncenterV2Client
+            client = ToncenterV2Client(api_key=api_key, is_testnet=False)
+            wallet, _, _, _ = WalletV4R2.from_mnemonic(client, words)
+            logger.info(f'Wallet lista (Toncenter). Enviando {ton_amount} TON -> {to_addr}')
+            tx = await wallet.transfer(destination=to_addr, amount=ton_amount,
+                                       body=memo or None)
+            logger.info(f'SUCCESS via Toncenter: {tx}')
+            return True, str(tx), None
+        except Exception as e:
+            logger.warning(f'Toncenter fallo: {e}. Intentando TON API...')
+
+    # ── Fallback: tonapi.io (funciona sin API key) ───────────────────────
     try:
-        from tonutils.client import ToncenterV2Client
-        from tonutils.wallet import WalletV4R2
-
-        logger.info('TON WalletV4R2 via tonutils')
-
-        # Cliente Toncenter V2
-        client = ToncenterV2Client(
-            api_key=api_key or None,
-            is_testnet=False
-        )
-
-        # Cargar wallet desde mnemonic - seqno se obtiene automáticamente
+        from tonutils.client import TonapiClient
+        client = TonapiClient(api_key='', is_testnet=False)
         wallet, _, _, _ = WalletV4R2.from_mnemonic(client, words)
-        logger.info(f'Wallet lista. Enviando {ton_amount} TON -> {to_addr}')
-
-        # Transferencia - tonutils maneja seqno, firma, BOC internamente
-        tx_hash = await wallet.transfer(
-            destination=to_addr,
-            amount=ton_amount,
-            body=memo or None
-        )
-
-        logger.info(f'SUCCESS tx_hash={tx_hash}')
-        return True, str(tx_hash), None
-
-    except ImportError:
-        logger.error('tonutils no instalado. Agrega "tonutils" a requirements.txt')
-        return False, None, 'tonutils no instalado. Agrega "tonutils" a requirements.txt y redespliega.'
+        logger.info(f'Wallet lista (TON API). Enviando {ton_amount} TON -> {to_addr}')
+        tx = await wallet.transfer(destination=to_addr, amount=ton_amount,
+                                   body=memo or None)
+        logger.info(f'SUCCESS via TON API: {tx}')
+        return True, str(tx), None
     except Exception as e:
-        logger.error(f'tonutils error: {e}')
+        logger.warning(f'TON API fallo: {e}. Intentando ToncenterV3...')
+
+    # ── Fallback 2: Toncenter V3 ─────────────────────────────────────────
+    try:
+        from tonutils.client import ToncenterV3Client
+        client = ToncenterV3Client(api_key=api_key or '', is_testnet=False)
+        wallet, _, _, _ = WalletV4R2.from_mnemonic(client, words)
+        logger.info(f'Wallet lista (Toncenter V3). Enviando {ton_amount} TON -> {to_addr}')
+        tx = await wallet.transfer(destination=to_addr, amount=ton_amount,
+                                   body=memo or None)
+        logger.info(f'SUCCESS via Toncenter V3: {tx}')
+        return True, str(tx), None
+    except Exception as e:
+        logger.error(f'Todos los clientes fallaron. Último error: {e}')
         return False, None, str(e)
