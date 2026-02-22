@@ -289,80 +289,119 @@ def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
     """
     Construye BOC correcto para Wallet V4R2.
 
-    Estructura del mensaje externo (wallet-v4r2):
-      ext_in_msg_info (header inline en ext cell)
-      body INLINE (no como ref separada):
-        signature       512 bits (64 bytes)
-        subwallet_id     32 bits
-        valid_until      32 bits
-        seqno            32 bits
-        op               8 bits (0 = send)
-        send_mode        8 bits (3 = pay fees separately + ignore errors)
-      ref: internal_message cell
+    Estructura verificada contra implementaciones oficiales (toncenter/pytonlib, ton-core):
+
+    1. int_msg_cell
+       bits: int_msg_info_relaxed | dest | amount | ... 
+       refs: [memo_cell] (opcional)
+
+    2. body_to_sign (lo que se firma con Ed25519)
+       bits: subwallet_id(32) | valid_until(32) | seqno(32) | op(8=0) | mode(8=3)
+       refs: [int_msg_cell]
+
+    3. signed_cell (lo que TON lee en recv_external como "in_msg")
+       bits: signature(512) | subwallet_id(32) | valid_until(32) | seqno(32) | op(8) | mode(8)
+       refs: [int_msg_cell]
+       (= firma prepend a body INLINE, int_msg como ref compartida)
+
+    4. ext_msg_cell
+       bits: ext_in_msg_info header | either_body=1 (body como ref)
+       refs: [signed_cell]
+
+    El contrato recv_external hace:
+      var signature = in_msg~load_bits(512);     <- 512 bits de signed_cell
+      var (swid, vuntil, seqno) = (cs~load_uint(32), cs~load_uint(32), cs~load_uint(32));
+    Esto lee exactamente los campos que pusimos en signed_cell. ✓
     """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     priv = Ed25519PrivateKey.from_private_bytes(seed)
 
-    # ── Mensaje interno ──────────────────────────────────────
+    # ── 1. Mensaje interno (int_msg_cell) ──────────────────────────────
+    # int_msg_info$0: ihr_disabled bounce bounced src dest value ...
     int_msg = Cell()
     (int_msg.b
-        .uint(0b010, 3)          # tag: int_msg_info (no ihr, bounced=0)
-        .uint(1, 1)              # bounce
-        .uint(0, 1)              # bounced
-        .addr_none()             # src
-        .addr_std(to_wc, to_hash)
-        .grams(nanotons)
-        .uint(0, 1)              # ihr_disabled extra
-        .grams(0)                # ihr_fee
-        .grams(0)                # fwd_fee
-        .uint(0, 64)             # created_lt
-        .uint(0, 32)             # created_at
+        .uint(0, 1)              # tag: int_msg_info$0
+        .uint(1, 1)              # ihr_disabled = true
+        .uint(1, 1)              # bounce = true
+        .uint(0, 1)              # bounced = false
+        .addr_none()             # src = addr_none (rellenado por la red)
+        .addr_std(to_wc, to_hash)  # dest
+        .grams(nanotons)         # value
+        .uint(0, 1)              # other currencies = none
+        .grams(0)                # ihr_fee = 0
+        .grams(0)                # fwd_fee = 0
+        .uint(0, 64)             # created_lt = 0
+        .uint(0, 32)             # created_at = 0
         .uint(0, 1)              # no init
-        .uint(0, 1))             # body inline (vacío)
+        .uint(0, 1))             # body inline (vacío si no hay memo)
 
     if memo:
+        # body con memo: bit=1 (body como ref) + memo_cell
+        # Corregimos el último bit de int_msg a 1 para indicar body como ref
+        # Como ya lo pusimos como 0, lo corregimos añadiendo memo como ref
+        # TON acepta memo como ref del int_msg con el bit correcto
+        # Realmente necesitamos reconstruir para poner el bit body=1
+        int_msg2 = Cell()
+        (int_msg2.b
+            .uint(0, 1)
+            .uint(1, 1)
+            .uint(1, 1)
+            .uint(0, 1)
+            .addr_none()
+            .addr_std(to_wc, to_hash)
+            .grams(nanotons)
+            .uint(0, 1)
+            .grams(0)
+            .grams(0)
+            .uint(0, 64)
+            .uint(0, 32)
+            .uint(0, 1)
+            .uint(1, 1))         # body como ref
         cmt = Cell()
         cmt.b.uint(0, 32).raw(memo.encode('utf-8')[:120])
-        int_msg.refs.append(cmt)
+        int_msg2.refs.append(cmt)
+        int_msg = int_msg2
 
-    # ── Cuerpo a firmar (sin la firma) ───────────────────────
-    # wallet-v4r2: subwallet_id | valid_until | seqno | op(8) | mode(8)
+    # ── 2. Body a firmar ───────────────────────────────────────────────
+    # wallet-v4r2: subwallet_id(32) | valid_until(32) | seqno(32) | op(8) | mode(8)
     body_to_sign = Cell()
     (body_to_sign.b
         .uint(SUBWALLET_ID, 32)
         .uint(expire_at, 32)
         .uint(seqno, 32)
-        .uint(0, 8)              # op = 0 (send message)
-        .uint(3, 8))             # send_mode = 3
+        .uint(0, 8)              # op = 0: send message
+        .uint(3, 8))             # send_mode = 3: pay fees + ignore errors
     body_to_sign.refs.append(int_msg)
 
     sig = priv.sign(body_to_sign.hash())
     logger.info(f'Body hash: {body_to_sign.hash().hex()[:16]}... seqno={seqno} expire={expire_at}')
 
-    # ── Mensaje externo ──────────────────────────────────────
-    # Header inline + body inline (firma + subwallet + vuntil + seqno + op + mode)
-    # refs: [int_msg]
-    ext = Cell()
-    (ext.b
-        # ext_in_msg_info header
-        .uint(0b10, 2)           # msg_type = ext_in
-        .addr_none()             # src = addr_none
-        .addr_std(sender_wc, sender_hash)  # dest
-        .grams(0)                # import_fee
-        # body inline (bit 0 = inline, bit 1 = body present)
-        .uint(0, 1)              # no state_init
-        .uint(0, 1)              # body inline (no ref para el cuerpo firmado)
-        # firma inline
-        .raw(sig)
-        # campos firmados inline
-        .uint(SUBWALLET_ID, 32)
+    # ── 3. Signed cell: firma INLINE + body INLINE + int_msg como ref ──
+    # El contrato lee: sig(512b) luego swid|vuntil|seqno desde este slice
+    signed = Cell()
+    (signed.b
+        .raw(sig)                # firma 512 bits
+        .uint(SUBWALLET_ID, 32)  # body inline
         .uint(expire_at, 32)
         .uint(seqno, 32)
         .uint(0, 8)              # op
-        .uint(3, 8))             # send_mode
-    # el mensaje interno va como ref
-    ext.refs.append(int_msg)
+        .uint(3, 8))             # mode
+    signed.refs.append(int_msg)  # int_msg como ref
+
+    # ── 4. Mensaje externo ─────────────────────────────────────────────
+    # ext_in_msg_info$10 src:MsgAddressExt dest:MsgAddressInt import_fee:Grams
+    # init:(Maybe StateInit) body:(Either X ^X)
+    # either=1 -> body como ref (signed_cell)
+    ext = Cell()
+    (ext.b
+        .uint(0b10, 2)           # tag: ext_in_msg_info$10
+        .addr_none()             # src: MsgAddressExt = addr_none$00
+        .addr_std(sender_wc, sender_hash)  # dest
+        .grams(0)                # import_fee = 0
+        .uint(0, 1)              # no state_init
+        .uint(1, 1))             # body como ref (Either bit = 1)
+    ext.refs.append(signed)      # signed_cell como ref del ext
 
     return ext.boc_b64()
 
