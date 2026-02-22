@@ -208,6 +208,23 @@ def _get_wallet_address_from_pubkey(pub_hex, api_key=''):
 #  TONCENTER HELPERS
 # ══════════════════════════════════════════════════════════════
 
+def _get_network_time(api_key=''):
+    """Obtiene el tiempo actual desde TonCenter para evitar desfase de reloj."""
+    try:
+        hdrs = {}
+        if api_key:
+            hdrs['X-API-Key'] = api_key
+        r = requests.get(f'{TONCENTER}/getMasterchainInfo',
+                         headers=hdrs, timeout=5)
+        data = r.json()
+        if data.get('ok'):
+            # utime del último bloque como referencia
+            return data['result'].get('last', {}).get('utime', int(time.time()))
+    except Exception:
+        pass
+    return int(time.time())
+
+
 def _tc_post(method, payload, api_key=''):
     hdrs = {'Content-Type': 'application/json'}
     if api_key:
@@ -372,7 +389,9 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         to_wc, to_hash = friendly_to_raw(to_addr)
         steps.append(f'Destino OK wc={to_wc}')
 
-        expire_at = int(time.time()) + 600
+        # Usar tiempo de la red TON para evitar errores de valid_until
+        net_time  = _get_network_time(api_key)
+        expire_at = net_time + 60  # 60 segundos desde ahora según la red
         nanotons  = int(float(ton_amount) * 1_000_000_000)
 
         steps.append(f'Firmando BOC: {ton_amount} TON -> {to_addr}')
