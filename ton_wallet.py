@@ -206,24 +206,56 @@ def _tc_post(method, payload, api_key=''):
 
 
 def _get_network_time(api_key=''):
-    """Tiempo actual desde la red TON con reintentos."""
-    for attempt in range(3):
+    """
+    Obtiene tiempo Unix real usando múltiples fuentes en orden de prioridad:
+    1. Toncenter getMasterchainInfo (con API key)
+    2. Toncenter sin API key
+    3. worldtimeapi.org (tiempo UTC externo confiable)
+    4. time.cloudflare.com
+    5. Tiempo local del sistema (último recurso)
+    """
+    # 1 y 2: Intentar con Toncenter
+    for use_key in ([True, False] if api_key else [False]):
         try:
             hdrs = {}
-            if api_key:
+            if use_key and api_key:
                 hdrs['X-API-Key'] = api_key
             r = requests.get(f'{TONCENTER}/getMasterchainInfo', headers=hdrs, timeout=8)
             data = r.json()
             if data.get('ok'):
                 utime = data['result'].get('last', {}).get('utime', 0)
-                if utime > 0:
-                    logger.info(f'TON net_time obtenido: {utime}')
+                if utime > 1_000_000_000:
+                    logger.info(f'TON net_time via Toncenter: {utime}')
                     return utime
         except Exception as e:
-            logger.warning(f'_get_network_time intento {attempt+1} fallo: {e}')
-            time.sleep(1)
+            logger.warning(f'Toncenter time fallo (key={use_key}): {e}')
+
+    # 3: worldtimeapi como fallback confiable
+    try:
+        r = requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC', timeout=6)
+        data = r.json()
+        utime = data.get('unixtime', 0)
+        if utime > 1_000_000_000:
+            logger.info(f'TON net_time via worldtimeapi: {utime}')
+            return utime
+    except Exception as e:
+        logger.warning(f'worldtimeapi fallo: {e}')
+
+    # 4: Cloudflare como otro fallback
+    try:
+        r = requests.get('https://time.cloudflare.com/cdn-cgi/trace', timeout=6)
+        for line in r.text.splitlines():
+            if line.startswith('ts='):
+                utime = int(float(line.split('=')[1]))
+                if utime > 1_000_000_000:
+                    logger.info(f'TON net_time via Cloudflare: {utime}')
+                    return utime
+    except Exception as e:
+        logger.warning(f'Cloudflare time fallo: {e}')
+
+    # 5: Último recurso: tiempo local
     local = int(time.time())
-    logger.warning(f'Usando tiempo local como fallback: {local}')
+    logger.error(f'TODAS las fuentes de tiempo fallaron. Usando tiempo local: {local}')
     return local
 
 
