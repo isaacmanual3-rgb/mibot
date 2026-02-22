@@ -143,6 +143,7 @@ app.jinja_env.globals['icon_url'] = icon_url
 app.jinja_env.globals['icon_fallback'] = icon_fallback
 app.jinja_env.globals['icons_config'] = lambda: ICONS_CONFIG
 app.jinja_env.globals['format_doge'] = lambda amount: format_doge(amount)
+app.jinja_env.globals['format_ton'] = lambda amount: format_ton(amount)
 
 # ============================================
 # TELEGRAM VERIFICATION
@@ -330,7 +331,13 @@ def _check_and_validate_referral(user):
 def format_doge(amount):
     """Format DOGE amount for display"""
     if amount is None:
-        return "0.00"
+        return "0.0000"
+    return f"{float(amount):.4f}"
+
+def format_ton(amount):
+    """Format TON amount for display — no conversion, value IS already TON"""
+    if amount is None:
+        return "0.0000"
     return f"{float(amount):.4f}"
 
 # ============================================
