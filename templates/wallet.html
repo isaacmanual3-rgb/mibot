@@ -456,7 +456,7 @@
     <div class="wl-card">
       {% set btn_count = 2 + (1 if ton_enabled else 0) + (1 if ton_withdrawal_enabled else 0) %}
       <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
-        <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('withdraw-modal')">
+        <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('ton-withdraw-modal')">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
           WITHDRAW
         </button>
@@ -622,37 +622,25 @@
     <div class="modal-handle"></div>
     <div class="modal-header">
       <span class="modal-title">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-        RETIRAR TON
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#ffd700"/><path d="M12 5v14M19 12l-7 7-7-7" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        WITHDRAW TON
       </span>
       <button class="modal-close" id="ton-wd-modal-close">×</button>
     </div>
 
-    <!-- Paso 1: Conectar wallet -->
-    <div id="ton-wd-step-connect">
-      <div style="text-align:center;padding:16px 0 10px">
-        <div style="background:var(--surface3);border:2px solid #0098EA;padding:14px;margin-bottom:18px;font-family:var(--font-px);font-size:0.38rem;color:#0098EA;letter-spacing:.1em">
-          100 DOGE = {{ (100 / doge_to_ton_rate)|round(4) }} TON &nbsp;·&nbsp; MIN: {{ ton_withdrawal_min }} DOGE
-        </div>
-        <p style="font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
-          Conecta tu wallet TON para recibir el retiro. El admin lo procesara manualmente.
-        </p>
-        <button id="ton-wd-btn-connect" style="width:100%;padding:15px;background:#0098EA;color:#fff;border:2px solid #00b4ff;box-shadow:4px 4px 0 #004466;font-family:var(--font-px);font-size:0.5rem;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          CONECTAR WALLET TON
-        </button>
+    <!-- Paso 1: Formulario -->
+    <div id="ton-wd-step-form">
+      <div style="background:var(--surface3);border:2px solid #ffd700;padding:12px 14px;margin-bottom:16px;font-family:var(--font-px);font-size:0.37rem;color:#ffd700;letter-spacing:.08em;text-align:center">
+        100 DOGE = {{ (100 / doge_to_ton_rate)|round(4) }} TON &nbsp;·&nbsp; MIN: {{ ton_withdrawal_min }} DOGE
       </div>
-    </div>
 
-    <!-- Paso 2: Monto -->
-    <div id="ton-wd-step-amount" style="display:none">
-      <div style="background:rgba(0,152,234,0.08);border:2px solid rgba(0,152,234,0.3);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-        <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#0098EA"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-        <div style="flex:1;min-width:0;overflow:hidden">
-          <div style="font-family:var(--font-px);font-size:0.34rem;color:var(--muted);margin-bottom:3px">WALLET TON</div>
-          <div id="ton-wd-wallet-display" style="font-size:0.7rem;color:#0098EA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-        </div>
-        <button id="ton-wd-btn-disconnect" style="background:none;border:1px solid #333;color:#666;padding:3px 8px;cursor:pointer;font-size:0.72rem;flex-shrink:0">x</button>
+      <div class="form-group">
+        <label class="form-label" style="color:#ffd700">Dirección TON destino</label>
+        <input type="text" id="ton-wd-address-input" class="form-input"
+               placeholder="UQ... o EQ... (cualquier wallet o exchange)"
+               autocomplete="off" spellcheck="false"
+               style="font-size:0.72rem;letter-spacing:0.02em">
+        <div class="form-hint">Tonkeeper, MyTonWallet, OKX, Bybit, Binance... cualquier dirección TON</div>
       </div>
 
       <div class="form-group">
@@ -668,7 +656,7 @@
           <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ ton_withdrawal_min }} DOGE</span>
         </div>
         <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Comision ({{ ton_withdrawal_fee_pct }}%)</span>
+          <span class="wl-fee-row-label">Comisión ({{ ton_withdrawal_fee_pct }}%)</span>
           <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ (ton_withdrawal_min * ton_withdrawal_fee_pct / 100)|round(2) }} DOGE</span>
         </div>
         <div class="wl-fee-row">
@@ -677,30 +665,32 @@
         </div>
       </div>
 
+      <div id="ton-wd-addr-warning" style="display:none;background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.4);padding:10px 12px;margin-bottom:14px;font-size:0.76rem;color:#ff4d6a;line-height:1.4"></div>
+
       <div class="modal-footer">
         <button id="ton-wd-btn-cancel" class="wl-btn-cancel">CANCELAR</button>
-        <button id="ton-wd-btn-submit" class="wl-btn-confirm" style="background:#0098EA;border-color:#00b4ff;box-shadow:3px 3px 0 0 #004466">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#fff"/><path d="M8.5 7h7l-4.5 10-2.5-6H15" stroke="#0098EA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          SOLICITAR RETIRO
+        <button id="ton-wd-btn-submit" class="wl-btn-confirm" style="background:#c8a200;border-color:#ffd700;box-shadow:3px 3px 0 0 #7a6000;color:#1a1a2e;font-weight:bold">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><path d="M12 5v14M19 12l-7 7-7-7" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          RETIRAR
         </button>
       </div>
     </div>
 
-    <!-- Paso 3: Procesando -->
+    <!-- Paso 2: Procesando -->
     <div id="ton-wd-step-processing" style="display:none;text-align:center;padding:36px 0">
-      <div style="width:52px;height:52px;border:3px solid #0098EA;border-top-color:transparent;border-radius:50%;animation:ton-wd-spin 1s linear infinite;margin:0 auto 20px"></div>
-      <div style="font-family:var(--font-px);font-size:0.46rem;color:#0098EA;letter-spacing:.1em;margin-bottom:12px">PROCESANDO RETIRO...</div>
+      <div style="width:52px;height:52px;border:3px solid #ffd700;border-top-color:transparent;border-radius:50%;animation:ton-wd-spin 1s linear infinite;margin:0 auto 20px"></div>
+      <div style="font-family:var(--font-px);font-size:0.46rem;color:#ffd700;letter-spacing:.1em;margin-bottom:12px">PROCESANDO RETIRO...</div>
       <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">Firmando y enviando la transacción TON.<br>Esto puede tomar unos segundos.</div>
       <style>@keyframes ton-wd-spin { to { transform:rotate(360deg) } }</style>
     </div>
 
-    <!-- Paso 4: Exito -->
+    <!-- Paso 3: Éxito -->
     <div id="ton-wd-step-success" style="display:none;text-align:center;padding:30px 0">
       <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">RETIRO SOLICITADO</div>
-      <div id="ton-wd-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px"></div>
+      <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">¡RETIRO ENVIADO!</div>
+      <div id="ton-wd-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
       <button id="ton-wd-btn-success-close" class="wl-btn-confirm">CERRAR</button>
     </div>
 
@@ -832,51 +822,29 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
 {% if ton_withdrawal_enabled %}
 /* ─── TON Withdrawal ──────────────────────────────────────────── */
 (function() {
-  var FEE_PCT      = {{ ton_withdrawal_fee_pct }};
-  var DOGE_TO_TON  = {{ doge_to_ton_rate }};
-  var MIN_DOGE     = {{ ton_withdrawal_min }};
-  var MAX_DOGE     = {{ user.doge_balance|float }};
-
-  var tcWD     = null;   // shared TonConnectUI (reuses deposit instance if loaded)
-  var wdWallet = null;
+  var FEE_PCT     = {{ ton_withdrawal_fee_pct }};
+  var DOGE_TO_TON = {{ doge_to_ton_rate }};
+  var MIN_DOGE    = {{ ton_withdrawal_min }};
+  var MAX_DOGE    = {{ user.doge_balance|float }};
 
   function el(id) { return document.getElementById(id); }
 
   function showWdStep(name) {
-    ['connect','amount','processing','success','error'].forEach(function(s) {
+    ['form','processing','success','error'].forEach(function(s) {
       var d = el('ton-wd-step-' + s);
       if (d) d.style.display = (s === name) ? 'block' : 'none';
     });
   }
 
-  function shortAddr(addr) {
-    var s = String(addr || '');
-    return s.length > 16 ? s.slice(0,8) + '...' + s.slice(-6) : s;
+  function isValidTonAddr(addr) {
+    addr = addr.trim();
+    // UQ.../EQ... base64url 48 chars, o raw hex 64 chars
+    return /^[UE]Q[A-Za-z0-9_\-]{46}$/.test(addr) || /^0:[a-fA-F0-9]{64}$/.test(addr);
   }
 
-  /* Init TonConnect — reuse deposit instance if available */
-  function initWdTC() {
-    if (tcWD) return;
-    // Try to reuse the deposit TC instance
-    if (window._tonConnectUI) { tcWD = window._tonConnectUI; syncWdWallet(); return; }
-    try {
-      tcWD = new TON_CONNECT_UI.TonConnectUI({
-        manifestUrl: window.location.origin + '/static/tonconnect-manifest.json',
-        buttonRootId: null
-      });
-      window._tonConnectUI = tcWD;
-    } catch(e) { console.error('TON WD init:', e); return; }
-    syncWdWallet();
-    tcWD.onStatusChange(function(w) { wdWallet = w; if (w) { el('ton-wd-wallet-display').textContent = shortAddr(w.account.address); showWdStep('amount'); } else { showWdStep('connect'); } });
-  }
-
-  function syncWdWallet() {
-    if (tcWD && tcWD.wallet) { wdWallet = tcWD.wallet; }
-  }
-
-  /* Preview */
+  /* Preview actualizado */
   el('ton-wd-amount-input') && el('ton-wd-amount-input').addEventListener('input', function() {
-    var d = parseFloat(this.value) || 0;
+    var d   = parseFloat(this.value) || 0;
     var fee = d * FEE_PCT / 100;
     var net = d - fee;
     var ton = net / DOGE_TO_TON;
@@ -885,52 +853,40 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     el('ton-wd-preview-ton').textContent  = ton.toFixed(4) + ' TON';
   });
 
-  /* Open modal */
+  /* Validar dirección en tiempo real */
+  el('ton-wd-address-input') && el('ton-wd-address-input').addEventListener('input', function() {
+    var w = el('ton-wd-addr-warning');
+    var v = this.value.trim();
+    if (v.length > 5 && !isValidTonAddr(v)) {
+      w.style.display = 'block';
+      w.textContent = '⚠ Dirección TON inválida. Debe empezar con UQ o EQ y tener 48 caracteres. Cópiala directamente de tu wallet o exchange.';
+    } else {
+      w.style.display = 'none';
+    }
+  });
+
+  /* Abrir modal */
   el('ton-withdraw-btn') && el('ton-withdraw-btn').addEventListener('click', function() {
-    showWdStep('connect');
+    showWdStep('form');
     DogeQuest.openModal('ton-withdraw-modal');
-    setTimeout(function() {
-      initWdTC();
-      if (wdWallet) { el('ton-wd-wallet-display').textContent = shortAddr(wdWallet.account.address); showWdStep('amount'); }
-    }, 200);
   });
 
-  /* Connect */
-  el('ton-wd-btn-connect') && el('ton-wd-btn-connect').addEventListener('click', function() {
-    var btn = this; btn.disabled = true; btn.textContent = 'Conectando...';
-    initWdTC();
-    if (!tcWD) { btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; return; }
-    if (wdWallet) { el('ton-wd-wallet-display').textContent = shortAddr(wdWallet.account.address); showWdStep('amount'); btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; return; }
-    tcWD.openModal().catch(function(){}).finally(function(){ btn.disabled = false; btn.textContent = 'CONECTAR WALLET TON'; });
-  });
-
-  /* Disconnect — limpia wallet en frontend Y en backend */
-  el('ton-wd-btn-disconnect') && el('ton-wd-btn-disconnect').addEventListener('click', async function() {
-    wdWallet = null;
-    // Limpiar en backend también para que pueda conectar wallet nueva
-    try {
-      await fetch('/api/ton/wallet/clear', { method: 'POST' });
-    } catch(e) {}
-    if (tcWD) { try { tcWD.disconnect(); } catch(e) {} }
-    showWdStep('connect');
-    DogeQuest.showToast('Wallet desvinculada. Conecta tu wallet TON.', 'success');
-  });
-
-  /* Cancel */
-  el('ton-wd-btn-cancel') && el('ton-wd-btn-cancel').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); });
+  /* Cerrar / Cancelar */
   el('ton-wd-modal-close') && el('ton-wd-modal-close').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); });
-  el('ton-wd-btn-retry') && el('ton-wd-btn-retry').addEventListener('click', function() { showWdStep('amount'); });
+  el('ton-wd-btn-cancel')  && el('ton-wd-btn-cancel').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); });
+  el('ton-wd-btn-retry')   && el('ton-wd-btn-retry').addEventListener('click', function() { showWdStep('form'); });
   el('ton-wd-btn-success-close') && el('ton-wd-btn-success-close').addEventListener('click', function() { DogeQuest.closeModal('ton-withdraw-modal'); location.reload(); });
 
   /* Submit */
   el('ton-wd-btn-submit') && el('ton-wd-btn-submit').addEventListener('click', async function() {
-    if (!wdWallet) { DogeQuest.showToast('Conecta tu wallet TON primero', 'error'); showWdStep('connect'); return; }
-
+    var addr    = (el('ton-wd-address-input').value || '').trim();
     var dogeAmt = parseFloat(el('ton-wd-amount-input').value || '0');
-    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Minimo ' + MIN_DOGE + ' DOGE', 'error'); return; }
+
+    if (!addr) { DogeQuest.showToast('Ingresa tu dirección TON', 'error'); return; }
+    if (!isValidTonAddr(addr)) { DogeQuest.showToast('Dirección TON inválida', 'error'); return; }
+    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Mínimo ' + MIN_DOGE + ' DOGE', 'error'); return; }
     if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('Saldo insuficiente', 'error'); return; }
 
-    /* Mostrar pantalla de procesando inmediatamente */
     showWdStep('processing');
 
     var data = null;
@@ -938,41 +894,37 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
       var res = await fetch('/api/ton/withdraw/init', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ doge_amount: dogeAmt, ton_wallet: wdWallet.account.address })
+        body: JSON.stringify({ doge_amount: dogeAmt, ton_wallet: addr })
       });
-
       if (!res.ok) {
         var errText = 'HTTP ' + res.status;
         try { var j = await res.json(); errText = j.message || errText; } catch(e){}
         throw new Error(errText);
       }
-
       data = await res.json();
       if (!data.success) throw new Error(data.message || 'Error al procesar retiro');
 
-      /* Éxito */
       showWdStep('success');
       var msg = '';
       if (data.auto_sent) {
-        msg = '✅ ¡TON enviado automáticamente!\n\n';
+        msg  = '✅ ¡TON enviado automáticamente!\n\n';
         msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
-        msg += 'A: ' + data.ton_wallet;
-        if (data.tx_hash) msg += '\nTX: ' + data.tx_hash.slice(0, 20) + '...';
+        msg += 'A: ' + addr;
+        if (data.tx_hash) msg += '\nTX: ' + data.tx_hash.slice(0, 24) + '...';
       } else {
-        msg = '⏳ Retiro registrado y en proceso\n\n';
+        msg  = '⏳ Retiro registrado y en proceso\n\n';
         msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
-        msg += 'Wallet: ' + data.ton_wallet + '\n\n';
+        msg += 'A: ' + addr + '\n\n';
         msg += 'ID: ' + (data.withdrawal_id || '—') + '\n';
-        msg += 'El envío de TON se procesará en los próximos minutos.';
+        msg += 'El TON se enviará en los próximos minutos.';
       }
       el('ton-wd-success-msg').textContent = msg;
 
     } catch(err) {
       showWdStep('error');
       var errMsg = err.message || 'Error desconocido';
-      /* Si ya se registró el retiro (DOGE deducido) pero el envío falló, informar */
       if (data && data.withdrawal_id) {
-        errMsg += '\n\nID de retiro: ' + data.withdrawal_id + '\n(Tu DOGE fue reservado, el TON se enviará manualmente por el admin)';
+        errMsg += '\n\nID: ' + data.withdrawal_id + '\n(Tu DOGE fue reservado, el TON se enviará manualmente)';
       }
       el('ton-wd-error-msg').textContent = errMsg;
     }
