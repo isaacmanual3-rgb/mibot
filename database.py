@@ -1169,6 +1169,16 @@ def init_ton_tables():
         execute_query("ALTER TABLE users ADD COLUMN ton_wallet VARCHAR(100) DEFAULT NULL")
         _ton_log.info("✓ Added ton_wallet column to users")
 
+    # 2b. Add ton_deposit_address — unique TON deposit address per user
+    if not _ton_column_exists('users', 'ton_deposit_address'):
+        execute_query("ALTER TABLE users ADD COLUMN ton_deposit_address VARCHAR(200) DEFAULT NULL")
+        _ton_log.info("✓ Added ton_deposit_address column to users")
+
+    # 2c. Add memo column to ton_deposits for matching incoming txs
+    if not _ton_column_exists('ton_deposits', 'memo'):
+        execute_query("ALTER TABLE ton_deposits ADD COLUMN memo VARCHAR(50) DEFAULT NULL")
+        _ton_log.info("✓ Added memo column to ton_deposits")
+
     # 3. Insert default TON config values if missing
     defaults = [
         ('ton_wallet_address', 'AQUI_TU_WALLET_TON'),
@@ -1648,3 +1658,41 @@ def save_user_ton_wallet(user_id, ton_wallet):
         "UPDATE users SET ton_wallet = %s WHERE user_id = %s",
         (ton_wallet, str(user_id))
     )
+
+
+def get_or_create_user_deposit_address(user_id):
+    """
+    Returns the bot's shared deposit address + a unique memo for this user.
+    The memo is used to identify which user sent the TON.
+    Format: TONU-<user_id_short>  (e.g. TONU-12345678)
+    """
+    user = execute_query(
+        "SELECT ton_deposit_address FROM users WHERE user_id = %s",
+        (str(user_id),), fetch_one=True
+    )
+    if user and user.get('ton_deposit_address'):
+        return user['ton_deposit_address']
+
+    # Generate stable memo from user_id
+    memo = f"TONU{str(user_id)[-8:]}"
+    execute_query(
+        "UPDATE users SET ton_deposit_address = %s WHERE user_id = %s",
+        (memo, str(user_id))
+    )
+    return memo
+
+
+def create_ton_deposit_pending(user_id, memo):
+    """
+    Create a pending deposit record identified by memo (user's unique comment).
+    ton_amount and doge_credited will be filled when the TX is detected.
+    """
+    import uuid
+    deposit_id = 'TOND-' + str(uuid.uuid4())[:8].upper()
+    execute_query("""
+        INSERT INTO ton_deposits
+            (deposit_id, user_id, ton_amount, doge_credited, ton_wallet_from, memo, status)
+        VALUES (%s, %s, 0, 0, '', %s, 'pending')
+        ON DUPLICATE KEY UPDATE deposit_id = deposit_id
+    """, (deposit_id, str(user_id), memo))
+    return deposit_id

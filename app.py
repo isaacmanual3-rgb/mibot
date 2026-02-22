@@ -44,7 +44,8 @@ from database import (
     # TON Deposit functions
     create_ton_deposit, confirm_ton_deposit, get_user_ton_deposits,
     create_ton_withdrawal,
-    get_pending_ton_deposits, save_user_ton_wallet
+    get_pending_ton_deposits, save_user_ton_wallet,
+    get_or_create_user_deposit_address, create_ton_deposit_pending
 )
 
 # Flask App Setup
@@ -469,6 +470,8 @@ def wallet(user):
     ton_min = float(get_config('ton_min_deposit', '0.1'))
     ton_enabled = get_config('ton_deposits_enabled', '1') == '1'
     ton_wallet_addr = get_config('ton_wallet_address', '')
+    # Unique memo per user for deposit identification
+    user_deposit_memo = get_or_create_user_deposit_address(user['user_id']) if ton_enabled else ''
 
     # TON withdrawal config
     ton_withdrawal_enabled = get_config('ton_withdrawal_enabled', '1') == '1'
@@ -488,6 +491,7 @@ def wallet(user):
         ton_min=ton_min,
         ton_enabled=ton_enabled,
         ton_wallet_address=ton_wallet_addr,
+        user_deposit_memo=user_deposit_memo,
         ton_withdrawal_enabled=ton_withdrawal_enabled,
         ton_withdrawal_min=ton_withdrawal_min,
         ton_withdrawal_fee_pct=ton_withdrawal_fee_pct,
@@ -582,180 +586,156 @@ def _auto_send_ton(destination, ton_amount, memo=''):
         return False, None, str(exc)
 
 
-@app.route('/api/ton/deposit/init', methods=['POST'])
+@app.route('/api/ton/deposit/address')
 @require_user
-def api_ton_deposit_init(user):
-    """Initialize a TON deposit - save pending record before sending"""
-    data = request.get_json() or {}
-    ton_wallet_from = data.get('ton_wallet', '').strip()
-    ton_amount = float(data.get('ton_amount', 0))
+def api_ton_deposit_address(user):
+    """
+    Returns the bot's deposit address + this user's unique memo.
+    Frontend uses this to show QR and address.
+    Also creates a pending deposit record for polling.
+    """
+    if get_config('ton_deposits_enabled', '1') != '1':
+        return jsonify({'success': False, 'message': 'Depósitos TON deshabilitados'})
 
-    if not ton_wallet_from:
-        return jsonify({'success': False, 'message': 'TON wallet address required'})
+    ton_wallet_addr = get_config('ton_wallet_address', '')
+    if not ton_wallet_addr or 'AQUI' in ton_wallet_addr:
+        return jsonify({'success': False, 'message': 'Dirección del bot no configurada. Contacta al admin.'})
 
+    memo = get_or_create_user_deposit_address(user['user_id'])
     ton_min = float(get_config('ton_min_deposit', '0.1'))
-    if ton_amount < ton_min:
-        return jsonify({'success': False, 'message': f'Minimum deposit is {ton_min} TON'})
-
     ton_rate = float(get_config('ton_to_doge_rate', '100'))
-    doge_credited = ton_amount * ton_rate
 
-    save_user_ton_wallet(user['user_id'], ton_wallet_from)
-
-    deposit_id = create_ton_deposit(
-        user['user_id'], ton_amount, doge_credited, ton_wallet_from
+    # Create or reuse a pending deposit for this user
+    from database import execute_query
+    existing = execute_query(
+        "SELECT deposit_id FROM ton_deposits WHERE user_id=%s AND status='pending' ORDER BY created_at DESC LIMIT 1",
+        (str(user['user_id']),), fetch_one=True
     )
+    if existing:
+        deposit_id = existing['deposit_id']
+    else:
+        deposit_id = create_ton_deposit_pending(user['user_id'], memo)
 
     return jsonify({
         'success': True,
+        'deposit_address': ton_wallet_addr,
+        'memo': memo,
         'deposit_id': deposit_id,
-        'doge_credited': doge_credited,
-        'ton_amount': ton_amount
+        'ton_min': ton_min,
+        'ton_rate': ton_rate,
     })
+
+
+@app.route('/api/ton/deposit/init', methods=['POST'])
+@require_user
+def api_ton_deposit_init(user):
+    """Legacy endpoint — kept for compatibility"""
+    return api_ton_deposit_address(user)
 
 
 @app.route('/api/ton/deposit/verify', methods=['POST'])
 @require_user
 def api_ton_deposit_verify(user):
-    """Verify TON deposit automatically via TON Center API and credit DOGE immediately."""
-    data = request.get_json() or {}
-    deposit_id = data.get('deposit_id', '').strip()
-    boc = data.get('boc', '')
-
-    if not deposit_id:
-        return jsonify({'success': False, 'message': 'deposit_id requerido'})
-
-    from database import execute_query
-    execute_query(
-        "UPDATE ton_deposits SET boc = %s WHERE deposit_id = %s AND user_id = %s",
-        (boc[:4000] if boc else None, deposit_id, str(user['user_id']))
-    )
-
-    verified, tx_hash = _verify_ton_boc(boc, deposit_id)
-    if verified:
-        ok = confirm_ton_deposit(deposit_id, tx_hash)
-        if ok:
-            dep = execute_query("SELECT doge_credited FROM ton_deposits WHERE deposit_id=%s", (deposit_id,), fetch_one=True)
-            doge = float(dep['doge_credited']) if dep else 0
-            return jsonify({'success': True, 'doge_credited': doge,
-                            'message': f'Deposito confirmado! {doge:.2f} DOGE acreditados.'})
-
+    """Legacy endpoint kept for compatibility — no longer used by frontend"""
     return jsonify({'success': False, 'pending': True,
-                    'message': 'TX enviada. Verificando en la red TON (10-60 segundos)...'})
-
-
-def _verify_ton_boc(boc, deposit_id):
-    """Broadcast BOC to TON Center and return (verified, tx_hash)."""
-    if not boc:
-        return False, None
-    try:
-        resp = requests.post(
-            'https://toncenter.com/api/v2/sendBocReturnHash',
-            json={'boc': boc}, timeout=15,
-            headers={'Content-Type': 'application/json'}
-        )
-        result = resp.json()
-        if result.get('ok') and result.get('result', {}).get('hash'):
-            tx_hash = result['result']['hash']
-            logger.info(f"TON deposit {deposit_id} broadcast hash: {tx_hash}")
-            import time; time.sleep(5)
-            return _check_ton_tx_hash(tx_hash), tx_hash
-    except Exception as e:
-        logger.warning(f"TON BOC verify error {deposit_id}: {e}")
-    return False, None
-
-
-def _check_ton_tx_hash(tx_hash):
-    """Check if a specific tx hash appears in recent receiver transactions."""
-    try:
-        receiver = get_config('ton_wallet_address', '')
-        if not receiver:
-            return False
-        resp = requests.get('https://toncenter.com/api/v2/getTransactions',
-                            params={'address': receiver, 'limit': 10}, timeout=10)
-        data = resp.json()
-        if not data.get('ok'):
-            return False
-        for tx in data.get('result', []):
-            if tx_hash in str(tx.get('transaction_id', {})):
-                return True
-    except Exception:
-        pass
-    return False
-
-@app.route('/api/ton/wallet/clear', methods=['POST'])
-@require_user
-def api_ton_wallet_clear(user):
-    """Desvincula la wallet TON guardada para que el usuario conecte una nueva."""
-    from database import execute_query
-    execute_query("UPDATE users SET ton_wallet = NULL WHERE user_id = %s", (str(user['user_id']),))
-    return jsonify({'success': True, 'message': 'Wallet TON desvinculada. Reconecta tu wallet.'})
-
+                    'message': 'Usa el nuevo sistema de QR. Recarga la página.'})
 
 
 @app.route('/api/ton/deposit/status/<deposit_id>')
 @require_user
 def api_ton_deposit_status(user, deposit_id):
-    """Polling: frontend checks every 8 sec to see if deposit was credited."""
+    """
+    Polling: frontend calls every 8s.
+    Scans Toncenter for incoming TX matching the user's memo, then credits DOGE.
+    """
     from database import execute_query
     deposit = execute_query(
-        "SELECT status, doge_credited, ton_amount, boc FROM ton_deposits WHERE deposit_id=%s AND user_id=%s",
+        "SELECT status, doge_credited, ton_amount FROM ton_deposits WHERE deposit_id=%s AND user_id=%s",
         (deposit_id, str(user['user_id'])), fetch_one=True
     )
     if not deposit:
         return jsonify({'status': 'not_found'})
 
     if deposit['status'] == 'pending':
-        _try_background_verify(deposit_id, deposit)
-        deposit = execute_query("SELECT status, doge_credited FROM ton_deposits WHERE deposit_id=%s",
-                                (deposit_id,), fetch_one=True)
+        _scan_and_credit_deposit(user['user_id'], deposit_id)
+        deposit = execute_query(
+            "SELECT status, doge_credited, ton_amount FROM ton_deposits WHERE deposit_id=%s",
+            (deposit_id,), fetch_one=True
+        )
 
     return jsonify({
         'status': deposit['status'] if deposit else 'not_found',
-        'doge_credited': float(deposit['doge_credited']) if deposit else 0
+        'doge_credited': float(deposit['doge_credited']) if deposit else 0,
+        'ton_amount': float(deposit['ton_amount']) if deposit else 0,
     })
 
 
-def _try_background_verify(deposit_id, deposit=None):
-    """Try to verify a pending deposit by scanning recent TON transactions."""
+def _scan_and_credit_deposit(user_id, deposit_id):
+    """
+    Scan the bot wallet's recent transactions for a TX whose comment matches
+    this user's memo. If found, credit DOGE automatically.
+    """
     from database import execute_query
     try:
-        if deposit is None:
-            deposit = execute_query(
-                "SELECT * FROM ton_deposits WHERE deposit_id=%s AND status='pending'",
-                (deposit_id,), fetch_one=True
-            )
-        if not deposit:
-            return
-
         receiver = get_config('ton_wallet_address', '')
+        api_key  = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
         if not receiver or 'AQUI' in receiver:
             return
 
-        resp = requests.get('https://toncenter.com/api/v2/getTransactions',
-                            params={'address': receiver, 'limit': 30}, timeout=10)
+        memo = get_or_create_user_deposit_address(user_id)
+        ton_rate = float(get_config('ton_to_doge_rate', '100'))
+        ton_min  = float(get_config('ton_min_deposit', '0.1'))
+
+        headers = {}
+        if api_key:
+            headers['X-API-Key'] = api_key
+
+        resp = requests.get(
+            'https://toncenter.com/api/v2/getTransactions',
+            params={'address': receiver, 'limit': 50},
+            headers=headers, timeout=10
+        )
         data = resp.json()
         if not data.get('ok'):
             return
 
-        expected_nano = int(float(deposit['ton_amount']) * 1e9)
-
         for tx in data.get('result', []):
             in_msg = tx.get('in_msg', {})
-            msg_comment = str(in_msg.get('message', '') or '')
-            msg_value   = int(in_msg.get('value', '0') or 0)
-            tx_hash     = tx.get('transaction_id', {}).get('hash', '')
+            comment = str(in_msg.get('message', '') or '').strip()
+            value_nano = int(in_msg.get('value', '0') or 0)
+            tx_hash = tx.get('transaction_id', {}).get('hash', '')
 
-            comment_match = deposit_id in msg_comment
-            amount_ok     = abs(msg_value - expected_nano) < expected_nano * 0.03
-            source_match  = str(deposit.get('ton_wallet_from', '')) in str(in_msg.get('source', ''))
+            if memo not in comment:
+                continue
 
-            if comment_match or (amount_ok and source_match):
-                confirm_ton_deposit(deposit_id, tx_hash)
-                logger.info(f"TON deposit {deposit_id} auto-confirmed in background")
-                return
+            ton_amount = value_nano / 1e9
+            if ton_amount < ton_min * 0.95:  # 5% tolerance
+                continue
+
+            # Check not already processed
+            already = execute_query(
+                "SELECT id FROM ton_deposits WHERE ton_tx_hash=%s",
+                (tx_hash,), fetch_one=True
+            )
+            if already:
+                continue
+
+            doge_credited = ton_amount * ton_rate
+            sender = str(in_msg.get('source', ''))
+
+            execute_query("""
+                UPDATE ton_deposits
+                SET ton_amount=%s, doge_credited=%s, ton_wallet_from=%s,
+                    ton_tx_hash=%s, memo=%s
+                WHERE deposit_id=%s AND status='pending'
+            """, (ton_amount, doge_credited, sender, tx_hash, memo, deposit_id))
+
+            confirm_ton_deposit(deposit_id, tx_hash)
+            logger.info(f"TON deposit auto-credited: {ton_amount} TON → {doge_credited} DOGE for user {user_id}")
+            return
+
     except Exception as e:
-        logger.warning(f"Background TON verify error {deposit_id}: {e}")
+        logger.warning(f"_scan_and_credit_deposit error: {e}")
 
 
 @app.route('/admin/ton-deposits')
