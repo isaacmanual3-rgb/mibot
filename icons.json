@@ -1,0 +1,86 @@
+{
+  "_comment": "Icon Configuration - Map icon names to PNG files or emoji fallbacks",
+  "_usage": "Set 'image' to filename (without path) or null to use 'fallback' emoji",
+  
+  "menu": {
+    "home": { "image": null, "fallback": "🏠" },
+    "wallet": { "image": null, "fallback": "💰" },
+    "mining": { "image": null, "fallback": "⛏️" },
+    "tasks": { "image": null, "fallback": "📋" },
+    "referrals": { "image": null, "fallback": "👥" },
+    "explore": { "image": null, "fallback": "🏆" },
+    "promo": { "image": null, "fallback": "🎁" },
+    "support": { "image": null, "fallback": "💬" }
+  },
+  
+  "currency": {
+    "doge": { "image": null, "fallback": "🐕" },
+    "doge_symbol": { "image": null, "fallback": "Ð" },
+    "coin": { "image": null, "fallback": "🪙" },
+    "money": { "image": null, "fallback": "💸" }
+  },
+  
+  "tiers": {
+    "legendary": { "image": null, "fallback": "👑" },
+    "diamond": { "image": null, "fallback": "💎" },
+    "gold": { "image": null, "fallback": "🥇" },
+    "silver": { "image": null, "fallback": "🥈" },
+    "bronze": { "image": null, "fallback": "🥉" },
+    "basic": { "image": null, "fallback": "⛏️" }
+  },
+  
+  "status": {
+    "success": { "image": null, "fallback": "✓" },
+    "check": { "image": null, "fallback": "✓" },
+    "pending": { "image": null, "fallback": "◎" },
+    "waiting": { "image": null, "fallback": "⏳" },
+    "active": { "image": null, "fallback": "⚡" },
+    "locked": { "image": null, "fallback": "🔒" },
+    "error": { "image": null, "fallback": "✕" },
+    "warning": { "image": null, "fallback": "⚠️" }
+  },
+  
+  "actions": {
+    "copy": { "image": null, "fallback": "▣" },
+    "share": { "image": null, "fallback": "📤" },
+    "play": { "image": null, "fallback": "►" },
+    "shop": { "image": null, "fallback": "🛒" },
+    "claim": { "image": null, "fallback": "💎" },
+    "close": { "image": null, "fallback": "×" },
+    "settings": { "image": null, "fallback": "⚙️" },
+    "refresh": { "image": null, "fallback": "↻" },
+    "delete": { "image": null, "fallback": "🗑️" },
+    "add": { "image": null, "fallback": "➕" },
+    "edit": { "image": null, "fallback": "📝" }
+  },
+  
+  "misc": {
+    "star": { "image": null, "fallback": "★" },
+    "crown": { "image": null, "fallback": "♔" },
+    "stats": { "image": null, "fallback": "📊" },
+    "link": { "image": null, "fallback": "🔗" },
+    "calendar": { "image": null, "fallback": "📅" },
+    "fire": { "image": null, "fallback": "🔥" },
+    "target": { "image": null, "fallback": "🎯" },
+    "gift": { "image": null, "fallback": "🎁" },
+    "user": { "image": null, "fallback": "👤" },
+    "users": { "image": null, "fallback": "👥" },
+    "trophy": { "image": null, "fallback": "🏆" },
+    "medal": { "image": null, "fallback": "🏅" },
+    "rocket": { "image": null, "fallback": "🚀" },
+    "gem": { "image": null, "fallback": "💎" },
+    "bolt": { "image": null, "fallback": "⚡" },
+    "machine": { "image": null, "fallback": "⚙️" },
+    "pickaxe": { "image": null, "fallback": "⛏️" },
+    "question": { "image": null, "fallback": "❓" },
+    "info": { "image": null, "fallback": "ℹ️" },
+    "empty": { "image": null, "fallback": "◇" }
+  },
+  
+  "arrows": {
+    "right": { "image": null, "fallback": "→" },
+    "left": { "image": null, "fallback": "←" },
+    "up": { "image": null, "fallback": "↑" },
+    "down": { "image": null, "fallback": "↓" }
+  }
+}
