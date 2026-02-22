@@ -207,14 +207,24 @@ def _tc_post(method, payload, api_key=''):
 
 def _get_network_time(api_key=''):
     """
-    Obtiene tiempo Unix real usando múltiples fuentes en orden de prioridad:
-    1. Toncenter getMasterchainInfo (con API key)
-    2. Toncenter sin API key
-    3. worldtimeapi.org (tiempo UTC externo confiable)
-    4. time.cloudflare.com
-    5. Tiempo local del sistema (último recurso)
+    Obtiene tiempo Unix real. Estrategia:
+    1. Toncenter getMasterchainInfo (fuente más confiable para TON)
+    2. Leer header HTTP Date de cualquier respuesta HTTP (siempre disponible)
+    3. Tiempo local del sistema
     """
-    # 1 y 2: Intentar con Toncenter
+    from email.utils import parsedate_to_datetime
+
+    def _time_from_http_date(headers):
+        """Extrae Unix timestamp del header Date de HTTP."""
+        date_str = headers.get('Date', '')
+        if date_str:
+            try:
+                return int(parsedate_to_datetime(date_str).timestamp())
+            except Exception:
+                pass
+        return 0
+
+    # 1: Toncenter (intenta con y sin api_key)
     for use_key in ([True, False] if api_key else [False]):
         try:
             hdrs = {}
@@ -225,35 +235,32 @@ def _get_network_time(api_key=''):
             if data.get('ok'):
                 utime = data['result'].get('last', {}).get('utime', 0)
                 if utime > 1_000_000_000:
-                    logger.info(f'TON net_time via Toncenter: {utime}')
+                    logger.info(f'net_time via Toncenter utime: {utime}')
                     return utime
+            # Aunque la respuesta no sea ok, podemos leer el Date header
+            t = _time_from_http_date(r.headers)
+            if t > 1_000_000_000:
+                logger.info(f'net_time via Toncenter Date header: {t}')
+                return t
         except Exception as e:
             logger.warning(f'Toncenter time fallo (key={use_key}): {e}')
 
-    # 3: worldtimeapi como fallback confiable
-    try:
-        r = requests.get('https://worldtimeapi.org/api/timezone/Etc/UTC', timeout=6)
-        data = r.json()
-        utime = data.get('unixtime', 0)
-        if utime > 1_000_000_000:
-            logger.info(f'TON net_time via worldtimeapi: {utime}')
-            return utime
-    except Exception as e:
-        logger.warning(f'worldtimeapi fallo: {e}')
+    # 2: Cualquier servidor HTTP externo accesible - leer solo el header Date
+    for url in [
+        'https://toncenter.com/',
+        'https://ton.org/',
+        'https://api.telegram.org/',
+    ]:
+        try:
+            r = requests.head(url, timeout=5, allow_redirects=True)
+            t = _time_from_http_date(r.headers)
+            if t > 1_000_000_000:
+                logger.info(f'net_time via HTTP Date header ({url}): {t}')
+                return t
+        except Exception as e:
+            logger.warning(f'HTTP Date header fallo ({url}): {e}')
 
-    # 4: Cloudflare como otro fallback
-    try:
-        r = requests.get('https://time.cloudflare.com/cdn-cgi/trace', timeout=6)
-        for line in r.text.splitlines():
-            if line.startswith('ts='):
-                utime = int(float(line.split('=')[1]))
-                if utime > 1_000_000_000:
-                    logger.info(f'TON net_time via Cloudflare: {utime}')
-                    return utime
-    except Exception as e:
-        logger.warning(f'Cloudflare time fallo: {e}')
-
-    # 5: Último recurso: tiempo local
+    # 3: Último recurso: tiempo local
     local = int(time.time())
     logger.error(f'TODAS las fuentes de tiempo fallaron. Usando tiempo local: {local}')
     return local
@@ -279,58 +286,83 @@ def _get_seqno(wallet_addr, api_key=''):
 
 def _build_boc(seed, sender_wc, sender_hash, to_wc, to_hash,
                nanotons, seqno, memo, expire_at):
+    """
+    Construye BOC correcto para Wallet V4R2.
+
+    Estructura del mensaje externo (wallet-v4r2):
+      ext_in_msg_info (header inline en ext cell)
+      body INLINE (no como ref separada):
+        signature       512 bits (64 bytes)
+        subwallet_id     32 bits
+        valid_until      32 bits
+        seqno            32 bits
+        op               8 bits (0 = send)
+        send_mode        8 bits (3 = pay fees separately + ignore errors)
+      ref: internal_message cell
+    """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     priv = Ed25519PrivateKey.from_private_bytes(seed)
 
-    # Mensaje interno
+    # ── Mensaje interno ──────────────────────────────────────
     int_msg = Cell()
     (int_msg.b
-        .uint(1, 1)
-        .uint(1, 1)
-        .uint(0, 1)
-        .addr_none()
+        .uint(0b010, 3)          # tag: int_msg_info (no ihr, bounced=0)
+        .uint(1, 1)              # bounce
+        .uint(0, 1)              # bounced
+        .addr_none()             # src
         .addr_std(to_wc, to_hash)
         .grams(nanotons)
-        .uint(0, 1)
-        .grams(0).grams(0)
-        .uint(0, 64).uint(0, 32)
-        .uint(0, 1)
-        .uint(0, 1))
+        .uint(0, 1)              # ihr_disabled extra
+        .grams(0)                # ihr_fee
+        .grams(0)                # fwd_fee
+        .uint(0, 64)             # created_lt
+        .uint(0, 32)             # created_at
+        .uint(0, 1)              # no init
+        .uint(0, 1))             # body inline (vacío)
 
     if memo:
         cmt = Cell()
         cmt.b.uint(0, 32).raw(memo.encode('utf-8')[:120])
         int_msg.refs.append(cmt)
 
-    # Cuerpo wallet-v4r2: subwallet_id | valid_until | seqno | op | send_mode
-    body = Cell()
-    (body.b
+    # ── Cuerpo a firmar (sin la firma) ───────────────────────
+    # wallet-v4r2: subwallet_id | valid_until | seqno | op(8) | mode(8)
+    body_to_sign = Cell()
+    (body_to_sign.b
         .uint(SUBWALLET_ID, 32)
         .uint(expire_at, 32)
         .uint(seqno, 32)
-        .uint(0, 8)
-        .uint(3, 8))
-    body.refs.append(int_msg)
+        .uint(0, 8)              # op = 0 (send message)
+        .uint(3, 8))             # send_mode = 3
+    body_to_sign.refs.append(int_msg)
 
-    # Firmar hash del body (ahora correcto con depth incluido)
-    sig = priv.sign(body.hash())
-    logger.info(f'Body hash: {body.hash().hex()[:16]}... seqno={seqno} expire={expire_at}')
+    sig = priv.sign(body_to_sign.hash())
+    logger.info(f'Body hash: {body_to_sign.hash().hex()[:16]}... seqno={seqno} expire={expire_at}')
 
-    # Mensaje externo
+    # ── Mensaje externo ──────────────────────────────────────
+    # Header inline + body inline (firma + subwallet + vuntil + seqno + op + mode)
+    # refs: [int_msg]
     ext = Cell()
     (ext.b
-        .uint(0b10, 2)
-        .addr_none()
-        .addr_std(sender_wc, sender_hash)
-        .grams(0)
-        .uint(0, 1)
-        .uint(1, 1))
-
-    signed = Cell()
-    signed.b.raw(sig)
-    signed.refs.append(body)
-    ext.refs.append(signed)
+        # ext_in_msg_info header
+        .uint(0b10, 2)           # msg_type = ext_in
+        .addr_none()             # src = addr_none
+        .addr_std(sender_wc, sender_hash)  # dest
+        .grams(0)                # import_fee
+        # body inline (bit 0 = inline, bit 1 = body present)
+        .uint(0, 1)              # no state_init
+        .uint(0, 1)              # body inline (no ref para el cuerpo firmado)
+        # firma inline
+        .raw(sig)
+        # campos firmados inline
+        .uint(SUBWALLET_ID, 32)
+        .uint(expire_at, 32)
+        .uint(seqno, 32)
+        .uint(0, 8)              # op
+        .uint(3, 8))             # send_mode
+    # el mensaje interno va como ref
+    ext.refs.append(int_msg)
 
     return ext.boc_b64()
 
