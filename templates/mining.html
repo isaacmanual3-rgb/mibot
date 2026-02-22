@@ -261,83 +261,169 @@
 .mn-machine-exp { font-size:0.6rem; color:var(--muted); }
 
 /* ═══════════════════════════════
-   PLANS GRID
+   PLANS GRID — PREMIUM REDESIGN
 ═══════════════════════════════ */
-.mn-plans { display:flex; flex-direction:column; gap:10px; }
+.mn-plans { display:flex; flex-direction:column; gap:14px; }
 
+/* Plan card base */
 .mn-plan {
-  background:var(--surface3); border:2px solid var(--border);
-  box-shadow:3px 3px 0 0 #020205; padding:16px; position:relative;
+  position:relative; overflow:hidden;
+  background:linear-gradient(160deg,#09091a,#06060f);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:2px; padding:20px 18px 18px;
+  transition:transform .15s, box-shadow .15s;
 }
-/* Tier accent top bar */
+.mn-plan:hover { transform:translateY(-2px); }
+
+/* Tier accent: left border glow + top line */
 .mn-plan::before {
-  content:''; position:absolute; top:0; left:0; right:0;
-  height:3px; background:var(--muted);
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:3px;
 }
-.mn-plan.basic::before    { background:var(--text2); }
-.mn-plan.bronze::before   { background:var(--bronze); }
-.mn-plan.silver::before   { background:var(--silver); }
-.mn-plan.gold::before     { background:var(--gold); }
-.mn-plan.diamond::before  { background:var(--cyan); }
-.mn-plan.legendary::before{ background:var(--purple); box-shadow:0 0 12px rgba(206,147,216,0.5); }
+.mn-plan::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+}
 
-.mn-plan-top {
-  display:flex; align-items:center; gap:12px; margin-bottom:14px;
-}
-.mn-plan-icon {
-  flex-shrink:0; width:44px; height:44px;
-  background:var(--surface); border:2px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:2px 2px 0 0 #020205;
-}
-.mn-plan.gold   .mn-plan-icon { border-color:var(--gold-dark); background:rgba(255,215,0,0.05); }
-.mn-plan.diamond.mn-plan-icon, .mn-plan.diamond .mn-plan-icon { border-color:rgba(128,222,234,0.3); background:rgba(128,222,234,0.04); }
-.mn-plan.legendary .mn-plan-icon { border-color:rgba(206,147,216,0.3); background:rgba(206,147,216,0.04); }
+/* Tier colors */
+.mn-plan.starter  { border-color:rgba(0,230,118,0.2);  box-shadow:0 4px 24px rgba(0,230,118,0.06); }
+.mn-plan.starter::before  { background:#00e676; box-shadow:0 0 12px rgba(0,230,118,0.6); }
+.mn-plan.starter::after   { background:linear-gradient(90deg,rgba(0,230,118,0.3),transparent); }
 
-.mn-plan-header { flex:1; }
-.mn-plan-tier {
-  display:block; font-family:var(--font-px); font-size:0.36rem;
-  letter-spacing:.14em; margin-bottom:5px;
+.mn-plan.basic    { border-color:rgba(100,181,246,0.2); box-shadow:0 4px 24px rgba(100,181,246,0.05); }
+.mn-plan.basic::before    { background:#64b5f6; box-shadow:0 0 12px rgba(100,181,246,0.5); }
+.mn-plan.basic::after     { background:linear-gradient(90deg,rgba(100,181,246,0.25),transparent); }
+
+.mn-plan.pro      { border-color:rgba(0,152,234,0.3);   box-shadow:0 4px 24px rgba(0,152,234,0.08); }
+.mn-plan.pro::before      { background:#0098EA; box-shadow:0 0 14px rgba(0,152,234,0.7); }
+.mn-plan.pro::after       { background:linear-gradient(90deg,rgba(0,152,234,0.3),transparent); }
+
+.mn-plan.elite    { border-color:rgba(255,215,0,0.25);  box-shadow:0 4px 24px rgba(255,215,0,0.07); }
+.mn-plan.elite::before    { background:#ffd700; box-shadow:0 0 14px rgba(255,215,0,0.6); }
+.mn-plan.elite::after     { background:linear-gradient(90deg,rgba(255,215,0,0.25),transparent); }
+
+.mn-plan.master   { border-color:rgba(255,111,0,0.3);   box-shadow:0 4px 24px rgba(255,111,0,0.08); }
+.mn-plan.master::before   { background:#ff6f00; box-shadow:0 0 14px rgba(255,111,0,0.7); }
+.mn-plan.master::after    { background:linear-gradient(90deg,rgba(255,111,0,0.3),transparent); }
+
+.mn-plan.legendary { border-color:rgba(206,147,216,0.35); box-shadow:0 4px 32px rgba(206,147,216,0.1); }
+.mn-plan.legendary::before { background:linear-gradient(180deg,#ce93d8,#ff4081); box-shadow:0 0 18px rgba(206,147,216,0.8); }
+.mn-plan.legendary::after  { background:linear-gradient(90deg,rgba(206,147,216,0.35),transparent); }
+
+/* Plan header row */
+.mn-plan-head {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:16px; padding-left:8px;
 }
-.mn-plan.basic .mn-plan-tier    { color:var(--text2); }
-.mn-plan.bronze .mn-plan-tier   { color:var(--bronze); }
-.mn-plan.silver .mn-plan-tier   { color:var(--silver); }
-.mn-plan.gold .mn-plan-tier     { color:var(--gold); }
-.mn-plan.diamond .mn-plan-tier  { color:var(--cyan); }
-.mn-plan.legendary .mn-plan-tier{ color:var(--purple); }
+.mn-plan-name-block {}
+.mn-plan-badge {
+  display:inline-block; font-family:var(--font-px); font-size:0.3rem;
+  letter-spacing:.16em; padding:3px 8px; margin-bottom:6px;
+  border:1px solid; border-radius:2px;
+}
+.mn-plan.starter  .mn-plan-badge { color:#00e676; border-color:rgba(0,230,118,0.4); background:rgba(0,230,118,0.06); }
+.mn-plan.basic    .mn-plan-badge { color:#64b5f6; border-color:rgba(100,181,246,0.4); background:rgba(100,181,246,0.06); }
+.mn-plan.pro      .mn-plan-badge { color:#0098EA; border-color:rgba(0,152,234,0.4); background:rgba(0,152,234,0.06); }
+.mn-plan.elite    .mn-plan-badge { color:#ffd700; border-color:rgba(255,215,0,0.4); background:rgba(255,215,0,0.06); }
+.mn-plan.master   .mn-plan-badge { color:#ff6f00; border-color:rgba(255,111,0,0.4); background:rgba(255,111,0,0.06); }
+.mn-plan.legendary .mn-plan-badge { color:#ce93d8; border-color:rgba(206,147,216,0.4); background:rgba(206,147,216,0.07); }
 
 .mn-plan-name {
-  display:block; font-family:var(--font-px); font-size:0.52rem;
-  color:var(--text); letter-spacing:.04em;
+  display:block; font-family:var(--font-px); font-size:0.68rem;
+  color:#fff; letter-spacing:.04em;
+}
+.mn-plan-price-block { text-align:right; }
+.mn-plan-price {
+  display:block; font-family:var(--font-px); font-size:0.9rem;
+  line-height:1;
+}
+.mn-plan.starter .mn-plan-price { color:#00e676; text-shadow:0 0 16px rgba(0,230,118,0.5); }
+.mn-plan.basic   .mn-plan-price { color:#64b5f6; }
+.mn-plan.pro     .mn-plan-price { color:#0098EA; text-shadow:0 0 16px rgba(0,152,234,0.5); }
+.mn-plan.elite   .mn-plan-price { color:#ffd700; text-shadow:0 0 16px rgba(255,215,0,0.5); }
+.mn-plan.master  .mn-plan-price { color:#ff6f00; text-shadow:0 0 16px rgba(255,111,0,0.5); }
+.mn-plan.legendary .mn-plan-price { color:#ce93d8; text-shadow:0 0 16px rgba(206,147,216,0.6); }
+
+.mn-plan-price-unit { font-size:0.34rem; opacity:0.7; display:block; margin-top:3px; font-family:var(--font-px); letter-spacing:.1em; }
+
+/* ROI bar */
+.mn-plan-roi {
+  padding:0 8px; margin-bottom:14px;
+}
+.mn-plan-roi-label {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:0.68rem; color:var(--muted); margin-bottom:6px;
+}
+.mn-plan-roi-pct {
+  font-family:var(--font-px); font-size:0.5rem; font-weight:bold;
+}
+.mn-plan.starter  .mn-plan-roi-pct { color:#00e676; }
+.mn-plan.basic    .mn-plan-roi-pct { color:#64b5f6; }
+.mn-plan.pro      .mn-plan-roi-pct { color:#0098EA; }
+.mn-plan.elite    .mn-plan-roi-pct { color:#ffd700; }
+.mn-plan.master   .mn-plan-roi-pct { color:#ff6f00; }
+.mn-plan.legendary .mn-plan-roi-pct { color:#ce93d8; }
+
+.mn-plan-roi-track {
+  height:5px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;
+}
+.mn-plan-roi-fill {
+  height:100%; border-radius:2px; transition:width .5s ease;
+}
+.mn-plan.starter   .mn-plan-roi-fill { width:20%;  background:linear-gradient(90deg,#00c853,#00e676); }
+.mn-plan.basic     .mn-plan-roi-fill { width:30%;  background:linear-gradient(90deg,#1565c0,#64b5f6); }
+.mn-plan.pro       .mn-plan-roi-fill { width:50%;  background:linear-gradient(90deg,#0057a8,#0098EA); }
+.mn-plan.elite     .mn-plan-roi-fill { width:70%;  background:linear-gradient(90deg,#c8a200,#ffd700); }
+.mn-plan.master    .mn-plan-roi-fill { width:85%;  background:linear-gradient(90deg,#e65100,#ff9800); }
+.mn-plan.legendary .mn-plan-roi-fill { width:100%; background:linear-gradient(90deg,#9c27b0,#ce93d8,#ff4081); box-shadow:0 0 8px rgba(206,147,216,0.5); }
+
+/* Metrics row */
+.mn-plan-metrics {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+  padding:0 8px; margin-bottom:16px;
+}
+.mn-plan-metric {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+  padding:10px 6px; text-align:center; border-radius:2px;
+}
+.mn-plan-metric-val {
+  display:block; font-family:var(--font-px); font-size:0.46rem;
+  color:#fff; margin-bottom:4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mn-plan-metric-lbl {
+  display:block; font-size:0.6rem; color:var(--muted); letter-spacing:.06em;
 }
 
-.mn-plan-stats {
-  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;
-}
-.mn-plan-stat {
-  background:var(--surface); border:1px solid var(--border); padding:10px 8px;
-}
-.mn-plan-stat-lbl {
-  display:block; font-family:var(--font-px); font-size:0.32rem;
-  color:var(--muted); letter-spacing:.1em; margin-bottom:5px;
-}
-.mn-plan-stat-val {
-  display:block; font-family:var(--font-px); font-size:0.52rem;
-  color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.mn-plan-stat-val.price { color:var(--gold); text-shadow:1px 1px 0 var(--gold-dark); }
-.mn-plan-stat-val.rate  { color:var(--green); }
-
-.mn-plan-desc { font-size:0.72rem; color:var(--text2); line-height:1.5; margin-bottom:14px; }
-
+/* Activate button */
 .mn-btn-purchase {
-  width:100%; padding:14px; display:flex; align-items:center; justify-content:center; gap:10px;
-  font-family:var(--font-px); font-size:0.48rem; letter-spacing:.06em;
-  background:var(--surface); color:var(--text); cursor:pointer;
-  border:2px solid var(--border); box-shadow:3px 3px 0 0 #020205;
-  transition:transform .07s, box-shadow .07s, color .1s, border-color .1s;
+  width:100%; padding:14px; margin:0 0; display:flex; align-items:center; justify-content:center; gap:8px;
+  font-family:var(--font-px); font-size:0.44rem; letter-spacing:.1em;
+  cursor:pointer; border:1px solid; border-radius:2px;
+  transition:transform .1s, box-shadow .1s, opacity .1s;
+  position:relative; overflow:hidden;
 }
-.mn-btn-purchase:hover  { transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 #020205; color:var(--gold); border-color:var(--gold-dark); }
+.mn-btn-purchase::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 50%);
+  pointer-events:none;
+}
+.mn-btn-purchase:hover  { transform:translateY(-1px); }
+.mn-btn-purchase:active { transform:translateY(1px); opacity:0.85; }
+
+.mn-plan.starter  .mn-btn-purchase { background:rgba(0,230,118,0.12); color:#00e676; border-color:rgba(0,230,118,0.4); box-shadow:0 4px 16px rgba(0,230,118,0.15); }
+.mn-plan.basic    .mn-btn-purchase { background:rgba(100,181,246,0.1); color:#64b5f6; border-color:rgba(100,181,246,0.35); box-shadow:0 4px 16px rgba(100,181,246,0.12); }
+.mn-plan.pro      .mn-btn-purchase { background:rgba(0,152,234,0.12); color:#0ff; border-color:rgba(0,152,234,0.45); box-shadow:0 4px 20px rgba(0,152,234,0.2); }
+.mn-plan.elite    .mn-btn-purchase { background:rgba(255,215,0,0.1); color:#ffd700; border-color:rgba(255,215,0,0.4); box-shadow:0 4px 20px rgba(255,215,0,0.15); }
+.mn-plan.master   .mn-btn-purchase { background:rgba(255,111,0,0.12); color:#ff9800; border-color:rgba(255,111,0,0.4); box-shadow:0 4px 20px rgba(255,111,0,0.2); }
+.mn-plan.legendary .mn-btn-purchase { background:linear-gradient(135deg,rgba(156,39,176,0.2),rgba(255,64,129,0.15)); color:#ce93d8; border-color:rgba(206,147,216,0.45); box-shadow:0 4px 24px rgba(206,147,216,0.2); }
+
+/* 30-day notice */
+.mn-plan-cycle {
+  text-align:center; font-size:0.62rem; color:rgba(255,255,255,0.25);
+  margin-top:10px; letter-spacing:.06em;
+}
+
+.mn-plan-desc { display:none; } /* hide, info shown in metrics now */
 .mn-btn-purchase:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #020205; }
 
 /* Gold/Diamond/Legendary buy button */
@@ -568,50 +654,71 @@
       {% if plans %}
       <div class="mn-plans">
         {% for plan in plans %}
-        <div class="mn-plan {{ plan.tier|default('basic') }}" data-plan-id="{{ plan.id }}">
-          <div class="mn-plan-top">
-            <div class="mn-plan-icon">
-              {% if plan.tier == 'legendary' %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ce93d8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-3-10-4.5 5L12 5l-1.5 8L6 8z"/><path d="M3 18v2h18v-2"/><circle cx="12" cy="5" r="1" fill="#ffd700"/><circle cx="3" cy="8" r="1" fill="#ce93d8"/><circle cx="21" cy="8" r="1" fill="#ce93d8"/></svg></span>
-              {% elif plan.tier == 'diamond'  %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#80deea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 3L8 9l4 12 4-12L12 3z" stroke-opacity="0.5"/></svg></span>
-              {% elif plan.tier == 'gold'     %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-              {% elif plan.tier == 'silver'   %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v7c0 5-3.5 9-8 10C8.5 21 5 17 5 12V5l7-3z"/><path d="M9 12l2 2 4-4" stroke="#40c4ff" stroke-width="2"/></svg></span>
-              {% elif plan.tier == 'bronze'   %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.5 0 7-2.5 7-6 0-4-2.5-6-4-8-1 2-1.5 3-3 4-1-2-1.5-4-1-6C8 8 5 10.5 5 15c0 4 2.5 7 7 7z"/><path d="M12 22c1.5 0 3-1 3-3s-1.5-3-3-4c-1.5 1-3 2-3 4s1.5 3 3 3z" fill="#ffd700" stroke="#ffd700" stroke-width="1"/></svg></span>
-              {% else                         %}<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-              {% endif %}
-            </div>
-            <div class="mn-plan-header">
-              <span class="mn-plan-tier">{{ plan.tier|upper }}</span>
+        {% set is_free = plan.price == 0 %}
+        {% set roi_pct = 20 if plan.tier == 'starter' else
+                         30 if plan.tier == 'basic' else
+                         50 if plan.tier == 'pro' else
+                         70 if plan.tier == 'elite' else
+                         85 if plan.tier == 'master' else
+                         100 %}
+        {% set daily_earn = plan.hourly_rate * 24 %}
+        {% set monthly_earn = plan.hourly_rate * 720 %}
+
+        <div class="mn-plan {{ plan.tier }}" data-plan-id="{{ plan.id }}">
+
+          <!-- Header: nombre + precio -->
+          <div class="mn-plan-head">
+            <div class="mn-plan-name-block">
+              <span class="mn-plan-badge">
+                {% if is_free %}★ GRATIS{% else %}{{ plan.tier|upper }}{% endif %}
+              </span>
               <span class="mn-plan-name">{{ plan.name }}</span>
             </div>
-          </div>
-
-          <div class="mn-plan-stats">
-            <div class="mn-plan-stat">
-              <span class="mn-plan-stat-lbl">Price</span>
-              <span class="mn-plan-stat-val price">{{ format_ton(plan.price) }}</span>
-            </div>
-            <div class="mn-plan-stat">
-              <span class="mn-plan-stat-lbl">Rate</span>
-              <span class="mn-plan-stat-val rate">{{ format_ton(plan.hourly_rate) }}/hr</span>
-            </div>
-            <div class="mn-plan-stat">
-              <span class="mn-plan-stat-lbl">Daily</span>
-              <span class="mn-plan-stat-val">~{{ format_ton(plan.hourly_rate * 24) }}</span>
-            </div>
-            <div class="mn-plan-stat">
-              <span class="mn-plan-stat-lbl">Duration</span>
-              <span class="mn-plan-stat-val">{{ plan.duration_days }}d</span>
+            <div class="mn-plan-price-block">
+              <span class="mn-plan-price">
+                {% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}
+              </span>
+              <span class="mn-plan-price-unit">30 DÍAS</span>
             </div>
           </div>
 
-          {% if plan.description %}
-          <p class="mn-plan-desc">{{ plan.description }}</p>
-          {% endif %}
+          <!-- ROI bar -->
+          <div class="mn-plan-roi">
+            <div class="mn-plan-roi-label">
+              <span>Retorno en 30 días</span>
+              <span class="mn-plan-roi-pct">+{{ roi_pct }}%</span>
+            </div>
+            <div class="mn-plan-roi-track">
+              <div class="mn-plan-roi-fill"></div>
+            </div>
+          </div>
 
+          <!-- Métricas -->
+          <div class="mn-plan-metrics">
+            <div class="mn-plan-metric">
+              <span class="mn-plan-metric-val">{{ "%.4f"|format(plan.hourly_rate) }}</span>
+              <span class="mn-plan-metric-lbl">TON/hr</span>
+            </div>
+            <div class="mn-plan-metric">
+              <span class="mn-plan-metric-val">{{ "%.4f"|format(daily_earn) }}</span>
+              <span class="mn-plan-metric-lbl">TON/día</span>
+            </div>
+            <div class="mn-plan-metric">
+              <span class="mn-plan-metric-val">{{ "%.2f"|format(monthly_earn) }}</span>
+              <span class="mn-plan-metric-lbl">TON/mes</span>
+            </div>
+          </div>
+
+          <!-- Botón -->
           <button class="mn-btn-purchase" onclick="purchaseMachine({{ plan.id }}, '{{ plan.name }}', {{ plan.price }})">
-            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
-            PURCHASE
+            {% if is_free %}
+              ★ ACTIVAR GRATIS
+            {% else %}
+              ⚡ ACTIVAR POR {{ plan.price|int }} TON
+            {% endif %}
           </button>
+          <div class="mn-plan-cycle">↻ Renovable cada 30 días</div>
+
         </div>
         {% endfor %}
       </div>
@@ -666,11 +773,11 @@
   <div class="mn-modal">
     <div class="mn-modal-handle"></div>
     <div class="mn-modal-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
-    <div class="mn-modal-title">CONFIRM PURCHASE</div>
-    <p class="mn-modal-msg" id="purchaseMessage">Are you sure you want to purchase this miner?</p>
+    <div class="mn-modal-title">CONFIRMAR PLAN</div>
+    <p class="mn-modal-msg" id="purchaseMessage">¿Activar este plan?</p>
     <div class="mn-modal-details">
       <div class="mn-detail-row">
-        <span class="mn-detail-lbl">Cost</span>
+        <span class="mn-detail-lbl">Costo</span>
         <span class="mn-detail-val" id="purchaseCost">0 TON</span>
       </div>
       <div class="mn-detail-row">
@@ -695,8 +802,8 @@ let currentPlanPrice = 0;
 
 function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
-  document.getElementById('purchaseMessage').textContent = `Purchase ${planName}?`;
-  document.getElementById('purchaseCost').textContent = `${price} TON`;
+  document.getElementById('purchaseMessage').textContent = `¿Activar el plan ${planName} por 30 días?`;
+  document.getElementById('purchaseCost').textContent = price === 0 ? '✨ GRATIS' : `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
 }
 function closePurchaseModal() {
