@@ -940,6 +940,16 @@ def purchase_mining_machine(user_id, plan_id):
     price = float(plan['price'])
     is_free = price == 0.0
 
+    # ── One-time-only check: never activated before (all history) ──
+    is_one_time = int(plan.get('one_time_only', 0)) == 1
+    if is_one_time:
+        ever_used = execute_query(
+            "SELECT id FROM user_mining_machines WHERE user_id=%s AND plan_id=%s LIMIT 1",
+            (str(user_id), plan_id), fetch_one=True
+        )
+        if ever_used:
+            return {'success': False, 'message': f'El plan {plan["name"]} es gratuito y solo puede activarse una vez por cuenta.'}
+
     # ── 30-day cooldown: one active machine per plan at a time ──
     existing = execute_query(
         "SELECT expires_at FROM user_mining_machines WHERE user_id=%s AND plan_id=%s AND expires_at > NOW() ORDER BY expires_at DESC LIMIT 1",
@@ -1073,7 +1083,7 @@ def delete_mining_plan(plan_id):
     execute_query(query, (plan_id,))
     return True
 
-def update_mining_plan(plan_id, name=None, price=None, hourly_rate=None, duration_days=None, description=None, active=None):
+def update_mining_plan(plan_id, name=None, price=None, hourly_rate=None, duration_days=None, description=None, active=None, one_time_only=None):
     """Update fields of an existing mining plan"""
     fields = []
     values = []
@@ -1089,6 +1099,8 @@ def update_mining_plan(plan_id, name=None, price=None, hourly_rate=None, duratio
         fields.append("description = %s"); values.append(str(description))
     if active is not None and str(active).strip() != '':
         fields.append("active = %s"); values.append(int(active))
+    if one_time_only is not None and str(one_time_only).strip() != '':
+        fields.append("one_time_only = %s"); values.append(int(one_time_only))
     if not fields:
         return None
     values.append(plan_id)
@@ -1408,6 +1420,13 @@ def init_all_tables():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     """)
     log.info("✓ mining_plans")
+
+    # ── Migration: add one_time_only column if missing ──────────
+    try:
+        execute_query("ALTER TABLE mining_plans ADD COLUMN one_time_only TINYINT(1) DEFAULT 0")
+        log.info("✓ migration: added one_time_only to mining_plans")
+    except Exception:
+        pass  # Column already exists — safe to ignore
 
     execute_query("""
         CREATE TABLE IF NOT EXISTS user_mining_machines (

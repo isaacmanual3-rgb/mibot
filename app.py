@@ -1536,6 +1536,7 @@ def admin_mining():
             'duration_days': int(p.get('duration_days', 30)),
             'description':   p.get('description', '') or '',
             'active':        int(p.get('active', 1)),
+            'one_time_only': int(p.get('one_time_only', 0)),
         })
     return render_template('admin_mining.html', plans=plans, active_page='mining')
 
@@ -1567,7 +1568,8 @@ def admin_mining_plan_update(plan_id):
             hourly_rate=data.get('hourly_rate'),
             duration_days=data.get('duration_days'),
             description=data.get('description'),
-            active=data.get('active')
+            active=data.get('active'),
+            one_time_only=data.get('one_time_only')
         )
         return jsonify({'success': True})
     except Exception as e:
