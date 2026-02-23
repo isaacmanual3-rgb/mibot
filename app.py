@@ -12,6 +12,7 @@ import requests
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from translations import get_t, get_supported_langs
 
 # Logging Configuration
 logging.basicConfig(
@@ -52,6 +53,21 @@ from database import (
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
+
+# ── LANGUAGE / i18n ─────────────────────────────────────────────
+@app.context_processor
+def inject_lang():
+    """Inject `t` (translations) and `current_lang` into every template."""
+    lang = session.get('lang', 'en')
+    return dict(t=get_t(lang), current_lang=lang)
+
+@app.route('/lang/<code>')
+def set_lang(code):
+    """Switch UI language and redirect back."""
+    if code in get_supported_langs():
+        session['lang'] = code
+    return redirect(request.referrer or url_for('index'))
+
 
 # Configuration
 ADMIN_IDS = os.environ.get('ADMIN_IDS', '5515244003').split(',')
