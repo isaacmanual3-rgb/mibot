@@ -1073,6 +1073,29 @@ def delete_mining_plan(plan_id):
     execute_query(query, (plan_id,))
     return True
 
+def update_mining_plan(plan_id, name=None, price=None, hourly_rate=None, duration_days=None, description=None, active=None):
+    """Update fields of an existing mining plan"""
+    fields = []
+    values = []
+    if name is not None:
+        fields.append("name = %s"); values.append(name)
+    if price is not None:
+        fields.append("price = %s"); values.append(float(price))
+    if hourly_rate is not None:
+        fields.append("hourly_rate = %s"); values.append(float(hourly_rate))
+    if duration_days is not None:
+        fields.append("duration_days = %s"); values.append(int(duration_days))
+    if description is not None:
+        fields.append("description = %s"); values.append(description)
+    if active is not None:
+        fields.append("active = %s"); values.append(int(active))
+    if not fields:
+        return None
+    values.append(plan_id)
+    query = f"UPDATE mining_plans SET {', '.join(fields)} WHERE id = %s"
+    execute_query(query, tuple(values))
+    return True
+
 def get_mining_stats():
     """Get global mining statistics"""
     stats = {

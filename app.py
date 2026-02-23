@@ -40,7 +40,7 @@ from database import (
     get_all_mining_plans, get_mining_plan, purchase_mining_machine,
     get_user_machines, get_user_mining_stats, get_pending_mining_rewards,
     claim_mining_rewards, process_mining_rewards, create_mining_plan,
-    delete_mining_plan, get_mining_stats,
+    delete_mining_plan, update_mining_plan, get_mining_stats,
     # TON Deposit functions
     create_ton_deposit, confirm_ton_deposit, get_user_ton_deposits,
     create_ton_withdrawal,
@@ -1517,6 +1517,57 @@ def admin_config():
     
     config = get_all_config()
     return render_template('admin_config.html', config=config)
+
+# ── ADMIN MINING PLANS ─────────────────────────────────────────────────────
+@app.route('/admin/mining')
+@require_admin
+def admin_mining():
+    """Admin panel: manage mining plans"""
+    plans = get_all_mining_plans(active_only=False)
+    return render_template('admin_mining.html', plans=plans, active_page='mining')
+
+@app.route('/admin/mining/plan/create', methods=['POST'])
+@require_admin
+def admin_mining_plan_create():
+    data = request.get_json() or request.form.to_dict()
+    try:
+        name         = data['name']
+        tier         = data.get('tier', name.lower())
+        price        = float(data['price'])
+        hourly_rate  = float(data['hourly_rate'])
+        duration_days= int(data.get('duration_days', 30))
+        description  = data.get('description', '')
+        create_mining_plan(name, tier, price, hourly_rate, duration_days, description)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/admin/mining/plan/<int:plan_id>/update', methods=['POST'])
+@require_admin
+def admin_mining_plan_update(plan_id):
+    data = request.get_json() or request.form.to_dict()
+    try:
+        update_mining_plan(
+            plan_id,
+            name=data.get('name'),
+            price=data.get('price'),
+            hourly_rate=data.get('hourly_rate'),
+            duration_days=data.get('duration_days'),
+            description=data.get('description'),
+            active=data.get('active')
+        )
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/admin/mining/plan/<int:plan_id>/delete', methods=['POST'])
+@require_admin
+def admin_mining_plan_delete(plan_id):
+    try:
+        delete_mining_plan(plan_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/admin/icons')
 @require_admin
