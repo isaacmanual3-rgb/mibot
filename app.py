@@ -2111,6 +2111,389 @@ def timeago_filter(dt):
     return "Just now"
 
 # ============================================
+# BOT WEBHOOK — integrado en Flask (una sola app)
+# ============================================
+# El bot recibe updates vía POST /webhook/<BOT_TOKEN>
+# No necesita proceso separado ni polling.
+# Registrar webhook:  GET /admin/bot/setup-webhook
+# ============================================
+
+import html as _html
+import hashlib as _hashlib
+
+_OFFICIAL_CHANNELS_STR = os.environ.get('OFFICIAL_CHANNELS', os.environ.get('OFFICIAL_CHANNEL',''))
+_OFFICIAL_CHANNELS = [c.strip() for c in _OFFICIAL_CHANNELS_STR.split(',') if c.strip()]
+_SUPPORT_GROUP = os.environ.get('SUPPORT_GROUP', '')
+_WEBAPP_URL    = os.environ.get('WEBAPP_URL', '')
+
+
+def _bot_api(method, payload):
+    """Llama a la Bot API de Telegram de forma síncrona."""
+    if not BOT_TOKEN:
+        return None
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/{method}",
+            json=payload, timeout=10
+        )
+        return r.json()
+    except Exception as e:
+        logger.error(f"Bot API {method}: {e}")
+        return None
+
+
+def _bot_send(chat_id, text, keyboard=None):
+    payload = {
+        "chat_id": int(chat_id),
+        "text": text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+    if keyboard:
+        import json as _json
+        payload["reply_markup"] = _json.dumps(keyboard)
+    return _bot_api("sendMessage", payload)
+
+
+def _bot_edit(chat_id, message_id, text, keyboard=None):
+    payload = {
+        "chat_id": int(chat_id),
+        "message_id": int(message_id),
+        "text": text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+    if keyboard:
+        import json as _json
+        payload["reply_markup"] = _json.dumps(keyboard)
+    return _bot_api("editMessageText", payload)
+
+
+def _bot_answer(callback_query_id, text="", alert=False):
+    return _bot_api("answerCallbackQuery", {
+        "callback_query_id": callback_query_id,
+        "text": text,
+        "show_alert": alert,
+    })
+
+
+def _check_member(user_id, channel):
+    ch = channel.strip()
+    if not ch.startswith('@'):
+        ch = f"@{ch}"
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/getChatMember",
+            json={"chat_id": ch, "user_id": int(user_id)}, timeout=8
+        )
+        data = r.json()
+        if data.get('ok'):
+            status = data['result']['status']
+            return status in ('member','administrator','creator')
+    except Exception as e:
+        logger.warning(f"getChatMember error: {e}")
+    return True   # en caso de error, no bloqueamos
+
+
+def _check_all_channels(user_id):
+    missing = [ch for ch in _OFFICIAL_CHANNELS if ch and not _check_member(user_id, ch)]
+    return len(missing) == 0, missing
+
+
+def _detect_lang_from_update(user_obj):
+    lc = user_obj.get('language_code')
+    try:
+        from notifications import detect_lang
+        return detect_lang(lc)
+    except Exception:
+        return 'es'
+
+
+def _main_keyboard(user_id, lang='es'):
+    from notifications import _OPEN_BTN
+    webapp_url = f"{_WEBAPP_URL}?user_id={user_id}" if _WEBAPP_URL else None
+    btn_text = _OPEN_BTN.get(lang, '🚀 Open SALLY-E')
+    rows = []
+    if webapp_url:
+        rows.append([{"text": btn_text, "web_app": {"url": webapp_url}}])
+    if _OFFICIAL_CHANNELS:
+        ch_clean = _OFFICIAL_CHANNELS[0].replace('@','')
+        rows.append([
+            {"text": "👥 Mis Referidos" if lang=='es' else "👥 My Referrals", "callback_data": "my_referrals"},
+            {"text": "📤 Compartir" if lang=='es' else "📤 Share", "callback_data": "share_referral"},
+        ])
+        rows.append([
+            {"text": "📢 Canal", "url": f"https://t.me/{ch_clean}"},
+        ])
+        if _SUPPORT_GROUP:
+            rows[-1].append({"text": "💬 Soporte", "url": _SUPPORT_GROUP})
+    return {"inline_keyboard": rows}
+
+
+def _join_keyboard(missing, lang='es'):
+    rows = []
+    for ch in missing[:5]:
+        ch_clean = ch.replace('@','')
+        rows.append([{"text": f"📢 {ch}", "url": f"https://t.me/{ch_clean}"}])
+    lbl = {"es":"✅ Ya me uní","en":"✅ I joined","pt":"✅ Já entrei","fr":"✅ J'ai rejoint"}.get(lang,"✅ Done")
+    rows.append([{"text": lbl, "callback_data": "verify_channels"}])
+    return {"inline_keyboard": rows}
+
+
+def _welcome_text(name, lang='es', verified=False):
+    safe = _html.escape(str(name))
+    msgs = {
+      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>SALLY-E Bot</b>\n\n💰 Gana tokens minando\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\nPresiona el botón de abajo para comenzar:",
+      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>SALLY-E Bot</b>\n\n💰 Earn tokens by mining\n✅ Complete tasks for rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\nPress the button below to start:",
+      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>SALLY-E Bot</b>\n\n💰 Ganhe tokens minerando\n✅ Complete tarefas e obtenha recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\nPressione o botão abaixo para começar:",
+      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>SALLY-E Bot</b>\n\n💰 Gagnez des tokens en minant\n✅ Complétez des tâches pour des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\nAppuyez sur le bouton ci-dessous pour commencer:",
+    }
+    return msgs.get(lang, msgs['es'])
+
+
+def _join_needed_text(name, missing, lang='es'):
+    safe = _html.escape(str(name))
+    chs = '\n'.join([f"📢 {ch}" for ch in missing])
+    msgs = {
+      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>SALLY-E Bot</b>\n\nPara continuar debes unirte a:\n\n{chs}\n\nUna vez que te unas, presiona <b>Ya me uní</b>.",
+      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>SALLY-E Bot</b>\n\nTo continue you must join:\n\n{chs}\n\nOnce joined, press <b>I joined</b>.",
+      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>SALLY-E Bot</b>\n\nPara continuar você deve entrar:\n\n{chs}\n\nDepois de entrar, pressione <b>Já entrei</b>.",
+      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>SALLY-E Bot</b>\n\nPour continuer vous devez rejoindre:\n\n{chs}\n\nUne fois rejoint, appuyez sur <b>J'ai rejoint</b>.",
+    }
+    return msgs.get(lang, msgs['es'])
+
+
+# ─── Handlers del bot ────────────────────────────────────
+
+def _handle_start(msg):
+    user = msg['from']
+    user_id = user['id']
+    first_name = user.get('first_name','Usuario')
+    username = user.get('username','')
+    lang = _detect_lang_from_update(user)
+
+    # Parse referrer
+    text = msg.get('text','')
+    referrer_id = None
+    parts = text.strip().split()
+    if len(parts) > 1:
+        arg = parts[1]
+        if arg.startswith('ref_'):
+            try:
+                pot = arg.replace('ref_','')
+                if str(pot) != str(user_id):
+                    referrer_id = pot
+            except:
+                pass
+
+    # DB: crear/actualizar usuario
+    try:
+        existing = get_user(user_id)
+        is_new = existing is None
+        if existing:
+            update_user(user_id, username=username, first_name=first_name)
+        else:
+            create_user(user_id, username=username, first_name=first_name, referred_by=referrer_id)
+    except Exception as e:
+        logger.warning(f"DB error on /start: {e}")
+        is_new = False
+
+    # Verificar canales
+    if _OFFICIAL_CHANNELS:
+        ok, missing = _check_all_channels(user_id)
+    else:
+        ok, missing = True, []
+
+    if not ok:
+        _bot_send(user_id, _join_needed_text(first_name, missing, lang), _join_keyboard(missing, lang))
+        return
+
+    _bot_send(user_id, _welcome_text(first_name, lang), _main_keyboard(user_id, lang))
+
+    # Notificación de bienvenida a usuario nuevo
+    if is_new:
+        try:
+            from notifications import notify_welcome
+            notify_welcome(user_id, first_name, user.get('language_code'))
+        except Exception:
+            pass
+
+
+def _handle_message(msg):
+    """Responde a cualquier texto que no sea comando."""
+    user = msg['from']
+    user_id = user['id']
+    first_name = user.get('first_name','Usuario')
+    lang = _detect_lang_from_update(user)
+
+    try:
+        from notifications import notify_generic
+        notify_generic(user_id, first_name, user.get('language_code'))
+    except Exception:
+        # Fallback directo
+        _bot_send(user_id, _welcome_text(first_name, lang), _main_keyboard(user_id, lang))
+
+
+def _handle_callback(cq):
+    cq_id   = cq['id']
+    user    = cq['from']
+    user_id = user['id']
+    first_name = user.get('first_name','Usuario')
+    lang    = _detect_lang_from_update(user)
+    data    = cq.get('data','')
+    msg     = cq.get('message',{})
+    msg_id  = msg.get('message_id')
+    chat_id = msg.get('chat',{}).get('id', user_id)
+
+    if data == 'verify_channels':
+        if _OFFICIAL_CHANNELS:
+            ok, missing = _check_all_channels(user_id)
+        else:
+            ok, missing = True, []
+
+        if not ok:
+            ch_list = ', '.join(missing)
+            alert_msgs = {
+                'es': f"❌ Aún no te uniste a: {ch_list}",
+                'en': f"❌ You haven't joined: {ch_list}",
+                'pt': f"❌ Você ainda não entrou em: {ch_list}",
+                'fr': f"❌ Vous n'avez pas encore rejoint: {ch_list}",
+            }
+            _bot_answer(cq_id, alert_msgs.get(lang, alert_msgs['es']), alert=True)
+            return
+
+        _bot_answer(cq_id)
+        _bot_edit(chat_id, msg_id, _welcome_text(first_name, lang), _main_keyboard(user_id, lang))
+
+        # Notificación de bienvenida tras unirse
+        try:
+            from notifications import notify_welcome
+            notify_welcome(user_id, first_name, user.get('language_code'))
+        except Exception:
+            pass
+
+    elif data == 'my_referrals':
+        _bot_answer(cq_id)
+        try:
+            refs = get_referrals(user_id) or []
+            validated = sum(1 for r in refs if r.get('validated'))
+            pending   = len(refs) - validated
+            if refs:
+                lines = []
+                for i, r in enumerate(refs[:10], 1):
+                    name = _html.escape(r.get('first_name') or r.get('username') or str(r.get('referred_id','')))
+                    status = "✅" if r.get('validated') else "⏳"
+                    lines.append(f"{i}. {name} {status}")
+                body = '\n'.join(lines)
+                if len(refs) > 10:
+                    body += f"\n... +{len(refs)-10}"
+                texts = {
+                    'es': f"👥 <b>Mis Referidos</b>\n\n✅ Validados: {validated}\n⏳ Pendientes: {pending}\n📊 Total: {len(refs)}\n\n{body}",
+                    'en': f"👥 <b>My Referrals</b>\n\n✅ Validated: {validated}\n⏳ Pending: {pending}\n📊 Total: {len(refs)}\n\n{body}",
+                    'pt': f"👥 <b>Meus Indicados</b>\n\n✅ Validados: {validated}\n⏳ Pendentes: {pending}\n📊 Total: {len(refs)}\n\n{body}",
+                    'fr': f"👥 <b>Mes Filleuls</b>\n\n✅ Validés: {validated}\n⏳ En attente: {pending}\n📊 Total: {len(refs)}\n\n{body}",
+                }
+            else:
+                texts = {
+                    'es': "👥 <b>Mis Referidos</b>\n\nAún no tienes referidos. ¡Comparte tu link para ganar!",
+                    'en': "👥 <b>My Referrals</b>\n\nYou have no referrals yet. Share your link to earn!",
+                    'pt': "👥 <b>Meus Indicados</b>\n\nVocê ainda não tem indicados. Compartilhe seu link para ganhar!",
+                    'fr': "👥 <b>Mes Filleuls</b>\n\nVous n'avez pas encore de filleuls. Partagez votre lien pour gagner!",
+                }
+            back_btn = {"inline_keyboard":[[{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}]]}
+            _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), back_btn)
+        except Exception as e:
+            logger.warning(f"my_referrals error: {e}")
+            _bot_answer(cq_id, "Error al cargar referidos", alert=True)
+
+    elif data == 'share_referral':
+        _bot_answer(cq_id)
+        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
+        texts = {
+            'es': f"📤 <b>Tu Link de Referido</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gana <b>1 S-E</b> por cada amigo que complete su primera tarea.\n📊 Además, <b>5% de comisión</b> del minado de tus referidos.",
+            'en': f"📤 <b>Your Referral Link</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Earn <b>1 S-E</b> for each friend who completes their first task.\n📊 Plus, <b>5% commission</b> from your referrals' mining.",
+            'pt': f"📤 <b>Seu Link de Indicação</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Ganhe <b>1 S-E</b> por cada amigo que completar a primeira tarefa.\n📊 Mais, <b>5% de comissão</b> da mineração dos seus indicados.",
+            'fr': f"📤 <b>Votre Lien de Parrainage</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gagnez <b>1 S-E</b> pour chaque ami qui complète sa première tâche.\n📊 Plus, <b>5% de commission</b> du minage de vos filleuls.",
+        }
+        share_text = {"es":"📤 Compartir link","en":"📤 Share link","pt":"📤 Compartilhar","fr":"📤 Partager"}
+        kb = {"inline_keyboard":[
+            [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": f"Únete a SALLY-E y gana tokens! {ref_link}"}],
+            [{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}],
+        ]}
+        _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), kb)
+
+    elif data == 'back_main':
+        _bot_answer(cq_id)
+        _bot_edit(chat_id, msg_id, _welcome_text(first_name, lang), _main_keyboard(user_id, lang))
+
+    else:
+        _bot_answer(cq_id)
+
+
+# ─── Ruta webhook ────────────────────────────────────────
+
+@app.route(f'/webhook/{BOT_TOKEN}', methods=['POST'])
+def telegram_webhook():
+    """Recibe los updates de Telegram vía webhook."""
+    try:
+        update = request.get_json(force=True, silent=True) or {}
+        logger.debug(f"Webhook update: {update.get('update_id')}")
+
+        if 'message' in update:
+            msg = update['message']
+            text = msg.get('text','')
+            # Solo mensajes privados
+            if msg.get('chat',{}).get('type') != 'private':
+                return 'ok', 200
+            if text.startswith('/start'):
+                _handle_start(msg)
+            elif text.startswith('/help'):
+                user = msg['from']
+                lang = _detect_lang_from_update(user)
+                _bot_send(user['id'], _welcome_text(user.get('first_name',''), lang), _main_keyboard(user['id'], lang))
+            elif not text.startswith('/'):
+                _handle_message(msg)
+
+        elif 'callback_query' in update:
+            _handle_callback(update['callback_query'])
+
+    except Exception as e:
+        logger.error(f"Webhook handler error: {e}", exc_info=True)
+
+    return 'ok', 200
+
+
+@app.route('/admin/bot/setup-webhook')
+@require_admin
+def bot_setup_webhook():
+    """Registra el webhook de Telegram. Llamar una vez tras desplegar."""
+    base_url = request.host_url.rstrip('/')
+    webhook_url = f"{base_url}/webhook/{BOT_TOKEN}"
+    result = _bot_api("setWebhook", {
+        "url": webhook_url,
+        "allowed_updates": ["message", "callback_query"],
+        "drop_pending_updates": True,
+    })
+    return jsonify({"webhook_url": webhook_url, "telegram_response": result})
+
+
+@app.route('/admin/bot/webhook-info')
+@require_admin
+def bot_webhook_info():
+    """Consulta el estado actual del webhook."""
+    result = _bot_api("getWebhookInfo", {})
+    return jsonify(result)
+
+
+@app.route('/admin/bot/delete-webhook')
+@require_admin
+def bot_delete_webhook():
+    """Elimina el webhook (útil para debugging)."""
+    result = _bot_api("deleteWebhook", {"drop_pending_updates": True})
+    return jsonify(result)
+
+
+# ============================================
 # RUN
 # ============================================
 
