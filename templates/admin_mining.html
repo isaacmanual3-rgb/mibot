@@ -344,18 +344,31 @@ async function savePlan() {
         return;
     }
 
-    const payload = { name, hourly_rate: parseFloat(hourlyRaw), price: parseFloat(price||0),
-                      duration_days: parseInt(days||30), description: desc, tier };
-
-    let url, method = 'POST';
-    if (isEditMode && planId) {
-        url = `/admin/mining/plan/${planId}/update`;
-    } else {
-        url = '/admin/mining/plan/create';
+    const hourlyNum = parseFloat(hourlyRaw);
+    if (isNaN(hourlyNum) || hourlyNum <= 0) {
+        showToast('Hourly Rate debe ser mayor a 0', 'error');
+        return;
     }
 
+    const payload = {
+        name,
+        hourly_rate:  hourlyNum,
+        price:        parseFloat(price) || 0,
+        duration_days: parseInt(days) || 30,
+        description:  desc,
+        tier
+    };
+
+    const url = isEditMode && planId
+        ? `/admin/mining/plan/${planId}/update`
+        : '/admin/mining/plan/create';
+
     try {
-        const res  = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const res  = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
         const data = await res.json();
         if (data.success) {
             showToast(isEditMode ? 'Plan actualizado ✓' : 'Plan creado ✓', 'success');
@@ -365,7 +378,7 @@ async function savePlan() {
             showToast(data.error || 'Error al guardar', 'error');
         }
     } catch(e) {
-        showToast('Error de red', 'error');
+        showToast('Error de red: ' + e.message, 'error');
     }
 }
 
