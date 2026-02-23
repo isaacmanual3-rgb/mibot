@@ -1,804 +1,426 @@
 {% extends "base.html" %}
-{% block title %}Apple Farm - DogeQuest{% endblock %}
+
+{% block title %}TON Farm - PixieLand{% endblock %}
+
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
-/* ══════════ RESET & BASE ══════════ */
-#farm-root,#farm-root *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-#farm-root{
-  font-family:'Fredoka One',cursive;
-  position:relative; width:100%; min-height:100vh;
-  overflow:hidden; touch-action:manipulation;
-  background:linear-gradient(180deg,#C8564A 0%,#D96A4A 8%,#E88060 18%,#F09A72 35%,#F5B888 55%,#F8CFA0 72%,#EDD898 85%,#C8DC88 100%);
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg:#08080f;--surface:#0d0d1a;--surface2:#111122;--surface3:#070710;
+  --gold:#ffd700;--gold2:#ffb300;--gold-dark:#5a3a00;--gold-dim:rgba(255,215,0,0.07);
+  --green:#00e676;--blue:#0098EA;--cyan:#40c4ff;--red:#ff4d6a;--orange:#ff9800;
+  --purple:#ce93d8;--border:#1e1e34;--text:#e0e2f0;--text2:#9090b8;--muted:#4a4a6e;
+  --font-px:'Press Start 2P',monospace;--font-body:'Inter',sans-serif;
 }
+.fm-shell*,.fm-shell*::before,.fm-shell*::after{box-sizing:border-box;}
+.fm-shell{font-family:var(--font-body);background:var(--bg);min-height:100vh;color:var(--text);position:relative;overflow-x:hidden;}
+.fm-shell::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,152,234,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,152,234,0.018) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
 
-/* ══════════ SCREENS ══════════ */
-.fsc{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
-.fsc.active{display:flex;}
+.fm-ticker{position:relative;z-index:20;background:linear-gradient(90deg,#001428,#002244,#001428);border-bottom:1px solid rgba(0,152,234,0.3);height:28px;display:flex;align-items:center;overflow:hidden;}
+.fm-ticker span{display:inline-block;white-space:nowrap;font-family:var(--font-px);font-size:0.38rem;color:rgba(0,152,234,0.9);letter-spacing:0.1em;animation:fm-tick 36s linear infinite;}
+@keyframes fm-tick{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
-/* ══════════ CLOUDS ══════════ */
-.clouds{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1;}
-.cl{position:absolute;}
-.cl1{top:6%;left:-5%;animation:drift1 34s linear infinite;}
-.cl2{top:18%;right:-8%;animation:drift2 46s linear infinite;}
-.cl3{top:2%;left:25%;animation:drift1 58s linear infinite 14s;opacity:.7;}
-@keyframes drift1{0%{transform:translateX(-220px)}100%{transform:translateX(115vw)}}
-@keyframes drift2{0%{transform:translateX(120px)}100%{transform:translateX(-115vw)}}
+.fm-page{position:relative;z-index:5;max-width:560px;margin:0 auto;padding:16px 14px 100px;display:flex;flex-direction:column;gap:12px;}
 
-/* ══════════ HILLS ══════════ */
-.hills{position:absolute;bottom:0;left:0;right:0;height:38%;z-index:2;pointer-events:none;}
-.hills svg{width:100%;height:100%;}
+.fm-card{background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.4);position:relative;padding:18px;animation:fm-up .3s ease both;}
+.fm-card::before,.fm-card::after{content:'';position:absolute;width:8px;height:8px;border-color:rgba(0,152,234,0.4);border-style:solid;}
+.fm-card::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
+.fm-card::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+@keyframes fm-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* Barn & deco */
-.barn{position:absolute;right:6%;bottom:18%;z-index:3;pointer-events:none;width:80px;}
-.gdeco-l{position:absolute;left:3%;bottom:20%;z-index:3;pointer-events:none;}
-.gdeco-r{position:absolute;right:14%;bottom:19%;z-index:3;pointer-events:none;}
+.fm-label{font-family:var(--font-px);font-size:0.38rem;color:var(--muted);letter-spacing:0.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.fm-label::after{content:'';flex:1;height:1px;background:var(--border);}
 
-/* ══════════ TOP BAR ══════════ */
-.topbar{
-  position:relative;z-index:50;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 12px 4px;gap:8px;
-}
-.wsign{
-  position:relative;
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:2.5px solid #2A1208;border-radius:7px;
-  box-shadow:0 3px 0 #1A0A04,0 5px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(180,110,40,.3);
-  overflow:hidden;
-}
-.wsign::before{content:'';position:absolute;top:0;left:0;right:0;height:38%;background:linear-gradient(180deg,rgba(200,130,50,.22),transparent);pointer-events:none;}
-.wsign::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 30px,rgba(0,0,0,.08) 30px,rgba(0,0,0,.08) 31px);pointer-events:none;}
-.tbtn{display:flex;align-items:center;gap:6px;padding:7px 12px;color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;text-shadow:0 1px 3px rgba(0,0,0,.6);cursor:pointer;border:none;background:transparent;}
-.lvldot{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#50CCFF,#1060C8);border:2px solid #0840A0;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#fff;flex-shrink:0;}
+/* HERO */
+.fm-hero{background:linear-gradient(160deg,#04040e,#060616);border:1px solid rgba(0,152,234,0.25);box-shadow:0 0 40px rgba(0,152,234,0.08),inset 0 1px 0 rgba(0,152,234,0.1);padding:24px 18px;text-align:center;position:relative;overflow:hidden;animation:fm-up .3s .04s ease both;}
+.fm-hero-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:260px;background:radial-gradient(circle,rgba(0,152,234,0.12) 0%,transparent 65%);pointer-events:none;}
+.fm-pending-label{font-family:var(--font-px);font-size:0.32rem;color:rgba(0,152,234,0.6);letter-spacing:0.2em;margin-bottom:8px;}
+.fm-pending-amount{font-family:var(--font-px);font-size:1.5rem;color:var(--green);text-shadow:0 0 30px rgba(0,230,118,0.45);margin-bottom:4px;line-height:1;animation:fm-glow 2s ease-in-out infinite;}
+@keyframes fm-glow{0%,100%{text-shadow:0 0 20px rgba(0,230,118,0.4)}50%{text-shadow:0 0 40px rgba(0,230,118,0.7),0 0 80px rgba(0,230,118,0.2)}}
+.fm-pending-unit{font-family:var(--font-px);font-size:0.34rem;color:rgba(0,230,118,0.5);letter-spacing:0.15em;margin-bottom:18px;}
+.fm-rate-row{font-size:0.74rem;color:var(--text2);margin-bottom:18px;}
+.fm-rate-row strong{color:var(--blue);}
+.fm-deposit-btn{width:100%;padding:16px;font-family:var(--font-px);font-size:0.48rem;letter-spacing:0.08em;background:linear-gradient(135deg,rgba(0,230,118,0.15),rgba(0,200,80,0.1));color:var(--green);border:1px solid rgba(0,230,118,0.45);box-shadow:0 0 20px rgba(0,230,118,0.12);cursor:pointer;position:relative;overflow:hidden;transition:transform .1s,box-shadow .1s;}
+.fm-deposit-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 50%);}
+.fm-deposit-btn:hover{transform:translateY(-2px);box-shadow:0 4px 24px rgba(0,230,118,0.25);}
+.fm-deposit-btn:active{transform:translateY(1px);}
+.fm-deposit-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.fm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border);margin-top:14px;}
+.fm-stat{padding:12px 6px;text-align:center;background:rgba(0,0,0,0.2);position:relative;}
+.fm-stat+.fm-stat::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:var(--border);}
+.fm-stat-val{display:block;font-family:var(--font-px);font-size:0.48rem;color:var(--blue);margin-bottom:5px;}
+.fm-stat-lbl{font-size:0.6rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
 
-/* Currency row */
-.currrow{position:relative;z-index:50;display:flex;gap:6px;padding:0 12px 4px;}
-.currbox{display:flex;align-items:center;gap:7px;padding:5px 14px;color:#FFE566;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.5);}
-.coin{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;}
-.cgold{background:radial-gradient(circle at 35% 32%,#FFE88A,#C89010);border:2px solid #A07008;color:#7A4800;}
-.csil{background:radial-gradient(circle at 35% 32%,#F0F0F0,#909090);border:2px solid #686868;color:#484848;}
+/* ACTIVE NODES */
+.fm-nodes{display:flex;flex-direction:column;gap:8px;}
+.fm-node{background:linear-gradient(135deg,#06060f,#08080e);border:1px solid rgba(0,152,234,0.18);display:flex;align-items:center;gap:12px;padding:12px 14px;position:relative;}
+.fm-node::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--green);box-shadow:0 0 8px rgba(0,230,118,0.5);}
+.fm-node-icon{flex-shrink:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);border:1px solid rgba(0,152,234,0.2);}
+.fm-node-body{flex:1;min-width:0;}
+.fm-node-name{display:block;font-family:var(--font-px);font-size:0.42rem;color:var(--text);letter-spacing:.04em;margin-bottom:4px;}
+.fm-node-rate{font-size:0.68rem;color:var(--text2);}
+.fm-node-right{flex-shrink:0;text-align:right;}
+.fm-node-status{display:flex;align-items:center;gap:4px;font-family:var(--font-px);font-size:0.3rem;color:var(--green);text-shadow:0 0 6px rgba(0,230,118,0.4);margin-bottom:4px;}
+.fm-node-dot{width:5px;height:5px;background:var(--green);box-shadow:0 0 5px rgba(0,230,118,0.7);animation:fm-dot 1s steps(1) infinite;}
+@keyframes fm-dot{0%,100%{opacity:1}50%{opacity:0.15}}
+.fm-node-exp{font-size:0.58rem;color:var(--muted);}
 
-/* ══════════ FARM SCREEN — ISLAND PATH ══════════ */
-#sc-farm{background:transparent;}
-.ipath{
-  position:absolute;inset:0;
-  overflow-y:auto;overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  z-index:10;padding-top:80px;padding-bottom:220px;
-}
-.ipath::-webkit-scrollbar{display:none;}
+/* SHOP CARDS */
+.fm-shop{display:flex;flex-direction:column;gap:10px;}
+.fm-tree-card{background:linear-gradient(160deg,#07070f,#05050c);border:1px solid rgba(255,255,255,0.06);overflow:hidden;position:relative;transition:border-color .2s;}
+.fm-tree-card:hover{border-color:rgba(0,152,234,0.25);}
+.fm-tree-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;}
+.fm-tree-card.starter::before{background:#00e676;box-shadow:0 0 10px rgba(0,230,118,0.6);}
+.fm-tree-card.basic::before{background:#64b5f6;box-shadow:0 0 10px rgba(100,181,246,0.5);}
+.fm-tree-card.pro::before{background:#0098EA;box-shadow:0 0 10px rgba(0,152,234,0.6);}
+.fm-tree-card.elite::before{background:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.6);}
+.fm-tree-card.master::before{background:#ff6f00;box-shadow:0 0 10px rgba(255,111,0,0.6);}
+.fm-tree-card.legendary::before{background:linear-gradient(180deg,#ce93d8,#ff4081);box-shadow:0 0 12px rgba(206,147,216,0.7);}
 
-/* Island */
-.island-wrap{position:absolute;display:flex;flex-direction:column;align-items:center;}
-.buy-sign{
-  position:relative;
-  background:linear-gradient(180deg,#7A4820 0%,#5C3010 50%,#4A2208 100%);
-  border:2.5px solid #2A1008;border-radius:7px;
-  box-shadow:0 3px 0 #1A0800,inset 0 1px 0 rgba(180,110,40,.25);
-  padding:4px 16px;color:#FFE566;font-size:.88rem;
-  text-shadow:1px 1px 2px rgba(0,0,0,.6);
-  margin-bottom:6px;cursor:pointer;z-index:3;
-}
-.buy-sign::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #2A1008;}
-.buy-sign.locked{background:linear-gradient(180deg,#6A6A6A,#484848);border-color:#303030;box-shadow:0 3px 0 #202020;}
-.buy-sign.locked::after{border-top-color:#303030;}
+.fm-tree-top{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;}
+.fm-tree-icon{flex-shrink:0;width:56px;height:56px;display:flex;align-items:center;justify-content:center;}
+.fm-tree-info{flex:1;min-width:0;}
+.fm-tree-badge{display:inline-block;font-family:var(--font-px);font-size:0.28rem;letter-spacing:.12em;padding:2px 7px;margin-bottom:5px;border-radius:2px;border:1px solid;}
+.fm-tree-card.starter .fm-tree-badge{color:#00e676;border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.06);}
+.fm-tree-card.basic .fm-tree-badge{color:#64b5f6;border-color:rgba(100,181,246,0.3);background:rgba(100,181,246,0.06);}
+.fm-tree-card.pro .fm-tree-badge{color:#0098EA;border-color:rgba(0,152,234,0.3);background:rgba(0,152,234,0.06);}
+.fm-tree-card.elite .fm-tree-badge{color:#ffd700;border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);}
+.fm-tree-card.master .fm-tree-badge{color:#ff9800;border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.06);}
+.fm-tree-card.legendary .fm-tree-badge{color:#ce93d8;border-color:rgba(206,147,216,0.3);background:rgba(206,147,216,0.06);}
+.fm-tree-name{display:block;font-family:var(--font-px);font-size:0.54rem;color:var(--text);letter-spacing:.03em;margin-bottom:4px;}
+.fm-tree-owned{font-size:0.68rem;color:var(--text2);}
+.fm-tree-owned strong{color:var(--blue);font-weight:600;}
+.fm-tree-price-col{text-align:right;flex-shrink:0;}
+.fm-tree-price{display:block;font-family:var(--font-px);font-size:0.82rem;line-height:1;}
+.fm-tree-card.starter .fm-tree-price{color:#00e676;}
+.fm-tree-card.basic .fm-tree-price{color:#64b5f6;}
+.fm-tree-card.pro .fm-tree-price{color:#0098EA;}
+.fm-tree-card.elite .fm-tree-price{color:#ffd700;}
+.fm-tree-card.master .fm-tree-price{color:#ff9800;}
+.fm-tree-card.legendary .fm-tree-price{color:#ce93d8;}
+.fm-tree-price-each{font-size:0.58rem;color:var(--muted);display:block;margin-top:3px;}
 
-.island-body{position:relative;cursor:pointer;transition:transform .12s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.38));}
-.island-body:active{transform:scale(.94);}
+.fm-tree-roi{padding:0 16px 10px;}
+.fm-tree-roi-head{display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-bottom:5px;}
+.fm-tree-roi-pct{font-family:var(--font-px);font-size:0.36rem;}
+.fm-tree-card.starter .fm-tree-roi-pct{color:#00e676;}
+.fm-tree-card.basic .fm-tree-roi-pct{color:#64b5f6;}
+.fm-tree-card.pro .fm-tree-roi-pct{color:#0098EA;}
+.fm-tree-card.elite .fm-tree-roi-pct{color:#ffd700;}
+.fm-tree-card.master .fm-tree-roi-pct{color:#ff9800;}
+.fm-tree-card.legendary .fm-tree-roi-pct{color:#ce93d8;}
+.fm-roi-track{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
+.fm-roi-fill{height:100%;border-radius:2px;}
+.fm-tree-card.starter .fm-roi-fill{width:20%;background:linear-gradient(90deg,#00c853,#00e676);}
+.fm-tree-card.basic .fm-roi-fill{width:30%;background:linear-gradient(90deg,#1565c0,#64b5f6);}
+.fm-tree-card.pro .fm-roi-fill{width:50%;background:linear-gradient(90deg,#005fa8,#0098EA);}
+.fm-tree-card.elite .fm-roi-fill{width:70%;background:linear-gradient(90deg,#c8a200,#ffd700);}
+.fm-tree-card.master .fm-roi-fill{width:85%;background:linear-gradient(90deg,#e65100,#ff9800);}
+.fm-tree-card.legendary .fm-roi-fill{width:100%;background:linear-gradient(90deg,#9c27b0,#ce93d8,#ff4081);box-shadow:0 0 6px rgba(206,147,216,0.5);}
 
-/* ══════════ BOTTOM FARM BAR ══════════ */
-.farmbot{position:absolute;bottom:64px;left:0;right:0;z-index:40;display:flex;flex-direction:column;align-items:center;gap:0;}
-.farm-timer{color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;text-shadow:0 2px 5px rgba(0,0,0,.55);margin-bottom:3px;}
-.farm-basket{
-  position:relative;width:220px;
-  background:linear-gradient(180deg,#7A3A10 0%,#5C2A08 100%);
-  border:3px solid #3D1A04;border-radius:10px;
-  box-shadow:0 4px 0 #1A0800,0 6px 12px rgba(0,0,0,.4);
-  padding:6px 14px;
-  display:flex;align-items:center;gap:10px;
-}
-.farm-basket::before{content:'';position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:140px;height:22px;border:4px solid #5C2A08;border-bottom:none;border-radius:40px 40px 0 0;}
-.egg-icon{font-size:1.3rem;}
-.egg-count{color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;text-shadow:0 1px 3px rgba(0,0,0,.6);flex:1;}
-.depo-btn{
-  background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);
-  border:2.5px solid #A06000;border-radius:8px;
-  box-shadow:0 3px 0 #7A4000;
-  color:#5A3000;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;
-  padding:5px 14px;cursor:pointer;border:none;
-  background:#F0A800;color:#6A3800;
-  text-shadow:0 1px 1px rgba(255,220,100,.5);
-}
-.depo-btn:active{transform:translateY(2px);}
+.fm-tree-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.04);margin:0 16px 12px;}
+.fm-tree-metric{background:rgba(0,0,0,0.3);padding:8px 4px;text-align:center;}
+.fm-tree-metric-val{display:block;font-family:var(--font-px);font-size:0.38rem;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fm-tree-metric-lbl{display:block;font-size:0.58rem;color:var(--muted);letter-spacing:.04em;}
 
-/* ══════════ NAV BAR ══════════ */
-.navbar{
-  position:fixed;bottom:0;left:0;right:0;z-index:200;
-  background:linear-gradient(180deg,#7A4820 0%,#5C3010 60%,#4A2208 100%);
-  border-top:3px solid #2A1008;
-  display:flex;align-items:flex-end;justify-content:space-around;
-  padding:6px 0 max(6px,env(safe-area-inset-bottom));
-}
-.ni{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:2px 8px;border:none;background:transparent;}
-.ni-icon{font-size:1.6rem;transition:transform .15s;}
-.ni-lbl{font-family:'Nunito',sans-serif;font-weight:900;font-size:.65rem;color:#FFE566;text-shadow:0 1px 3px rgba(0,0,0,.6);}
-.ni.act .ni-icon{transform:scale(1.2);}
-.ni.act .ni-lbl{color:#FFF;}
-.ni-center{
-  position:relative;
-  background:radial-gradient(circle at 40% 38%,#FF8A50,#CC4400);
-  border:3px solid #8A2A00;border-radius:50%;
-  width:52px;height:52px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 -3px 12px rgba(255,140,0,.5),0 4px 0 #5A1800;
-  margin-bottom:4px;
-}
+.fm-tree-buy{display:flex;align-items:center;gap:8px;padding:0 16px 14px;}
+.fm-qty-wrap{display:flex;align-items:center;gap:0;border:1px solid var(--border);flex-shrink:0;}
+.fm-qty-btn{width:32px;height:36px;background:var(--surface3);color:var(--text);border:none;cursor:pointer;font-family:var(--font-px);font-size:0.6rem;transition:background .1s,color .1s;}
+.fm-qty-btn:hover{background:rgba(0,152,234,0.15);color:var(--blue);}
+.fm-qty-num{width:40px;height:36px;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-px);font-size:0.46rem;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.fm-buy-btn{flex:1;padding:10px 8px;cursor:pointer;font-family:var(--font-px);font-size:0.36rem;letter-spacing:.08em;border:1px solid;border-radius:2px;position:relative;overflow:hidden;transition:transform .1s,box-shadow .1s,opacity .1s;}
+.fm-buy-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 50%);pointer-events:none;}
+.fm-buy-btn:hover{transform:translateY(-1px);}
+.fm-buy-btn:active{transform:translateY(1px);opacity:0.85;}
+.fm-tree-card.starter .fm-buy-btn{color:#00e676;border-color:rgba(0,230,118,0.4);background:rgba(0,230,118,0.08);box-shadow:0 2px 12px rgba(0,230,118,0.12);}
+.fm-tree-card.basic .fm-buy-btn{color:#64b5f6;border-color:rgba(100,181,246,0.4);background:rgba(100,181,246,0.08);}
+.fm-tree-card.pro .fm-buy-btn{color:#40c4ff;border-color:rgba(0,152,234,0.45);background:rgba(0,152,234,0.1);box-shadow:0 2px 14px rgba(0,152,234,0.15);}
+.fm-tree-card.elite .fm-buy-btn{color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.08);}
+.fm-tree-card.master .fm-buy-btn{color:#ff9800;border-color:rgba(255,152,0,0.4);background:rgba(255,152,0,0.08);}
+.fm-tree-card.legendary .fm-buy-btn{color:#ce93d8;border-color:rgba(206,147,216,0.4);background:linear-gradient(135deg,rgba(156,39,176,0.12),rgba(255,64,129,0.08));}
+.fm-tree-cycle{text-align:center;font-size:0.6rem;color:rgba(255,255,255,0.2);padding:0 16px 10px;letter-spacing:.05em;}
 
-/* ══════════ COMMERCE SCREEN ══════════ */
-#sc-commerce{
-  background:linear-gradient(180deg,#C8564A 0%,#D96A4A 8%,#E88060 18%,#F09A72 35%,#F5B888 55%,#F8CFA0 72%,#EDD898 85%,#C8DC88 100%);
-  overflow-y:auto;padding:80px 14px 100px;-webkit-overflow-scrolling:touch;
-}
-#sc-commerce::-webkit-scrollbar{display:none;}
-
-.comm-title{
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem;
-  color:#fff;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.4);margin-bottom:12px;
-}
-
-/* Wood panel */
-.wpanel{
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:2.5px solid #2A1208;border-radius:10px;
-  box-shadow:0 4px 0 #1A0A04,0 6px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(180,110,40,.3);
-  padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;
-}
-.wpanel::before{content:'';position:absolute;top:0;left:0;right:0;height:35%;background:linear-gradient(180deg,rgba(200,130,50,.2),transparent);pointer-events:none;}
-
-/* Balance row */
-.bal-row{display:flex;align-items:center;gap:10px;}
-.bal-coin{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#F0F0F0,#909090);border:2px solid #686868;display:flex;align-items:center;justify-content:center;font-size:.8rem;}
-.bal-val{color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;text-shadow:0 1px 3px rgba(0,0,0,.5);}
-
-/* Blue button */
-.btn-blue{
-  width:100%;padding:12px;border-radius:8px;border:none;
-  background:linear-gradient(180deg,#50A8E8 0%,#2070C8 100%);
-  border-bottom:3px solid #1050A0;
-  color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;
-  text-shadow:0 1px 3px rgba(0,0,50,.4);cursor:pointer;margin-top:10px;
-}
-.btn-blue:active{transform:translateY(2px);}
-
-/* Promo row */
-.promo-row{display:flex;align-items:center;gap:12px;}
-.promo-icon{font-size:1.8rem;}
-.promo-txt .pt1{font-family:'Nunito',sans-serif;font-weight:900;color:#FFD700;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.4);}
-.promo-txt .pt2{font-family:'Nunito',sans-serif;font-weight:700;color:#F5C070;font-size:.8rem;}
-
-/* Sell row */
-.sell-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.sell-row span{font-family:'Nunito',sans-serif;font-weight:800;color:#F0E0B0;font-size:.9rem;flex:1;}
-.btn-sell{background:linear-gradient(180deg,#FF7060 0%,#CC3020 100%);border:none;border-bottom:3px solid #8A1010;border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;padding:8px 18px;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.4);}
-.btn-sell:active{transform:translateY(2px);}
-
-/* Section title */
-.sec-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem;color:#fff;text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.4);margin:10px 0 6px;}
-
-/* Chicken card */
-.chk-card{
-  background:linear-gradient(180deg,#5C3010 0%,#432008 100%);
-  border:2.5px solid #2A1008;border-radius:10px;
-  box-shadow:0 4px 0 #1A0800,0 6px 12px rgba(0,0,0,.4),inset 0 1px 0 rgba(180,110,40,.2);
-  margin-bottom:12px;overflow:hidden;position:relative;
-}
-.chk-top{display:flex;align-items:flex-start;gap:0;padding:12px;}
-.chk-img{
-  width:72px;height:72px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:3rem;
-  background:rgba(0,0,0,.15);border-radius:8px;margin-right:10px;
-}
-.chk-info{flex:1;}
-.chk-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;margin-bottom:4px;}
-.chk-name.baby  {color:#FFD700;}
-.chk-name.green {color:#80E840;}
-.chk-name.granny{color:#A8E8A8;}
-.chk-name.dorado{color:#FFB800;}
-.chk-name.mistico{color:#E090FF;}
-.chk-name.common{color:#FFD700;}
-.chk-stat{font-family:'Nunito',sans-serif;font-weight:800;color:#F0E0C0;font-size:.88rem;margin-bottom:2px;}
-.chk-stat .sv{color:#80FF80;font-weight:900;}
-.chk-stat .sc{color:#FF9060;font-weight:900;}
-.chk-stat .st{color:#A0D0FF;font-weight:900;}
-
-/* Qty + Buy row */
-.chk-bot{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 12px 12px;
-}
-.qbtn{
-  width:34px;height:34px;border-radius:7px;
-  background:linear-gradient(180deg,#8A5030 0%,#6A3018 100%);
-  border:2px solid #3A1808;box-shadow:0 2px 0 #1A0800;
-  color:#FFE566;font-size:1.2rem;font-weight:900;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.qbtn:active{transform:translateY(1px);}
-.qnum{
-  min-width:36px;text-align:center;
-  color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;
-  text-shadow:0 1px 3px rgba(0,0,0,.5);
-}
-.ybtn{
-  flex:1;padding:10px 0;border-radius:8px;border:none;
-  background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);
-  border-bottom:3px solid #A06000;
-  color:#6A3800;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;
-  text-shadow:0 1px 1px rgba(255,220,100,.5);cursor:pointer;
-}
-.ybtn:active{transform:translateY(2px);}
-.ybtn.locked-btn{background:linear-gradient(180deg,#888,#555);border-bottom:3px solid #333;color:#CCC;text-shadow:none;}
-
-/* ══════════ TOAST ══════════ */
-#toast{
-  position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);
-  background:rgba(30,15,5,.92);color:#FFE566;
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;
-  padding:10px 22px;border-radius:10px;border:2px solid #8A5020;
-  box-shadow:0 4px 12px rgba(0,0,0,.5);
-  z-index:9999;transition:transform .3s;pointer-events:none;
-  white-space:nowrap;
-}
-#toast.show{transform:translateX(-50%) translateY(0);}
-
-/* Floating egg */
-.fegg{position:fixed;font-size:1.3rem;pointer-events:none;z-index:9998;animation:fup 1.1s ease-out forwards;}
-@keyframes fup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(1.3)}}
-
-/* ══════════ HARVEST MODAL ══════════ */
-.hmodal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:flex-end;justify-content:center;}
-.hmodal-bg.show{display:flex;animation:mfade .2s ease;}
-@keyframes mfade{from{opacity:0}to{opacity:1}}
-.hmodal{
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:3px solid #2A1208;border-radius:16px 16px 0 0;
-  box-shadow:0 -6px 24px rgba(0,0,0,.5);
-  width:100%;max-width:480px;padding:20px 20px 32px;
-  animation:mup .25s cubic-bezier(.22,.77,.42,1) both;
-}
-@keyframes mup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.hmodal-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem;color:#FFE566;text-align:center;margin-bottom:14px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
-.hmodal-egg{text-align:center;font-size:3rem;margin-bottom:8px;}
-.hmodal-count{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;text-align:center;font-size:1.6rem;margin-bottom:18px;text-shadow:0 2px 6px rgba(0,0,0,.4);}
-.hmodal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.btn-cancel{padding:12px;border-radius:8px;border:none;background:rgba(0,0,0,.3);border:2px solid #4A2810;color:#C0A090;font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;cursor:pointer;}
-.btn-harvest{padding:12px;border-radius:8px;border:none;background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);border-bottom:3px solid #A06000;color:#6A3800;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;}
-.btn-harvest:active{transform:translateY(2px);}
-.mn-spinner2{display:inline-block;width:14px;height:14px;border:2.5px solid rgba(100,60,0,.3);border-top-color:#6A3800;animation:spin .4s linear infinite;vertical-align:middle;margin-right:6px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ══════════ ISLAND SVG HELPER CLASSES ══════════ */
-.lock-overlay{
-  position:absolute;left:50%;bottom:28px;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;z-index:4;
-  pointer-events:none;
-}
-
-/* ══════════ BRIDGE SVG ══════════ */
-.bsvg{position:absolute;pointer-events:none;z-index:4;overflow:visible;}
+/* MODAL */
+.fm-modal-bg{display:none;position:fixed;inset:0;background:rgba(2,2,10,0.92);z-index:200;align-items:flex-end;justify-content:center;}
+.fm-modal-bg.show{display:flex;animation:fm-bg-in .2s ease;}
+@keyframes fm-bg-in{from{opacity:0}to{opacity:1}}
+.fm-modal{background:var(--surface2);border:1px solid rgba(0,152,234,0.25);border-bottom:none;box-shadow:0 -20px 60px rgba(0,152,234,0.12);width:100%;max-width:500px;padding:24px 20px 32px;position:relative;animation:fm-sheet .25s cubic-bezier(.22,.77,.42,1) both;}
+@keyframes fm-sheet{from{transform:translateY(80px);opacity:0}to{transform:translateY(0);opacity:1}}
+.fm-modal-handle{width:36px;height:3px;background:var(--border);margin:0 auto 20px;border-radius:2px;}
+.fm-modal-title{font-family:var(--font-px);font-size:0.56rem;color:var(--text);text-align:center;letter-spacing:.08em;margin-bottom:8px;}
+.fm-modal-msg{font-size:0.8rem;color:var(--text2);text-align:center;margin-bottom:18px;line-height:1.5;}
+.fm-modal-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.fm-modal-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface3);border:1px solid var(--border);padding:10px 14px;}
+.fm-modal-lbl{font-size:0.72rem;color:var(--text2);}
+.fm-modal-val{font-family:var(--font-px);font-size:0.42rem;color:var(--blue);}
+.fm-modal-btns{display:grid;grid-template-columns:1fr 2fr;gap:10px;}
+.fm-btn-cancel{font-family:var(--font-px);font-size:0.42rem;letter-spacing:.06em;padding:14px;background:transparent;color:var(--muted);border:1px solid var(--border);cursor:pointer;transition:color .1s;}
+.fm-btn-cancel:hover{color:var(--text);}
+.fm-btn-confirm{font-family:var(--font-px);font-size:0.46rem;letter-spacing:.08em;padding:14px;background:linear-gradient(135deg,rgba(0,152,234,0.2),rgba(0,100,180,0.15));color:var(--blue);border:1px solid rgba(0,152,234,0.45);box-shadow:0 0 20px rgba(0,152,234,0.15);cursor:pointer;transition:transform .1s,box-shadow .1s;}
+.fm-btn-confirm:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(0,152,234,0.25);}
+.fm-btn-confirm:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.fm-spinner{display:inline-block;width:10px;height:10px;border:2px solid rgba(0,152,234,0.2);border-top-color:var(--blue);animation:fm-spin .5s linear infinite;border-radius:50%;}
+@keyframes fm-spin{to{transform:rotate(360deg)}}
 </style>
 
-<!-- ══════ CLOUD SVGs ══════ -->
-<div id="farm-root">
-<div class="clouds">
-  <div class="cl cl1"><svg width="130" height="55" viewBox="0 0 130 55" fill="none"><ellipse cx="65" cy="38" rx="62" ry="22" fill="rgba(255,255,255,0.82)"/><ellipse cx="40" cy="30" rx="32" ry="20" fill="rgba(255,255,255,0.85)"/><ellipse cx="80" cy="26" rx="28" ry="18" fill="rgba(255,255,255,0.80)"/><ellipse cx="60" cy="20" rx="22" ry="16" fill="rgba(255,255,255,0.88)"/></svg></div>
-  <div class="cl cl2"><svg width="100" height="42" viewBox="0 0 100 42" fill="none"><ellipse cx="50" cy="30" rx="48" ry="16" fill="rgba(255,255,255,0.75)"/><ellipse cx="30" cy="22" rx="24" ry="15" fill="rgba(255,255,255,0.78)"/><ellipse cx="65" cy="18" rx="22" ry="14" fill="rgba(255,255,255,0.72)"/><ellipse cx="48" cy="14" rx="18" ry="12" fill="rgba(255,255,255,0.82)"/></svg></div>
-  <div class="cl cl3"><svg width="90" height="38" viewBox="0 0 90 38" fill="none"><ellipse cx="45" cy="26" rx="42" ry="14" fill="rgba(255,255,255,0.65)"/><ellipse cx="28" cy="18" rx="20" ry="13" fill="rgba(255,255,255,0.68)"/><ellipse cx="58" cy="14" rx="18" ry="12" fill="rgba(255,255,255,0.62)"/></svg></div>
-</div>
+{# ─── SVG HELPERS ─── #}
+{% set TON_ICON %}<svg viewBox="0 0 56 56" fill="none" width="14" height="14"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>{% endset %}
 
-<!-- ══════ HILLS ══════ -->
-<div class="hills">
-  <svg viewBox="0 0 400 200" preserveAspectRatio="none" fill="none">
-    <path d="M0,140 Q60,80 130,110 Q200,140 270,90 Q340,40 400,80 L400,200 L0,200Z" fill="#7CC040"/>
-    <path d="M0,165 Q80,120 160,145 Q240,170 320,130 Q360,110 400,125 L400,200 L0,200Z" fill="#6AB030"/>
-    <path d="M0,185 Q100,160 200,175 Q300,190 400,170 L400,200 L0,200Z" fill="#5A9820"/>
-  </svg>
-</div>
+<div class="fm-shell">
 
-<!-- Deco trees & barn -->
-<div class="gdeco-l"><svg width="40" height="68" viewBox="0 0 40 68"><rect x="17" y="48" width="7" height="22" fill="#6B4020" rx="2"/><ellipse cx="20" cy="42" rx="18" ry="24" fill="#4A8820"/><ellipse cx="14" cy="34" rx="10" ry="14" fill="#3A7010"/><ellipse cx="26" cy="30" rx="10" ry="14" fill="#3A7010"/><ellipse cx="20" cy="22" rx="8" ry="12" fill="#5AAA30"/></svg></div>
-<div class="gdeco-r"><svg width="36" height="58" viewBox="0 0 36 58"><rect x="15" y="40" width="6" height="20" fill="#6B4020" rx="2"/><ellipse cx="18" cy="35" rx="16" ry="20" fill="#4A8820"/><ellipse cx="12" cy="28" rx="9" ry="13" fill="#3A7010"/><ellipse cx="24" cy="25" rx="9" ry="13" fill="#3A7010"/><ellipse cx="18" cy="18" rx="7" ry="10" fill="#5AAA30"/></svg></div>
-<div class="barn"><svg viewBox="0 0 80 70" fill="none"><rect x="8" y="30" width="64" height="40" fill="#CC3A2A"/><polygon points="0,34 40,4 80,34" fill="#A02820"/><rect x="28" y="50" width="24" height="20" fill="#8A5020"/><rect x="8" y="30" width="8" height="40" fill="#B03020"/><rect x="64" y="30" width="8" height="40" fill="#B03020"/><rect x="10" y="36" width="14" height="10" rx="1" fill="#F0E8D0" fill-opacity=".6"/><rect x="56" y="36" width="14" height="10" rx="1" fill="#F0E8D0" fill-opacity=".6"/></svg></div>
+  <div class="fm-ticker" aria-hidden="true"><span>◆ TON FARM ◆&nbsp;&nbsp; ACTIVA NODOS Y GENERA TON AUTOMÁTICAMENTE &nbsp;◆&nbsp;&nbsp; MÁS NODOS = MÁS TON POR HORA &nbsp;◆&nbsp;&nbsp; DEPOSITA AL BALANCE EN UN CLICK &nbsp;◆&nbsp;&nbsp; STARTER GRATIS PARA TODOS &nbsp;◆&nbsp;&nbsp;</span></div>
 
-<!-- ══════════════════════════════════
-     FARM SCREEN
-══════════════════════════════════ -->
-<div class="fsc active" id="sc-farm">
+  <div class="fm-page">
 
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="wsign"><div class="tbtn"><div class="coin cgold">★</div><span id="fg">0</span></div></div>
-    <div class="wsign"><button class="tbtn" onclick="goComm()">🛒 Comercio</button></div>
-    <div class="wsign"><div class="tbtn"><div class="coin csil">☆</div><span id="fs">0</span></div></div>
-  </div>
-  <div class="currrow">
-    <div class="wsign"><div class="currbox"><div class="coin csil">☆</div><span id="fc">{{ mining_stats.total_machines if mining_stats else 0 }}</span><span style="font-size:.7rem;color:#C8A870;margin-left:2px;">árboles</span></div></div>
-  </div>
-
-  <!-- Island path (generated by JS) -->
-  <div class="ipath" id="ipath"></div>
-
-  <!-- Bridge SVG layer -->
-  <svg class="bsvg" id="bridges" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;"></svg>
-
-  <!-- Bottom bar -->
-  <div class="farmbot">
-    <div class="farm-timer">Siguiente 🍎: <strong id="ntimer">--</strong></div>
-    <div class="farm-basket">
-      <span class="egg-icon">🍎</span>
-      <span class="egg-count" id="acount">{{ pending_rewards|int }}</span>
-      <button class="depo-btn" onclick="openHarvest()">Depo</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════
-     COMMERCE SCREEN
-══════════════════════════════════ -->
-<div class="fsc" id="sc-commerce">
-
-  <div class="topbar" style="position:sticky;top:0;z-index:50;">
-    <div class="wsign"><div class="tbtn"><div class="coin cgold">★</div><span id="cg">0</span></div></div>
-    <div class="wsign"><button class="tbtn" onclick="goFarm()">🌿 Granja</button></div>
-    <div class="wsign"><div class="tbtn"><div class="coin csil">☆</div><span id="cs">0</span></div></div>
-  </div>
-
-  <!-- Balance -->
-  <div class="comm-title">Su saldo para compras</div>
-  <div class="wpanel" style="margin:0 0 10px;">
-    <div class="bal-row">
-      <div class="bal-coin">☆</div>
-      <div class="bal-val" id="c-bval">{{ user.doge_balance|int }}</div>
-    </div>
-    <button class="btn-blue" onclick="showT('💎 Próximamente depósito de TON!')">Depositar TON</button>
-  </div>
-
-  <!-- Promo -->
-  <div class="wpanel">
-    <div class="promo-row">
-      <div class="promo-icon">🎁</div>
-      <div class="promo-txt"><div class="pt1">Paquete de árbol</div><div class="pt2">Más manzanas, más ganancias</div></div>
-    </div>
-  </div>
-
-  <!-- Sell row -->
-  <div class="wpanel">
-    <div class="sell-row">
-      <span>Cosechar y depositar tus manzanas</span>
-      <button class="btn-sell" onclick="openHarvest()">Cosechar</button>
-    </div>
-  </div>
-
-  <!-- Tree list -->
-  <div class="sec-title">Árboles:</div>
-  <div id="treelist"></div>
-
-</div>
-
-<!-- ══════════ NAVBAR ══════════ -->
-<nav class="navbar">
-  <button class="ni act" id="nb-comm" onclick="goComm(this)">
-    <span class="ni-icon">🛒</span><span class="ni-lbl">Comercio</span>
-  </button>
-  <button class="ni" id="nb-tasks" onclick="showT('📋 Tareas próximamente')">
-    <span class="ni-icon">📋</span><span class="ni-lbl">Tareas</span>
-  </button>
-  <button class="ni" id="nb-farm" onclick="goFarm(this)" style="margin-bottom:6px;">
-    <div class="ni-center"><span style="font-size:1.8rem;">🍎</span></div>
-    <span class="ni-lbl">Granja</span>
-  </button>
-  <button class="ni" id="nb-store" onclick="showT('🏪 Almacenamiento próximamente')">
-    <span class="ni-icon">🏪</span><span class="ni-lbl">Almacén</span>
-  </button>
-  <button class="ni" id="nb-menu" onclick="showT('⚙️ Menú próximamente')">
-    <span class="ni-icon">⚙️</span><span class="ni-lbl">Menú</span>
-  </button>
-</nav>
-
-<!-- ══════════ HARVEST MODAL ══════════ -->
-<div id="hmodal" class="hmodal-bg">
-  <div class="hmodal">
-    <div class="hmodal-egg">🍎</div>
-    <div class="hmodal-title">Cosechar Manzanas</div>
-    <div class="hmodal-count" id="hmodal-count">0 manzanas listas</div>
-    <div class="hmodal-btns">
-      <button class="btn-cancel" onclick="closeHarvest()">Cancelar</button>
-      <button class="btn-harvest" id="harvest-confirm-btn" onclick="doHarvest()">🍎 Cosechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════ TOAST ══════════ -->
-<div id="toast"></div>
-
-</div><!-- /farm-root -->
-
-<script>
-// ════════════════════════════════
-//  TREE DEFINITIONS
-// ════════════════════════════════
-const TREES = [
-  {% for plan in plans %}
-  {id:{{plan.id}}, name:'{{plan.name}}', cost:{{plan.price}}, ph:{{plan.hourly_rate|float}}, tier:'{{plan.tier}}',
-   emoji: '{% if plan.tier=="mistico" or plan.tier=="legendary" %}🌸{% elif plan.tier=="dorado" or plan.tier=="elite" %}✨{% elif plan.tier=="granny" or plan.tier=="master" %}🌿{% elif plan.tier=="gala" or plan.tier=="pro" %}🌼{% elif plan.tier=="fuji" or plan.tier=="basic" %}🍃{% else %}🌱{% endif %}',
-   color:'{% if plan.tier=="mistico" or plan.tier=="legendary" %}#E090FF{% elif plan.tier=="dorado" or plan.tier=="elite" %}#FFD700{% elif plan.tier=="granny" or plan.tier=="master" %}#A8E8A8{% elif plan.tier=="gala" or plan.tier=="pro" %}#FFF176{% elif plan.tier=="fuji" or plan.tier=="basic" %}#A5D6A7{% else %}#FFD700{% endif %}'
-  },
-  {% endfor %}
-];
-
-// ════════════════════════════════
-//  SERVER STATE
-// ════════════════════════════════
-const SERVER = {
-  balance: {{user.doge_balance|float}},
-  pending: {{pending_rewards|float}},
-  pph: {{(mining_stats.total_hourly_rate if mining_stats else 0)|float}},
-  machines: {{(mining_stats.total_machines if mining_stats else 0)|int}},
-  userMachines: [{% for m in user_machines %}{name:'{{m.plan_name}}',ph:{{m.hourly_rate|float}},planId:{% for p in plans %}{% if p.name == m.plan_name %}{{p.id}}{% endif %}{% endfor %}0},{% endfor %}]
-};
-
-// ════════════════════════════════
-//  GAME STATE
-// ════════════════════════════════
-const G = {
-  bal: SERVER.balance,
-  pend: SERVER.pending,
-  pph: SERVER.pph,
-  trees: {},   // planId -> qty owned
-  qty: {},     // planId -> qty to buy
-  lt: Date.now()
-};
-TREES.forEach(t => { G.trees[t.id] = 0; G.qty[t.id] = 1; });
-
-// populate owned from server
-SERVER.userMachines.forEach(m => {
-  const tree = TREES.find(t => t.id === m.planId || t.name === m.name);
-  if (tree) G.trees[tree.id] = (G.trees[tree.id] || 0) + 1;
-});
-
-function pph() { return SERVER.pph; }
-function fmt(n) {
-  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1)+'k';
-  return Math.floor(n).toString();
-}
-
-// ════════════════════════════════
-//  GAME LOOP
-// ════════════════════════════════
-let _lt = Date.now();
-function tick() {
-  const now = Date.now(); const dt = (now - _lt)/1000; _lt = now;
-  const rate = pph()/3600;
-  G.pend += rate * dt;
-  const ni = rate > 0 ? 1/rate : Infinity;
-  const el = document.getElementById('ntimer');
-  if (el) el.textContent = rate > 0 ? (ni < 2 ? '¡Ya!' : Math.ceil(ni)+'s') : '— planta un árbol —';
-  const ac = document.getElementById('acount'); if (ac) ac.textContent = fmt(Math.floor(G.pend));
-  updateNavBal();
-}
-function updateNavBal() {
-  const b = Math.floor(G.bal);
-  ['fg','fs','cg','cs'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent = fmt(b); });
-  const cv = document.getElementById('c-bval'); if(cv) cv.textContent = fmt(b);
-}
-setInterval(tick, 500);
-tick();
-
-// ════════════════════════════════
-//  SCREENS
-// ════════════════════════════════
-function goFarm(btn) {
-  document.querySelectorAll('.fsc').forEach(s => s.classList.remove('active'));
-  document.getElementById('sc-farm').classList.add('active');
-  document.querySelectorAll('.ni').forEach(b => b.classList.remove('act'));
-  if (btn) btn.classList.add('act');
-  else { document.getElementById('nb-farm').classList.add('act'); }
-  buildPath();
-}
-function goComm(btn) {
-  document.querySelectorAll('.fsc').forEach(s => s.classList.remove('active'));
-  document.getElementById('sc-commerce').classList.add('active');
-  document.querySelectorAll('.ni').forEach(b => b.classList.remove('act'));
-  if (btn) btn.classList.add('act');
-  else { document.getElementById('nb-comm').classList.add('act'); }
-  buildComm();
-}
-
-// ════════════════════════════════
-//  ISLAND PATH (FARM SCREEN)
-// ════════════════════════════════
-function buildPath() {
-  const container = document.getElementById('ipath');
-  const bridges   = document.getElementById('bridges');
-  if (!container) return;
-  container.innerHTML = '';
-  bridges.innerHTML = '';
-
-  const W = window.innerWidth;
-  const islandW = Math.min(130, W * 0.36);
-  const islandH = islandW * 0.6;
-  const pad = 16;
-
-  // Zigzag positions for up to 6 trees
-  const zigzag = [
-    { x: pad,                         y: 60 },
-    { x: W - islandW - pad,           y: 180 },
-    { x: pad,                          y: 310 },
-    { x: W - islandW - pad,           y: 440 },
-    { x: pad,                          y: 570 },
-    { x: W - islandW - pad,           y: 700 },
-  ];
-
-  const totalH = 700 + islandH + 60;
-  container.style.height = totalH + 'px';
-  bridges.setAttribute('viewBox', '0 0 '+W+' '+totalH);
-  bridges.style.height = totalH + 'px';
-
-  TREES.forEach((tree, i) => {
-    const pos = zigzag[i] || { x: pad, y: 60 + i*140 };
-    const owned = G.trees[tree.id] || 0;
-    const unlocked = tree.cost === 0 || G.bal >= 0; // always show, lock by price
-
-    // Draw bridge to next
-    if (i < TREES.length - 1) {
-      const next = zigzag[i+1] || { x: pos.x, y: pos.y + 140 };
-      const x1 = pos.x + islandW/2, y1 = pos.y + islandH;
-      const x2 = next.x + islandW/2, y2 = next.y;
-      drawBridge(bridges, x1, y1, x2, y2);
-    }
-
-    // Island wrapper
-    const wrap = document.createElement('div');
-    wrap.className = 'island-wrap';
-    wrap.id = 'isl' + tree.id;
-    wrap.style.cssText = 'left:'+pos.x+'px;top:'+pos.y+'px;width:'+islandW+'px;';
-
-    const isLocked = tree.cost > 0 && G.bal < tree.cost && owned === 0;
-
-    // BUY sign
-    const sign = document.createElement('div');
-    sign.className = 'buy-sign' + (isLocked ? ' locked' : '');
-    sign.textContent = isLocked ? '🔒 BUY' : (owned > 0 ? '✅ ' + owned + 'x' : 'BUY');
-    sign.onclick = () => { goComm(); scrollToTree(tree.id); };
-    wrap.appendChild(sign);
-
-    // Island body
-    const body = document.createElement('div');
-    body.className = 'island-body';
-    body.style.width = islandW + 'px';
-    body.onclick = () => { goComm(); scrollToTree(tree.id); };
-    body.innerHTML = islandSVG(tree, owned, isLocked, islandW, islandH);
-    wrap.appendChild(body);
-
-    container.appendChild(wrap);
-  });
-}
-
-function islandSVG(tree, owned, locked, W, H) {
-  const cx = W/2, cy = H*0.62;
-  const rx = W*0.46, ry = H*0.38;
-
-  // Island shape
-  const grassColor = locked ? '#8A9A70' : '#7CC040';
-  const darkGrass  = locked ? '#708060' : '#5A9820';
-  const dirtColor  = locked ? '#8A7060' : '#A06830';
-  const darkDirt   = locked ? '#706050' : '#8A5A20';
-
-  // Chicken/tree emoji on island
-  const emoji = locked ? '🔒' : (owned > 0 ? tree.emoji : '🪹');
-  const emojiSize = W * 0.28;
-
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
-    <!-- dirt body -->
-    <ellipse cx="${cx}" cy="${cy+ry*0.4}" rx="${rx}" ry="${ry*0.7}" fill="${darkDirt}"/>
-    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${dirtColor}"/>
-    <!-- grass top -->
-    <ellipse cx="${cx}" cy="${cy-ry*0.55}" rx="${rx*0.95}" ry="${ry*0.45}" fill="${grassColor}"/>
-    <ellipse cx="${cx}" cy="${cy-ry*0.7}" rx="${rx*0.78}" ry="${ry*0.28}" fill="${darkGrass}"/>
-    <!-- hay nest (when owned) -->
-    ${owned > 0 ? `
-    <ellipse cx="${cx}" cy="${cy-ry*0.25}" rx="${rx*0.48}" ry="${ry*0.18}" fill="#C8901A" opacity="0.9"/>
-    <ellipse cx="${cx}" cy="${cy-ry*0.32}" rx="${rx*0.42}" ry="${ry*0.14}" fill="#DDA82A"/>
-    ` : ''}
-    <!-- emoji -->
-    <text x="${cx}" y="${cy-ry*0.1}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="middle">${emoji}</text>
-    ${locked ? `<text x="${cx}" y="${cy+ry*0.55}" font-size="${W*0.13}" text-anchor="middle" fill="#FFE566" font-family="Nunito,sans-serif" font-weight="900">${tree.cost > 0 ? tree.cost+'T' : 'FREE'}</text>` : ''}
-  </svg>`;
-}
-
-function drawBridge(svg, x1, y1, x2, y2) {
-  const steps = 8;
-  const dx = (x2-x1)/steps, dy = (y2-y1)/steps;
-  for (let i = 0; i < steps; i++) {
-    const bx = x1 + dx*i + dx*.15;
-    const by = y1 + dy*i + dy*.15;
-    const bw = Math.sqrt(dx*dx+dy*dy)*0.72;
-    const angle = Math.atan2(dy, dx) * 180/Math.PI;
-    const plank = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    plank.setAttribute('x', bx - bw/2);
-    plank.setAttribute('y', by - 5);
-    plank.setAttribute('width', bw);
-    plank.setAttribute('height', 10);
-    plank.setAttribute('rx', 2);
-    plank.setAttribute('fill', i%2===0 ? '#8A5020' : '#6A3810');
-    plank.setAttribute('transform', `rotate(${angle},${bx},${by})`);
-    plank.setAttribute('opacity','0.92');
-    svg.appendChild(plank);
-  }
-}
-
-function scrollToTree(id) {
-  setTimeout(() => {
-    const el = document.getElementById('cc'+id);
-    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
-  }, 200);
-}
-
-// ════════════════════════════════
-//  COMMERCE — TREE CARDS
-// ════════════════════════════════
-function buildComm() {
-  const list = document.getElementById('treelist');
-  if (!list) return;
-  list.innerHTML = '';
-
-  TREES.forEach(tree => {
-    const owned = G.trees[tree.id] || 0;
-    const qty = G.qty[tree.id] || 1;
-    const cost = tree.cost * qty;
-    const canAfford = G.bal >= cost;
-    const isFree = tree.cost === 0;
-
-    const card = document.createElement('div');
-    card.className = 'chk-card';
-    card.id = 'cc'+tree.id;
-
-    // Name class by tier
-    let nc = 'common';
-    if (tree.tier==='mistico'||tree.tier==='legendary') nc='mistico';
-    else if (tree.tier==='dorado'||tree.tier==='elite')   nc='dorado';
-    else if (tree.tier==='granny'||tree.tier==='master')  nc='granny';
-    else if (tree.tier==='gala'||tree.tier==='pro')       nc='gala';
-    else if (tree.tier==='fuji'||tree.tier==='basic')     nc='green';
-    else                                                   nc='baby';
-
-    card.innerHTML = `
-      <div class="chk-top">
-        <div class="chk-img">${tree.emoji}</div>
-        <div class="chk-info">
-          <div class="chk-name ${nc}" id="cname${tree.id}">${tree.name}</div>
-          <div class="chk-stat">🍎 por hora <span class="sv" id="cph${tree.id}">+${Math.floor(tree.ph*qty)}</span></div>
-          <div class="chk-stat">Costo: <span class="sc" id="ccost${tree.id}">${isFree?'GRATIS':fmt(cost)}</span> ${isFree?'':' <span style="font-size:.75rem">TON</span>'}</div>
-          <div class="chk-stat">Árboles plantados: <span class="st">${owned}</span></div>
+    <!-- HERO: contador vivo + depositar -->
+    <div class="fm-hero">
+      <div class="fm-hero-glow" aria-hidden="true"></div>
+      <div class="fm-pending-label">TON ACUMULADO</div>
+      <div class="fm-pending-amount" id="livePending">{{ "%.6f"|format(pending_rewards) }}</div>
+      <div class="fm-pending-unit">PENDIENTE DE DEPÓSITO</div>
+      <div class="fm-rate-row">
+        Generando <strong id="liveRateLabel">{{ "%.6f"|format(mining_stats.total_hourly_rate if mining_stats else 0) }} TON/hr</strong>
+        &nbsp;·&nbsp; Próximo en <strong id="nextTimer">—</strong>
+      </div>
+      <button class="fm-deposit-btn" id="depositBtn" onclick="depositRewards()"
+        {% if not pending_rewards or pending_rewards <= 0 %}disabled{% endif %}>
+        ⬇&nbsp; DEPOSITAR AL BALANCE
+      </button>
+      <div class="fm-stats">
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
+          <span class="fm-stat-lbl">Nodos</span>
+        </div>
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ "%.4f"|format(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
+          <span class="fm-stat-lbl">TON/hr</span>
+        </div>
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ "%.4f"|format((mining_stats.total_hourly_rate if mining_stats else 0) * 24) }}</span>
+          <span class="fm-stat-lbl">TON/día</span>
         </div>
       </div>
-      <div class="chk-bot">
-        <button class="qbtn" onclick="chQ(${tree.id},-1)">−</button>
-        <span class="qnum" id="qn${tree.id}">${qty}</span>
-        <button class="qbtn" onclick="chQ(${tree.id},1)">+</button>
-        ${isFree||canAfford
-          ? `<button class="ybtn" id="yb${tree.id}" style="${!canAfford&&!isFree?'opacity:.5':''}" onclick="buyTree(${tree.id},event)">Comprar</button>`
-          : `<button class="ybtn" id="yb${tree.id}" style="opacity:.5" onclick="buyTree(${tree.id},event)">Comprar</button>`}
-      </div>`;
-    list.appendChild(card);
-  });
-}
+    </div>
 
-function chQ(id, d) {
-  G.qty[id] = Math.max(1, (G.qty[id]||1) + d);
-  const tree = TREES.find(t=>t.id===id);
-  const qty = G.qty[id];
-  const cost = tree.cost * qty;
-  const isFree = tree.cost === 0;
+    <!-- NODOS ACTIVOS -->
+    {% if user_machines %}
+    <div class="fm-card" style="animation-delay:.06s">
+      <div class="fm-label">{{ TON_ICON|safe }} Nodos Activos</div>
+      <div class="fm-nodes">
+        {% for m in user_machines %}
+        <div class="fm-node">
+          <div class="fm-node-icon">{{ node_svg(m.plan_name|lower)|safe }}</div>
+          <div class="fm-node-body">
+            <span class="fm-node-name">{{ m.plan_name }}</span>
+            <span class="fm-node-rate">{{ format_ton(m.hourly_rate) }} TON/hr</span>
+          </div>
+          <div class="fm-node-right">
+            <div class="fm-node-status"><div class="fm-node-dot"></div>ACTIVO</div>
+            <div class="fm-node-exp">{{ m.expires_at.strftime('%d/%m/%Y') if m.expires_at else '—' }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
-  const qn = document.getElementById('qn'+id); if(qn) qn.textContent = qty;
-  const cc = document.getElementById('ccost'+id); if(cc) cc.textContent = isFree?'GRATIS':fmt(cost);
-  const cp = document.getElementById('cph'+id); if(cp) cp.textContent = '+'+Math.floor(tree.ph*qty);
-  const yb = document.getElementById('yb'+id); if(yb) yb.style.opacity = (isFree||G.bal>=cost)?'1':'0.5';
-}
+    <!-- TIENDA -->
+    <div class="fm-card" style="animation-delay:.1s">
+      <div class="fm-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Tienda de Nodos
+      </div>
+      <p style="font-size:.74rem;color:var(--text2);margin-bottom:14px;line-height:1.5;">Activa nodos para generar TON pasivamente. Cada activación dura 30 días y es renovable.</p>
 
-async function buyTree(id, ev) {
-  const tree = TREES.find(t=>t.id===id);
-  const qty = G.qty[id]||1;
-  const cost = tree.cost * qty;
-  if (tree.cost > 0 && G.bal < cost) { showT('❌ Saldo insuficiente'); return; }
+      {% if plans %}
+      <div class="fm-shop">
+        {% for plan in plans %}
+        {% set is_free = plan.price == 0 %}
+        {% set roi = 20 if plan.tier=='starter' else 30 if plan.tier=='basic' else 50 if plan.tier=='pro' else 70 if plan.tier=='elite' else 85 if plan.tier=='master' else 100 %}
+        <div class="fm-tree-card {{ plan.tier }}" id="tc{{ plan.id }}">
 
-  const btn = document.getElementById('yb'+id);
-  if (btn) { btn.disabled=true; btn.textContent='Plantando...'; }
+          <div class="fm-tree-top">
+            <div class="fm-tree-icon">{{ tier_svg(plan.tier)|safe }}</div>
+            <div class="fm-tree-info">
+              <span class="fm-tree-badge">{% if is_free %}★ GRATIS{% else %}{{ plan.tier|upper }}{% endif %}</span>
+              <span class="fm-tree-name">{{ plan.name }}</span>
+              <div class="fm-tree-owned">Retorno <strong>+{{ roi }}%</strong> en 30 días</div>
+            </div>
+            <div class="fm-tree-price-col">
+              <span class="fm-tree-price" id="tp{{ plan.id }}">{% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}</span>
+              <span class="fm-tree-price-each" id="tpe{{ plan.id }}">{% if not is_free %}por activación{% endif %}</span>
+            </div>
+          </div>
 
-  let ok = 0;
-  for (let i=0; i<qty; i++) {
-    try {
-      const res = await fetch('/api/mining/purchase',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan_id:id})});
-      const data = await res.json();
-      if (data.success) { ok++; if (tree.cost>0) G.bal -= tree.cost; }
-      else { showT(data.message||'Error'); break; }
-    } catch(e) { showT('Error de conexión'); break; }
+          <div class="fm-tree-roi">
+            <div class="fm-tree-roi-head"><span>Rentabilidad 30d</span><span class="fm-tree-roi-pct">+{{ roi }}%</span></div>
+            <div class="fm-roi-track"><div class="fm-roi-fill"></div></div>
+          </div>
+
+          <div class="fm-tree-metrics">
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mhr{{ plan.id }}">{{ "%.5f"|format(plan.hourly_rate) }}</span>
+              <span class="fm-tree-metric-lbl">TON/hr</span>
+            </div>
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mday{{ plan.id }}">{{ "%.4f"|format(plan.hourly_rate * 24) }}</span>
+              <span class="fm-tree-metric-lbl">TON/día</span>
+            </div>
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mmo{{ plan.id }}">{{ "%.2f"|format(plan.hourly_rate * 720) }}</span>
+              <span class="fm-tree-metric-lbl">TON/mes</span>
+            </div>
+          </div>
+
+          <div class="fm-tree-buy">
+            {% if not is_free %}
+            <div class="fm-qty-wrap">
+              <button class="fm-qty-btn" onclick="chQty({{ plan.id }},{{ plan.price }},{{ plan.hourly_rate }},-1)">−</button>
+              <span class="fm-qty-num" id="qn{{ plan.id }}">1</span>
+              <button class="fm-qty-btn" onclick="chQty({{ plan.id }},{{ plan.price }},{{ plan.hourly_rate }},1)">+</button>
+            </div>
+            {% endif %}
+            <button class="fm-buy-btn" id="bb{{ plan.id }}"
+                    onclick="openConfirm({{ plan.id }},'{{ plan.name }}',{{ plan.price }},{{ 1 if is_free else 0 }},{{ plan.hourly_rate }})">
+              {% if is_free %}★ ACTIVAR GRATIS{% else %}⚡ ACTIVAR{% endif %}
+            </button>
+          </div>
+          <div class="fm-tree-cycle">↻ Renovable cada 30 días</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="text-align:center;color:var(--muted);font-size:.76rem;padding:30px 0;">Sin nodos disponibles por ahora.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL CONFIRMACIÓN -->
+<div id="confirmModal" class="fm-modal-bg">
+  <div class="fm-modal">
+    <div class="fm-modal-handle"></div>
+    <div class="fm-modal-title" id="modalTitle">CONFIRMAR ACTIVACIÓN</div>
+    <p class="fm-modal-msg" id="modalMsg">¿Activar este nodo por 30 días?</p>
+    <div class="fm-modal-rows">
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Costo</span><span class="fm-modal-val" id="modalCost">—</span></div>
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Tu balance</span><span class="fm-modal-val">{{ format_ton(user.doge_balance) }} TON</span></div>
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Ganarás en 30 días</span><span class="fm-modal-val" id="modalEarn">—</span></div>
+    </div>
+    <div class="fm-modal-btns">
+      <button class="fm-btn-cancel" onclick="closeConfirm()">CANCELAR</button>
+      <button class="fm-btn-confirm" id="confirmBtn" onclick="doActivate()">⚡ CONFIRMAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const RATE = {{ mining_stats.total_hourly_rate if mining_stats else 0 }};
+let pending = {{ pending_rewards }};
+let _lt = Date.now();
+let _planId = null;
+
+// Live tick
+function tick() {
+  const now = Date.now(), dt = (now - _lt) / 1000; _lt = now;
+  if (RATE > 0) {
+    pending += (RATE / 3600) * dt;
+    const el = document.getElementById('livePending');
+    if (el) el.textContent = pending.toFixed(6);
+    const ni = 1 / (RATE / 3600);
+    const nt = document.getElementById('nextTimer');
+    if (nt) nt.textContent = ni < 2 ? '¡Ya!' : ni < 60 ? Math.ceil(ni) + 's' : (ni/60).toFixed(1) + 'm';
+    const db = document.getElementById('depositBtn');
+    if (db && pending > 0.000001) db.disabled = false;
   }
+}
+setInterval(tick, 500);
 
-  if (ok>0) {
-    G.trees[id] = (G.trees[id]||0) + ok;
-    spawnEggs(ev ? ev.clientX : window.innerWidth/2, ev ? ev.clientY : window.innerHeight/2, ok);
-    showT('🌳 +'+ok+' árbol'+(ok>1?'es':'')+' plantado'+(ok>1?'s':'')+'!');
-    setTimeout(()=>location.reload(), 1500);
-  }
-
-  if (btn) { btn.disabled=false; btn.textContent='Comprar'; }
-  buildComm(); updateNavBal();
+// Qty selector
+function chQty(id, price, hr, d) {
+  const QTY = window._QTY || {}; window._QTY = QTY;
+  QTY[id] = Math.max(1, (QTY[id] || 1) + d);
+  const q = QTY[id];
+  const qn = document.getElementById('qn' + id); if (qn) qn.textContent = q;
+  const tp = document.getElementById('tp' + id);  if (tp) tp.textContent = (price * q) + ' TON';
+  const tpe= document.getElementById('tpe' + id); if (tpe) tpe.textContent = q > 1 ? price + ' TON × ' + q : 'por activación';
+  const mhr = document.getElementById('mhr'  + id); if (mhr)  mhr.textContent  = (hr * q).toFixed(5);
+  const mday= document.getElementById('mday' + id); if (mday) mday.textContent = (hr * q * 24).toFixed(4);
+  const mmo = document.getElementById('mmo'  + id); if (mmo)  mmo.textContent  = (hr * q * 720).toFixed(2);
 }
 
-// ════════════════════════════════
-//  HARVEST
-// ════════════════════════════════
-function openHarvest() {
-  const cnt = Math.floor(G.pend);
-  document.getElementById('hmodal-count').textContent = fmt(cnt) + ' manzanas listas';
-  document.getElementById('hmodal').classList.add('show');
+function openConfirm(planId, planName, price, isFree, hr) {
+  _planId = planId;
+  const qty = (window._QTY && window._QTY[planId]) || 1;
+  const total = price * qty;
+  const earn = (hr * qty * 720).toFixed(4);
+  document.getElementById('modalMsg').textContent  = '¿Activar ' + (qty > 1 ? qty + '× ' : '') + planName + ' por 30 días?';
+  document.getElementById('modalCost').textContent = isFree ? '✨ GRATIS' : total + ' TON';
+  document.getElementById('modalEarn').textContent = '~' + earn + ' TON';
+  document.getElementById('confirmModal').classList.add('show');
 }
-function closeHarvest() { document.getElementById('hmodal').classList.remove('show'); }
-
-async function doHarvest() {
-  const btn = document.getElementById('harvest-confirm-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="mn-spinner2"></span> Cosechando...';
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+  _planId = null;
+}
+async function doActivate() {
+  if (!_planId) return;
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="fm-spinner"></span> ACTIVANDO...';
   try {
-    const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
-    const data = await res.json();
-    if (data.success) {
-      const earned = Math.floor(G.pend);
-      G.bal += earned; G.pend = 0;
-      closeHarvest();
-      spawnEggs(window.innerWidth/2, window.innerHeight/2, Math.min(earned,15));
-      showT('🍎 ¡+'+fmt(earned)+' manzanas cosechadas!');
-      setTimeout(()=>location.reload(),1600);
-    } else { showT(data.message||'Error al cosechar'); }
-  } catch(e) { showT('Error de conexión'); }
-  btn.disabled=false;
-  btn.innerHTML='🍎 Cosechar';
+    const r = await fetch('/api/mining/purchase', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plan_id:_planId}) });
+    const d = await r.json();
+    if (d.success) {
+      closeConfirm(); showToast(d.message, 'success');
+      if (window.DogeQuest && DogeQuest.createPixelExplosion) DogeQuest.createPixelExplosion(window.innerWidth/2, window.innerHeight/2, '#0098EA');
+      setTimeout(() => location.reload(), 1400);
+    } else { showToast(d.message || 'Error', 'error'); }
+  } catch(e) { showToast('Error de conexión', 'error'); }
+  btn.disabled = false; btn.innerHTML = '⚡ CONFIRMAR';
 }
-
-// ════════════════════════════════
-//  HELPERS
-// ════════════════════════════════
-function spawnEggs(x, y, n) {
-  for (let i=0; i<Math.min(n,18); i++) {
-    setTimeout(()=>{
-      const el = document.createElement('div'); el.className='fegg'; el.textContent='🍎';
-      el.style.left=(x-10+Math.random()*40-20)+'px'; el.style.top=(y-10)+'px';
-      document.body.appendChild(el); setTimeout(()=>el.remove(),1200);
-    }, i*60);
-  }
+async function depositRewards() {
+  const btn = document.getElementById('depositBtn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true; btn.textContent = '⏳ DEPOSITANDO...';
+  try {
+    const r = await fetch('/api/mining/claim', { method:'POST', headers:{'Content-Type':'application/json'} });
+    const d = await r.json();
+    if (d.success) {
+      showToast(d.message, 'success'); pending = 0;
+      document.getElementById('livePending').textContent = '0.000000';
+      if (window.DogeQuest && DogeQuest.createCoinRain) DogeQuest.createCoinRain(12);
+      setTimeout(() => location.reload(), 1400);
+    } else {
+      showToast(d.message || 'Sin saldo pendiente', 'error');
+      btn.disabled = false; btn.textContent = '⬇ DEPOSITAR AL BALANCE';
+    }
+  } catch(e) { showToast('Error de conexión', 'error'); btn.disabled = false; btn.textContent = '⬇ DEPOSITAR AL BALANCE'; }
 }
-function showT(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ════════════════════════════════
-//  INIT — start on commerce if no trees
-// ════════════════════════════════
-const hasTrees = TREES.some(t => G.trees[t.id] > 0);
-if (!hasTrees) {
-  goComm();
-} else {
-  goFarm();
-  buildPath();
-}
-buildComm();
-window.addEventListener('resize', ()=>{ if(document.getElementById('sc-farm').classList.contains('active')) buildPath(); });
+function showToast(m, t) { if (window.DogeQuest && DogeQuest.showToast) DogeQuest.showToast(m, t); else alert(m); }
+document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target===this) closeConfirm(); });
 </script>
+
+{# ── Macros de iconos ── #}
+{% macro tier_svg(tier) %}
+{% if tier=='legendary' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(156,39,176,0.1)" stroke="rgba(206,147,216,0.3)"/><path d="M28 10 L44 38 L28 46 L12 38 Z" fill="none" stroke="#ce93d8" stroke-width="1.8"/><path d="M12 38 L44 38 M20 24 L28 10 L36 24" stroke="rgba(206,147,216,0.35)" stroke-width="1"/><circle cx="28" cy="10" r="3" fill="#ffd700"/><circle cx="12" cy="38" r="2.5" fill="#ff4081"/><circle cx="44" cy="38" r="2.5" fill="#ff4081"/></svg>
+{% elif tier=='master' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(255,111,0,0.1)" stroke="rgba(255,111,0,0.3)"/><path d="M28 9 L47 35 L28 47 L9 35 Z" fill="none" stroke="#ff6f00" stroke-width="1.8"/><path d="M28 9 L28 47 M9 35 L47 35" stroke="rgba(255,111,0,0.25)" stroke-width="1"/><circle cx="28" cy="9" r="3" fill="#ffd700"/></svg>
+{% elif tier=='elite' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.3)"/><path d="M28 11 L32 21 L43 22 L35 30 L37 41 L28 36 L19 41 L21 30 L13 22 L24 21 Z" fill="none" stroke="#ffd700" stroke-width="1.8" stroke-linejoin="round"/></svg>
+{% elif tier=='pro' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(0,152,234,0.1)" stroke="rgba(0,152,234,0.3)"/><path d="M20 17.5 Q20 15 22 15 L34 15 Q36 15 36 17.5 Q36 19.5 34.5 21 L29 36 Q28.4 38 28 38 Q27.6 38 27 36 L21.5 21 Q20 19.5 20 17.5 Z" fill="none" stroke="#0098EA" stroke-width="2.2" stroke-linejoin="round"/><line x1="28" y1="17" x2="28" y2="32" stroke="#0098EA" stroke-width="2.2" stroke-linecap="round"/></svg>
+{% elif tier=='basic' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(100,181,246,0.08)" stroke="rgba(100,181,246,0.28)"/><rect x="14" y="14" width="28" height="28" rx="4" fill="none" stroke="#64b5f6" stroke-width="1.8"/><path d="M19 28 L24 33 L37 20" stroke="#64b5f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{% else %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(0,230,118,0.08)" stroke="rgba(0,230,118,0.28)"/><circle cx="28" cy="28" r="11" fill="none" stroke="#00e676" stroke-width="1.8"/><path d="M28 17 L28 39 M17 28 L39 28" stroke="#00e676" stroke-width="2" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% macro node_svg(name) %}
+{% if 'legend' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(156,39,176,0.12)" stroke="rgba(206,147,216,0.4)"/><path d="M20 8 L32 30 L20 36 L8 30 Z" fill="none" stroke="#ce93d8" stroke-width="1.5"/><circle cx="20" cy="8" r="2.5" fill="#ffd700"/></svg>
+{% elif 'master' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(255,111,0,0.1)" stroke="rgba(255,111,0,0.4)"/><path d="M20 7 L33 27 L20 35 L7 27 Z" fill="none" stroke="#ff6f00" stroke-width="1.5"/></svg>
+{% elif 'elite' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.4)"/><path d="M20 9 L23 16 L31 17 L25 23 L26.5 31 L20 27.5 L13.5 31 L15 23 L9 17 L17 16 Z" fill="none" stroke="#ffd700" stroke-width="1.5" stroke-linejoin="round"/></svg>
+{% elif 'pro' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(0,152,234,0.1)" stroke="rgba(0,152,234,0.4)"/><path d="M14 15 Q14 12.5 16.5 12.5 L23.5 12.5 Q26 12.5 26 15 Q26 17 24.5 18.5 L21 29 Q20.5 30.5 20 30.5 Q19.5 30.5 19 29 L15.5 18.5 Q14 17 14 15 Z" fill="none" stroke="#0098EA" stroke-width="1.8" stroke-linejoin="round"/><line x1="20" y1="15" x2="20" y2="26" stroke="#0098EA" stroke-width="1.8" stroke-linecap="round"/></svg>
+{% elif 'basic' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(100,181,246,0.08)" stroke="rgba(100,181,246,0.35)"/><rect x="10" y="10" width="20" height="20" rx="3" fill="none" stroke="#64b5f6" stroke-width="1.5"/><path d="M14 20 L18 24 L26 16" stroke="#64b5f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{% else %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(0,230,118,0.08)" stroke="rgba(0,230,118,0.35)"/><circle cx="20" cy="20" r="8" fill="none" stroke="#00e676" stroke-width="1.5"/><path d="M20 12 L20 28 M12 20 L28 20" stroke="#00e676" stroke-width="1.8" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
 {% endblock %}
