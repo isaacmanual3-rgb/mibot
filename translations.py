@@ -178,6 +178,18 @@ TRANSLATIONS = {
         'en': 'UQ... or EQ... (any wallet or exchange)',
         'es': 'UQ... o EQ... (cualquier wallet o exchange)'
     },
+    # JS notification strings (used via window.I18N in main.js)
+    'js_connection_error':    {'en': 'Connection error',                    'es': 'Error de conexión'},
+    'js_link_copied':         {'en': 'Link copied!',                        'es': '¡Enlace copiado!'},
+    'js_enter_valid_amount':  {'en': 'Enter a valid amount',                'es': 'Ingresa una cantidad válida'},
+    'js_enter_valid_wallet':  {'en': 'Enter a valid DOGE wallet address',   'es': 'Ingresa una dirección DOGE válida'},
+    'js_withdrawal_submitted':{'en': 'Withdrawal request submitted!',       'es': '¡Solicitud de retiro enviada!'},
+    'js_withdrawal_failed':   {'en': 'Withdrawal failed',                   'es': 'Error al procesar el retiro'},
+    'js_enter_promo':         {'en': 'Enter a promo code',                  'es': 'Ingresa un código promo'},
+    'js_invalid_code':        {'en': 'Invalid code',                        'es': 'Código inválido'},
+    'js_verifying':           {'en': 'Verifying completion...',             'es': 'Verificando...'},
+    'js_task_failed':         {'en': 'Could not complete task',             'es': 'No se pudo completar la tarea'},
+    'js_already_claimed':     {'en': 'Already claimed today!',              'es': '¡Ya reclamaste hoy!'},
 
     # ── TASKS PAGE ─────────────────────────────────────────────
     'tq_ticker': {
