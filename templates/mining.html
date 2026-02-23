@@ -1,639 +1,223 @@
 {% extends "base.html" %}
 
-{% block title %}Mining - DogeQuest{% endblock %}
+{% block title %}TON Farm - PixieLand{% endblock %}
 
 {% block content %}
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --bg:        #08080f;
-  --surface:   #0d0d1a;
-  --surface2:  #111122;
-  --surface3:  #070710;
-  --gold:      #ffd700;
-  --gold2:     #ffb300;
-  --gold-dark: #5a3a00;
-  --gold-dim:  rgba(255,215,0,0.07);
-  --green:     #00e676;
-  --blue:      #40c4ff;
-  --red:       #ff4d6a;
-  --orange:    #ff9800;
-  --purple:    #ce93d8;
-  --cyan:      #80deea;
-  --silver:    #b0bec5;
-  --bronze:    #ff8a65;
-  --border:    #1e1e34;
-  --text:      #e0e2f0;
-  --text2:     #9090b8;
-  --muted:     #4a4a6e;
-  --font-px:   'Press Start 2P', monospace;
-  --font-body: 'Inter', sans-serif;
+  --bg:#08080f;--surface:#0d0d1a;--surface2:#111122;--surface3:#070710;
+  --gold:#ffd700;--gold2:#ffb300;--gold-dark:#5a3a00;--gold-dim:rgba(255,215,0,0.07);
+  --green:#00e676;--blue:#0098EA;--cyan:#40c4ff;--red:#ff4d6a;--orange:#ff9800;
+  --purple:#ce93d8;--border:#1e1e34;--text:#e0e2f0;--text2:#9090b8;--muted:#4a4a6e;
+  --font-px:'Press Start 2P',monospace;--font-body:'Inter',sans-serif;
 }
+.fm-shell*,.fm-shell*::before,.fm-shell*::after{box-sizing:border-box;}
+.fm-shell{font-family:var(--font-body);background:var(--bg);min-height:100vh;color:var(--text);position:relative;overflow-x:hidden;}
+.fm-shell::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,152,234,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,152,234,0.018) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
 
-.mn-shell *, .mn-shell *::before, .mn-shell *::after { box-sizing: border-box; }
-.mn-shell {
-  font-family: var(--font-body);
-  background: var(--bg); min-height: 100vh;
-  color: var(--text); position: relative; overflow-x: hidden;
-}
-.mn-shell::before {
-  content:''; position:fixed; inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.011) 1px, transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,0.011) 1px, transparent 1px);
-  background-size:24px 24px; pointer-events:none; z-index:0;
-}
-.mn-shell::after {
-  content:''; position:fixed; inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px);
-  pointer-events:none; z-index:1;
-}
+.fm-ticker{position:relative;z-index:20;background:linear-gradient(90deg,#001428,#002244,#001428);border-bottom:1px solid rgba(0,152,234,0.3);height:28px;display:flex;align-items:center;overflow:hidden;}
+.fm-ticker span{display:inline-block;white-space:nowrap;font-family:var(--font-px);font-size:0.38rem;color:rgba(0,152,234,0.9);letter-spacing:0.1em;animation:fm-tick 36s linear infinite;}
+@keyframes fm-tick{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
-/* TICKER */
-.mn-ticker {
-  position:relative; z-index:20;
-  background:var(--gold); height:28px;
-  display:flex; align-items:center; overflow:hidden;
-  border-bottom:3px solid var(--gold-dark);
-}
-.mn-ticker span {
-  display:inline-block; white-space:nowrap;
-  font-family:var(--font-px); font-size:0.42rem;
-  color:#0a0800; letter-spacing:0.08em;
-  animation:mn-tick 32s linear infinite;
-}
-@keyframes mn-tick{ from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+.fm-page{position:relative;z-index:5;max-width:560px;margin:0 auto;padding:16px 14px 100px;display:flex;flex-direction:column;gap:12px;}
 
-/* PAGE */
-.mn-page {
-  position:relative; z-index:5;
-  max-width:560px; margin:0 auto;
-  padding:20px 14px 80px;
-  display:flex; flex-direction:column; gap:14px;
-}
+.fm-card{background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.4);position:relative;padding:18px;animation:fm-up .3s ease both;}
+.fm-card::before,.fm-card::after{content:'';position:absolute;width:8px;height:8px;border-color:rgba(0,152,234,0.4);border-style:solid;}
+.fm-card::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
+.fm-card::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+@keyframes fm-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-/* CARD */
-.mn-card {
-  background:var(--surface);
-  border:2px solid var(--border);
-  box-shadow:4px 4px 0 0 #030308;
-  position:relative; padding:20px;
-  animation:mn-up .3s ease both;
-}
-.mn-card::before,.mn-card::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--gold); border-style:solid;
-}
-.mn-card::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.mn-card::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
-.mn-card:nth-child(1){animation-delay:.04s}
-.mn-card:nth-child(2){animation-delay:.09s}
-.mn-card:nth-child(3){animation-delay:.14s}
-.mn-card:nth-child(4){animation-delay:.19s}
-.mn-card:nth-child(5){animation-delay:.24s}
-.mn-card:nth-child(6){animation-delay:.29s}
-@keyframes mn-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fm-label{font-family:var(--font-px);font-size:0.38rem;color:var(--muted);letter-spacing:0.18em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.fm-label::after{content:'';flex:1;height:1px;background:var(--border);}
 
-.mn-label {
-  font-family:var(--font-px); font-size:0.42rem;
-  color:var(--muted); letter-spacing:0.18em; text-transform:uppercase;
-  display:flex; align-items:center; gap:8px; margin-bottom:16px;
-}
-.mn-label::after{ content:''; flex:1; height:1px; background:var(--border); }
+/* HERO */
+.fm-hero{background:linear-gradient(160deg,#04040e,#060616);border:1px solid rgba(0,152,234,0.25);box-shadow:0 0 40px rgba(0,152,234,0.08),inset 0 1px 0 rgba(0,152,234,0.1);padding:24px 18px;text-align:center;position:relative;overflow:hidden;animation:fm-up .3s .04s ease both;}
+.fm-hero-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:260px;height:260px;background:radial-gradient(circle,rgba(0,152,234,0.12) 0%,transparent 65%);pointer-events:none;}
+.fm-pending-label{font-family:var(--font-px);font-size:0.32rem;color:rgba(0,152,234,0.6);letter-spacing:0.2em;margin-bottom:8px;}
+.fm-pending-amount{font-family:var(--font-px);font-size:1.5rem;color:var(--green);text-shadow:0 0 30px rgba(0,230,118,0.45);margin-bottom:4px;line-height:1;animation:fm-glow 2s ease-in-out infinite;}
+@keyframes fm-glow{0%,100%{text-shadow:0 0 20px rgba(0,230,118,0.4)}50%{text-shadow:0 0 40px rgba(0,230,118,0.7),0 0 80px rgba(0,230,118,0.2)}}
+.fm-pending-unit{font-family:var(--font-px);font-size:0.34rem;color:rgba(0,230,118,0.5);letter-spacing:0.15em;margin-bottom:18px;}
+.fm-rate-row{font-size:0.74rem;color:var(--text2);margin-bottom:18px;}
+.fm-rate-row strong{color:var(--blue);}
+.fm-deposit-btn{width:100%;padding:16px;font-family:var(--font-px);font-size:0.48rem;letter-spacing:0.08em;background:linear-gradient(135deg,rgba(0,230,118,0.15),rgba(0,200,80,0.1));color:var(--green);border:1px solid rgba(0,230,118,0.45);box-shadow:0 0 20px rgba(0,230,118,0.12);cursor:pointer;position:relative;overflow:hidden;transition:transform .1s,box-shadow .1s;}
+.fm-deposit-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,transparent 50%);}
+.fm-deposit-btn:hover{transform:translateY(-2px);box-shadow:0 4px 24px rgba(0,230,118,0.25);}
+.fm-deposit-btn:active{transform:translateY(1px);}
+.fm-deposit-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.fm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border);margin-top:14px;}
+.fm-stat{padding:12px 6px;text-align:center;background:rgba(0,0,0,0.2);position:relative;}
+.fm-stat+.fm-stat::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:1px;background:var(--border);}
+.fm-stat-val{display:block;font-family:var(--font-px);font-size:0.48rem;color:var(--blue);margin-bottom:5px;}
+.fm-stat-lbl{font-size:0.6rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
 
-/* ═══════════════════════════════
-   SVG ICON SYSTEM — PREMIUM
-═══════════════════════════════ */
-.px-icon {
-  display:flex; align-items:center; justify-content:center;
-  width:22px; height:22px; flex-shrink:0;
-}
-.px-icon svg {
-  width:100%; height:100%;
-  display:block;
-}
+/* ACTIVE NODES */
+.fm-nodes{display:flex;flex-direction:column;gap:8px;}
+.fm-node{background:linear-gradient(135deg,#06060f,#08080e);border:1px solid rgba(0,152,234,0.18);display:flex;align-items:center;gap:12px;padding:12px 14px;position:relative;}
+.fm-node::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--green);box-shadow:0 0 8px rgba(0,230,118,0.5);}
+.fm-node-icon{flex-shrink:0;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);border:1px solid rgba(0,152,234,0.2);}
+.fm-node-body{flex:1;min-width:0;}
+.fm-node-name{display:block;font-family:var(--font-px);font-size:0.42rem;color:var(--text);letter-spacing:.04em;margin-bottom:4px;}
+.fm-node-rate{font-size:0.68rem;color:var(--text2);}
+.fm-node-right{flex-shrink:0;text-align:right;}
+.fm-node-status{display:flex;align-items:center;gap:4px;font-family:var(--font-px);font-size:0.3rem;color:var(--green);text-shadow:0 0 6px rgba(0,230,118,0.4);margin-bottom:4px;}
+.fm-node-dot{width:5px;height:5px;background:var(--green);box-shadow:0 0 5px rgba(0,230,118,0.7);animation:fm-dot 1s steps(1) infinite;}
+@keyframes fm-dot{0%,100%{opacity:1}50%{opacity:0.15}}
+.fm-node-exp{font-size:0.58rem;color:var(--muted);}
 
-/* ═══════════════════════════════
-   MINING HERO
-═══════════════════════════════ */
-.mn-hero {
-  background: linear-gradient(160deg, #08080e 0%, #0c0c1e 100%);
-  border: 2px solid var(--gold-dark);
-  box-shadow: 4px 4px 0 0 #020201, 0 0 50px rgba(255,215,0,0.06);
-  padding: 28px 20px 24px; text-align: center;
-  position: relative; overflow: hidden;
-  animation: mn-up .3s .04s ease both;
-}
-.mn-hero::before,.mn-hero::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--gold); border-style:solid;
-}
-.mn-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.mn-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+/* SHOP CARDS */
+.fm-shop{display:flex;flex-direction:column;gap:10px;}
+.fm-tree-card{background:linear-gradient(160deg,#07070f,#05050c);border:1px solid rgba(255,255,255,0.06);overflow:hidden;position:relative;transition:border-color .2s;}
+.fm-tree-card:hover{border-color:rgba(0,152,234,0.25);}
+.fm-tree-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;}
+.fm-tree-card.starter::before{background:#00e676;box-shadow:0 0 10px rgba(0,230,118,0.6);}
+.fm-tree-card.basic::before{background:#64b5f6;box-shadow:0 0 10px rgba(100,181,246,0.5);}
+.fm-tree-card.pro::before{background:#0098EA;box-shadow:0 0 10px rgba(0,152,234,0.6);}
+.fm-tree-card.elite::before{background:#ffd700;box-shadow:0 0 10px rgba(255,215,0,0.6);}
+.fm-tree-card.master::before{background:#ff6f00;box-shadow:0 0 10px rgba(255,111,0,0.6);}
+.fm-tree-card.legendary::before{background:linear-gradient(180deg,#ce93d8,#ff4081);box-shadow:0 0 12px rgba(206,147,216,0.7);}
 
-.mn-hero-glow {
-  position:absolute; top:-40px; left:50%; transform:translateX(-50%);
-  width:200px; height:200px;
-  background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 68%);
-  pointer-events:none;
-}
+.fm-tree-top{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;}
+.fm-tree-icon{flex-shrink:0;width:56px;height:56px;display:flex;align-items:center;justify-content:center;}
+.fm-tree-info{flex:1;min-width:0;}
+.fm-tree-badge{display:inline-block;font-family:var(--font-px);font-size:0.28rem;letter-spacing:.12em;padding:2px 7px;margin-bottom:5px;border-radius:2px;border:1px solid;}
+.fm-tree-card.starter .fm-tree-badge{color:#00e676;border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.06);}
+.fm-tree-card.basic .fm-tree-badge{color:#64b5f6;border-color:rgba(100,181,246,0.3);background:rgba(100,181,246,0.06);}
+.fm-tree-card.pro .fm-tree-badge{color:#0098EA;border-color:rgba(0,152,234,0.3);background:rgba(0,152,234,0.06);}
+.fm-tree-card.elite .fm-tree-badge{color:#ffd700;border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);}
+.fm-tree-card.master .fm-tree-badge{color:#ff9800;border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.06);}
+.fm-tree-card.legendary .fm-tree-badge{color:#ce93d8;border-color:rgba(206,147,216,0.3);background:rgba(206,147,216,0.06);}
+.fm-tree-name{display:block;font-family:var(--font-px);font-size:0.54rem;color:var(--text);letter-spacing:.03em;margin-bottom:4px;}
+.fm-tree-owned{font-size:0.68rem;color:var(--text2);}
+.fm-tree-owned strong{color:var(--blue);font-weight:600;}
+.fm-tree-price-col{text-align:right;flex-shrink:0;}
+.fm-tree-price{display:block;font-family:var(--font-px);font-size:0.82rem;line-height:1;}
+.fm-tree-card.starter .fm-tree-price{color:#00e676;}
+.fm-tree-card.basic .fm-tree-price{color:#64b5f6;}
+.fm-tree-card.pro .fm-tree-price{color:#0098EA;}
+.fm-tree-card.elite .fm-tree-price{color:#ffd700;}
+.fm-tree-card.master .fm-tree-price{color:#ff9800;}
+.fm-tree-card.legendary .fm-tree-price{color:#ce93d8;}
+.fm-tree-price-each{font-size:0.58rem;color:var(--muted);display:block;margin-top:3px;}
 
-.mn-hero-icon {
-  width:54px; height:54px;
-  background:var(--gold-dim); border:2px solid var(--gold-dark);
-  box-shadow:3px 3px 0 0 #020201;
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 18px;
-  animation: mn-bounce .8s steps(1) infinite;
-}
-@keyframes mn-bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+.fm-tree-roi{padding:0 16px 10px;}
+.fm-tree-roi-head{display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-bottom:5px;}
+.fm-tree-roi-pct{font-family:var(--font-px);font-size:0.36rem;}
+.fm-tree-card.starter .fm-tree-roi-pct{color:#00e676;}
+.fm-tree-card.basic .fm-tree-roi-pct{color:#64b5f6;}
+.fm-tree-card.pro .fm-tree-roi-pct{color:#0098EA;}
+.fm-tree-card.elite .fm-tree-roi-pct{color:#ffd700;}
+.fm-tree-card.master .fm-tree-roi-pct{color:#ff9800;}
+.fm-tree-card.legendary .fm-tree-roi-pct{color:#ce93d8;}
+.fm-roi-track{height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
+.fm-roi-fill{height:100%;border-radius:2px;}
+.fm-tree-card.starter .fm-roi-fill{width:20%;background:linear-gradient(90deg,#00c853,#00e676);}
+.fm-tree-card.basic .fm-roi-fill{width:30%;background:linear-gradient(90deg,#1565c0,#64b5f6);}
+.fm-tree-card.pro .fm-roi-fill{width:50%;background:linear-gradient(90deg,#005fa8,#0098EA);}
+.fm-tree-card.elite .fm-roi-fill{width:70%;background:linear-gradient(90deg,#c8a200,#ffd700);}
+.fm-tree-card.master .fm-roi-fill{width:85%;background:linear-gradient(90deg,#e65100,#ff9800);}
+.fm-tree-card.legendary .fm-roi-fill{width:100%;background:linear-gradient(90deg,#9c27b0,#ce93d8,#ff4081);box-shadow:0 0 6px rgba(206,147,216,0.5);}
 
-.mn-hero-title {
-  font-family:var(--font-px); font-size:0.75rem;
-  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark), 0 0 16px rgba(255,215,0,0.3);
-  letter-spacing:.07em; margin-bottom:10px;
-  animation: mn-flicker 6s ease infinite;
-}
-@keyframes mn-flicker{ 0%,91%,93%,95%,100%{opacity:1} 92%,94%{opacity:0.55} }
-.mn-hero-sub { font-size:0.8rem; color:var(--text2); line-height:1.5; }
+.fm-tree-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.04);margin:0 16px 12px;}
+.fm-tree-metric{background:rgba(0,0,0,0.3);padding:8px 4px;text-align:center;}
+.fm-tree-metric-val{display:block;font-family:var(--font-px);font-size:0.38rem;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fm-tree-metric-lbl{display:block;font-size:0.58rem;color:var(--muted);letter-spacing:.04em;}
 
-/* ═══════════════════════════════
-   STATS GRID
-═══════════════════════════════ */
-.mn-stats {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
-  border:2px solid var(--border);
-}
-.mn-stat {
-  padding:16px 10px; text-align:center;
-  background:var(--surface3); position:relative;
-}
-.mn-stat + .mn-stat::before {
-  content:''; position:absolute; left:0; top:15%; bottom:15%;
-  width:1px; background:var(--border);
-}
-.mn-stat-icon {
-  width:34px; height:34px;
-  background:var(--surface); border:2px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 10px;
-}
-.mn-stat-val {
-  display:block; font-family:var(--font-px); font-size:0.62rem;
-  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark);
-  margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.mn-stat-lbl { font-size:0.6rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+.fm-tree-buy{display:flex;align-items:center;gap:8px;padding:0 16px 14px;}
+.fm-qty-wrap{display:flex;align-items:center;gap:0;border:1px solid var(--border);flex-shrink:0;}
+.fm-qty-btn{width:32px;height:36px;background:var(--surface3);color:var(--text);border:none;cursor:pointer;font-family:var(--font-px);font-size:0.6rem;transition:background .1s,color .1s;}
+.fm-qty-btn:hover{background:rgba(0,152,234,0.15);color:var(--blue);}
+.fm-qty-num{width:40px;height:36px;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-px);font-size:0.46rem;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.fm-buy-btn{flex:1;padding:10px 8px;cursor:pointer;font-family:var(--font-px);font-size:0.36rem;letter-spacing:.08em;border:1px solid;border-radius:2px;position:relative;overflow:hidden;transition:transform .1s,box-shadow .1s,opacity .1s;}
+.fm-buy-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 50%);pointer-events:none;}
+.fm-buy-btn:hover{transform:translateY(-1px);}
+.fm-buy-btn:active{transform:translateY(1px);opacity:0.85;}
+.fm-tree-card.starter .fm-buy-btn{color:#00e676;border-color:rgba(0,230,118,0.4);background:rgba(0,230,118,0.08);box-shadow:0 2px 12px rgba(0,230,118,0.12);}
+.fm-tree-card.basic .fm-buy-btn{color:#64b5f6;border-color:rgba(100,181,246,0.4);background:rgba(100,181,246,0.08);}
+.fm-tree-card.pro .fm-buy-btn{color:#40c4ff;border-color:rgba(0,152,234,0.45);background:rgba(0,152,234,0.1);box-shadow:0 2px 14px rgba(0,152,234,0.15);}
+.fm-tree-card.elite .fm-buy-btn{color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.08);}
+.fm-tree-card.master .fm-buy-btn{color:#ff9800;border-color:rgba(255,152,0,0.4);background:rgba(255,152,0,0.08);}
+.fm-tree-card.legendary .fm-buy-btn{color:#ce93d8;border-color:rgba(206,147,216,0.4);background:linear-gradient(135deg,rgba(156,39,176,0.12),rgba(255,64,129,0.08));}
+.fm-tree-cycle{text-align:center;font-size:0.6rem;color:rgba(255,255,255,0.2);padding:0 16px 10px;letter-spacing:.05em;}
 
-/* ═══════════════════════════════
-   CLAIM SECTION
-═══════════════════════════════ */
-.mn-claim {
-  background:#060612; border:2px solid rgba(0,230,118,0.3);
-  box-shadow:4px 4px 0 0 #020205, 0 0 20px rgba(0,230,118,0.06);
-  padding:16px 20px; position:relative;
-}
-.mn-claim::before,.mn-claim::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--green); border-style:solid;
-}
-.mn-claim::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.mn-claim::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
-
-.mn-claim-btn {
-  width:100%; padding:16px; display:flex; align-items:center; justify-content:center; gap:12px;
-  font-family:var(--font-px); font-size:0.52rem; letter-spacing:.07em;
-  background:var(--green); color:#050f08;
-  border:2px solid #00c853;
-  box-shadow:4px 4px 0 0 #003318;
-  cursor:pointer; transition:transform .07s, box-shadow .07s;
-  animation: mn-pulse 2s ease-in-out infinite;
-}
-@keyframes mn-pulse{
-  0%,100%{box-shadow:4px 4px 0 0 #003318, 0 0 0 0 rgba(0,230,118,0)}
-  50%{box-shadow:4px 4px 0 0 #003318, 0 0 0 6px rgba(0,230,118,0)}
-}
-.mn-claim-btn:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #003318; animation:none; }
-.mn-claim-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #003318; }
-.mn-claim-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; animation:none; }
-
-/* ═══════════════════════════════
-   YOUR MACHINES
-═══════════════════════════════ */
-.mn-machines { display:flex; flex-direction:column; gap:8px; }
-
-.mn-machine {
-  background:var(--surface3); border:2px solid var(--border);
-  box-shadow:2px 2px 0 0 #020205;
-  display:flex; align-items:center; gap:12px; padding:12px 14px;
-  position:relative;
-}
-.mn-machine::before {
-  content:''; position:absolute; left:0; top:0; bottom:0;
-  width:3px; background:var(--green);
-}
-.mn-machine-icon {
-  flex-shrink:0; width:42px; height:42px;
-  background:var(--surface); border:2px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-}
-.mn-machine-body { flex:1; min-width:0; }
-.mn-machine-name {
-  display:block; font-family:var(--font-px); font-size:0.46rem;
-  color:var(--text); letter-spacing:.04em; margin-bottom:5px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.mn-machine-rate { font-size:0.7rem; color:var(--text2); }
-.mn-machine-right { flex-shrink:0; text-align:right; }
-.mn-machine-status {
-  display:flex; align-items:center; gap:5px;
-  font-family:var(--font-px); font-size:0.36rem;
-  color:var(--green); letter-spacing:.06em;
-  text-shadow:0 0 8px rgba(0,230,118,0.4); margin-bottom:5px;
-}
-.mn-status-dot {
-  width:6px; height:6px; background:var(--green);
-  box-shadow:0 0 6px rgba(0,230,118,0.6);
-  animation:mn-dot 1s steps(1) infinite;
-}
-@keyframes mn-dot{ 0%,100%{opacity:1} 50%{opacity:0.2} }
-.mn-machine-exp { font-size:0.6rem; color:var(--muted); }
-
-/* ═══════════════════════════════
-   PLANS GRID — PREMIUM REDESIGN
-═══════════════════════════════ */
-.mn-plans { display:flex; flex-direction:column; gap:14px; }
-
-/* Plan card base */
-.mn-plan {
-  position:relative; overflow:hidden;
-  background:linear-gradient(160deg,#09091a,#06060f);
-  border:1px solid rgba(255,255,255,0.07);
-  border-radius:2px; padding:20px 18px 18px;
-  transition:transform .15s, box-shadow .15s;
-}
-.mn-plan:hover { transform:translateY(-2px); }
-
-/* Tier accent: left border glow + top line */
-.mn-plan::before {
-  content:''; position:absolute; left:0; top:0; bottom:0;
-  width:3px;
-}
-.mn-plan::after {
-  content:''; position:absolute; top:0; left:0; right:0; height:1px;
-}
-
-/* Tier colors */
-.mn-plan.starter  { border-color:rgba(0,230,118,0.2);  box-shadow:0 4px 24px rgba(0,230,118,0.06); }
-.mn-plan.starter::before  { background:#00e676; box-shadow:0 0 12px rgba(0,230,118,0.6); }
-.mn-plan.starter::after   { background:linear-gradient(90deg,rgba(0,230,118,0.3),transparent); }
-
-.mn-plan.basic    { border-color:rgba(100,181,246,0.2); box-shadow:0 4px 24px rgba(100,181,246,0.05); }
-.mn-plan.basic::before    { background:#64b5f6; box-shadow:0 0 12px rgba(100,181,246,0.5); }
-.mn-plan.basic::after     { background:linear-gradient(90deg,rgba(100,181,246,0.25),transparent); }
-
-.mn-plan.pro      { border-color:rgba(0,152,234,0.3);   box-shadow:0 4px 24px rgba(0,152,234,0.08); }
-.mn-plan.pro::before      { background:#0098EA; box-shadow:0 0 14px rgba(0,152,234,0.7); }
-.mn-plan.pro::after       { background:linear-gradient(90deg,rgba(0,152,234,0.3),transparent); }
-
-.mn-plan.elite    { border-color:rgba(255,215,0,0.25);  box-shadow:0 4px 24px rgba(255,215,0,0.07); }
-.mn-plan.elite::before    { background:#ffd700; box-shadow:0 0 14px rgba(255,215,0,0.6); }
-.mn-plan.elite::after     { background:linear-gradient(90deg,rgba(255,215,0,0.25),transparent); }
-
-.mn-plan.master   { border-color:rgba(255,111,0,0.3);   box-shadow:0 4px 24px rgba(255,111,0,0.08); }
-.mn-plan.master::before   { background:#ff6f00; box-shadow:0 0 14px rgba(255,111,0,0.7); }
-.mn-plan.master::after    { background:linear-gradient(90deg,rgba(255,111,0,0.3),transparent); }
-
-.mn-plan.legendary { border-color:rgba(206,147,216,0.35); box-shadow:0 4px 32px rgba(206,147,216,0.1); }
-.mn-plan.legendary::before { background:linear-gradient(180deg,#ce93d8,#ff4081); box-shadow:0 0 18px rgba(206,147,216,0.8); }
-.mn-plan.legendary::after  { background:linear-gradient(90deg,rgba(206,147,216,0.35),transparent); }
-
-/* Plan header row */
-.mn-plan-head {
-  display:flex; align-items:flex-start; justify-content:space-between;
-  margin-bottom:16px; padding-left:8px;
-}
-.mn-plan-name-block {}
-.mn-plan-badge {
-  display:inline-block; font-family:var(--font-px); font-size:0.3rem;
-  letter-spacing:.16em; padding:3px 8px; margin-bottom:6px;
-  border:1px solid; border-radius:2px;
-}
-.mn-plan.starter  .mn-plan-badge { color:#00e676; border-color:rgba(0,230,118,0.4); background:rgba(0,230,118,0.06); }
-.mn-plan.basic    .mn-plan-badge { color:#64b5f6; border-color:rgba(100,181,246,0.4); background:rgba(100,181,246,0.06); }
-.mn-plan.pro      .mn-plan-badge { color:#0098EA; border-color:rgba(0,152,234,0.4); background:rgba(0,152,234,0.06); }
-.mn-plan.elite    .mn-plan-badge { color:#ffd700; border-color:rgba(255,215,0,0.4); background:rgba(255,215,0,0.06); }
-.mn-plan.master   .mn-plan-badge { color:#ff6f00; border-color:rgba(255,111,0,0.4); background:rgba(255,111,0,0.06); }
-.mn-plan.legendary .mn-plan-badge { color:#ce93d8; border-color:rgba(206,147,216,0.4); background:rgba(206,147,216,0.07); }
-
-.mn-plan-name {
-  display:block; font-family:var(--font-px); font-size:0.68rem;
-  color:#fff; letter-spacing:.04em;
-}
-.mn-plan-price-block { text-align:right; }
-.mn-plan-price {
-  display:block; font-family:var(--font-px); font-size:0.9rem;
-  line-height:1;
-}
-.mn-plan.starter .mn-plan-price { color:#00e676; text-shadow:0 0 16px rgba(0,230,118,0.5); }
-.mn-plan.basic   .mn-plan-price { color:#64b5f6; }
-.mn-plan.pro     .mn-plan-price { color:#0098EA; text-shadow:0 0 16px rgba(0,152,234,0.5); }
-.mn-plan.elite   .mn-plan-price { color:#ffd700; text-shadow:0 0 16px rgba(255,215,0,0.5); }
-.mn-plan.master  .mn-plan-price { color:#ff6f00; text-shadow:0 0 16px rgba(255,111,0,0.5); }
-.mn-plan.legendary .mn-plan-price { color:#ce93d8; text-shadow:0 0 16px rgba(206,147,216,0.6); }
-
-.mn-plan-price-unit { font-size:0.34rem; opacity:0.7; display:block; margin-top:3px; font-family:var(--font-px); letter-spacing:.1em; }
-
-/* ROI bar */
-.mn-plan-roi {
-  padding:0 8px; margin-bottom:14px;
-}
-.mn-plan-roi-label {
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:0.68rem; color:var(--muted); margin-bottom:6px;
-}
-.mn-plan-roi-pct {
-  font-family:var(--font-px); font-size:0.5rem; font-weight:bold;
-}
-.mn-plan.starter  .mn-plan-roi-pct { color:#00e676; }
-.mn-plan.basic    .mn-plan-roi-pct { color:#64b5f6; }
-.mn-plan.pro      .mn-plan-roi-pct { color:#0098EA; }
-.mn-plan.elite    .mn-plan-roi-pct { color:#ffd700; }
-.mn-plan.master   .mn-plan-roi-pct { color:#ff6f00; }
-.mn-plan.legendary .mn-plan-roi-pct { color:#ce93d8; }
-
-.mn-plan-roi-track {
-  height:5px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;
-}
-.mn-plan-roi-fill {
-  height:100%; border-radius:2px; transition:width .5s ease;
-}
-.mn-plan.starter   .mn-plan-roi-fill { width:20%;  background:linear-gradient(90deg,#00c853,#00e676); }
-.mn-plan.basic     .mn-plan-roi-fill { width:30%;  background:linear-gradient(90deg,#1565c0,#64b5f6); }
-.mn-plan.pro       .mn-plan-roi-fill { width:50%;  background:linear-gradient(90deg,#0057a8,#0098EA); }
-.mn-plan.elite     .mn-plan-roi-fill { width:70%;  background:linear-gradient(90deg,#c8a200,#ffd700); }
-.mn-plan.master    .mn-plan-roi-fill { width:85%;  background:linear-gradient(90deg,#e65100,#ff9800); }
-.mn-plan.legendary .mn-plan-roi-fill { width:100%; background:linear-gradient(90deg,#9c27b0,#ce93d8,#ff4081); box-shadow:0 0 8px rgba(206,147,216,0.5); }
-
-/* Metrics row */
-.mn-plan-metrics {
-  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
-  padding:0 8px; margin-bottom:16px;
-}
-.mn-plan-metric {
-  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
-  padding:10px 6px; text-align:center; border-radius:2px;
-}
-.mn-plan-metric-val {
-  display:block; font-family:var(--font-px); font-size:0.46rem;
-  color:#fff; margin-bottom:4px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.mn-plan-metric-lbl {
-  display:block; font-size:0.6rem; color:var(--muted); letter-spacing:.06em;
-}
-
-/* Activate button */
-.mn-btn-purchase {
-  width:100%; padding:14px; margin:0 0; display:flex; align-items:center; justify-content:center; gap:8px;
-  font-family:var(--font-px); font-size:0.44rem; letter-spacing:.1em;
-  cursor:pointer; border:1px solid; border-radius:2px;
-  transition:transform .1s, box-shadow .1s, opacity .1s;
-  position:relative; overflow:hidden;
-}
-.mn-btn-purchase::before {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 50%);
-  pointer-events:none;
-}
-.mn-btn-purchase:hover  { transform:translateY(-1px); }
-.mn-btn-purchase:active { transform:translateY(1px); opacity:0.85; }
-
-.mn-plan.starter  .mn-btn-purchase { background:rgba(0,230,118,0.12); color:#00e676; border-color:rgba(0,230,118,0.4); box-shadow:0 4px 16px rgba(0,230,118,0.15); }
-.mn-plan.basic    .mn-btn-purchase { background:rgba(100,181,246,0.1); color:#64b5f6; border-color:rgba(100,181,246,0.35); box-shadow:0 4px 16px rgba(100,181,246,0.12); }
-.mn-plan.pro      .mn-btn-purchase { background:rgba(0,152,234,0.12); color:#0ff; border-color:rgba(0,152,234,0.45); box-shadow:0 4px 20px rgba(0,152,234,0.2); }
-.mn-plan.elite    .mn-btn-purchase { background:rgba(255,215,0,0.1); color:#ffd700; border-color:rgba(255,215,0,0.4); box-shadow:0 4px 20px rgba(255,215,0,0.15); }
-.mn-plan.master   .mn-btn-purchase { background:rgba(255,111,0,0.12); color:#ff9800; border-color:rgba(255,111,0,0.4); box-shadow:0 4px 20px rgba(255,111,0,0.2); }
-.mn-plan.legendary .mn-btn-purchase { background:linear-gradient(135deg,rgba(156,39,176,0.2),rgba(255,64,129,0.15)); color:#ce93d8; border-color:rgba(206,147,216,0.45); box-shadow:0 4px 24px rgba(206,147,216,0.2); }
-
-/* 30-day notice */
-.mn-plan-cycle {
-  text-align:center; font-size:0.62rem; color:rgba(255,255,255,0.25);
-  margin-top:10px; letter-spacing:.06em;
-}
-
-.mn-plan-desc { display:none; } /* hide, info shown in metrics now */
-.mn-btn-purchase:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #020205; }
-
-/* Gold/Diamond/Legendary buy button */
-.mn-plan.gold .mn-btn-purchase, .mn-plan.diamond .mn-btn-purchase, .mn-plan.legendary .mn-btn-purchase {
-  background:var(--gold); color:#0a0800;
-  border:2px solid var(--gold2); box-shadow:3px 3px 0 0 var(--gold-dark);
-}
-.mn-plan.gold .mn-btn-purchase:hover, .mn-plan.diamond .mn-btn-purchase:hover, .mn-plan.legendary .mn-btn-purchase:hover {
-  box-shadow:5px 5px 0 0 var(--gold-dark); color:#0a0800;
-}
-
-/* ═══════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════ */
-.mn-steps {
-  display:flex; align-items:flex-start; justify-content:space-between; gap:4px;
-}
-.mn-step { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; }
-.mn-step-num {
-  width:24px; height:24px; background:var(--gold); color:#0a0800;
-  font-family:var(--font-px); font-size:0.48rem;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:2px 2px 0 0 var(--gold-dark);
-}
-.mn-step-icon {
-  width:36px; height:36px; background:var(--surface3);
-  border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
-}
-.mn-step-lbl { font-size:0.6rem; color:var(--text2); text-align:center; line-height:1.5; max-width:58px; }
-.mn-step-arrow { font-family:var(--font-px); font-size:0.5rem; color:var(--muted); margin-top:20px; flex-shrink:0; }
-
-/* ═══════════════════════════════
-   PURCHASE MODAL
-═══════════════════════════════ */
-.mn-modal-bg {
-  display:none; position:fixed; inset:0;
-  background:rgba(4,4,10,0.9); z-index:100;
-  align-items:center; justify-content:center;
-}
-.mn-modal-bg.show { display:flex; animation:mn-modal-bg .2s ease; }
-@keyframes mn-modal-bg{ from{opacity:0} to{opacity:1} }
-
-.mn-modal {
-  background:var(--surface2);
-  border:2px solid var(--border);
-  box-shadow:0 0 40px rgba(0,0,0,0.7);
-  width:90%; max-width:400px; padding:28px 20px 32px;
-  position:relative;
-  animation:mn-sheet .25s cubic-bezier(.22,.77,.42,1) both;
-}
-@keyframes mn-sheet{ from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
-.mn-modal::before,.mn-modal::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--gold); border-style:solid;
-}
-.mn-modal::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.mn-modal::after{top:-2px;right:-2px;border-width:2px 2px 0 0}
-
-.mn-modal-handle { width:36px; height:4px; background:var(--border); margin:0 auto 22px; }
-
-.mn-modal-icon {
-  width:50px; height:50px; background:var(--gold-dim); border:2px solid var(--gold-dark);
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 16px; box-shadow:3px 3px 0 0 #020201;
-}
-.mn-modal-title {
-  font-family:var(--font-px); font-size:0.62rem;
-  color:var(--text); text-align:center; letter-spacing:.06em; margin-bottom:10px;
-}
-.mn-modal-msg { font-size:0.82rem; color:var(--text2); text-align:center; margin-bottom:20px; line-height:1.5; }
-
-.mn-modal-details { display:flex; flex-direction:column; gap:8px; margin-bottom:22px; }
-.mn-detail-row {
-  display:flex; justify-content:space-between; align-items:center;
-  background:var(--surface3); border:1px solid var(--border); padding:10px 14px;
-}
-.mn-detail-lbl { font-size:0.72rem; color:var(--text2); }
-.mn-detail-val { font-family:var(--font-px); font-size:0.44rem; color:var(--gold); text-shadow:1px 1px 0 var(--gold-dark); }
-
-.mn-modal-btns { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
-.mn-btn-cancel {
-  font-family:var(--font-px); font-size:0.44rem; letter-spacing:.06em;
-  padding:14px; background:transparent; color:var(--text2);
-  border:2px solid var(--border); box-shadow:2px 2px 0 0 #030308;
-  cursor:pointer; transition:transform .07s;
-}
-.mn-btn-cancel:hover{ transform:translate(-1px,-1px); }
-.mn-btn-confirm {
-  font-family:var(--font-px); font-size:0.5rem; letter-spacing:.06em;
-  padding:14px; background:var(--gold); color:#0a0800;
-  border:2px solid var(--gold2); box-shadow:3px 3px 0 0 var(--gold-dark);
-  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
-  transition:transform .07s, box-shadow .07s;
-}
-.mn-btn-confirm:hover  { transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 var(--gold-dark); }
-.mn-btn-confirm:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--gold-dark); }
-.mn-btn-confirm:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-
-.mn-spinner {
-  display:inline-block; width:10px; height:10px;
-  border:2px solid rgba(0,0,0,0.3); border-top-color:#0a0800;
-  animation:mn-spin .4s steps(4) infinite;
-}
-@keyframes mn-spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
-
-/* No plans */
-.mn-no-plans { padding:40px 20px; text-align:center; }
-.mn-no-plans-icon {
-  width:42px; height:42px; background:var(--surface3); border:2px solid var(--border);
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 16px; animation:mn-bounce .9s steps(1) infinite;
-}
-.mn-no-plans-title { font-family:var(--font-px); font-size:0.5rem; color:var(--text2); margin-bottom:10px; }
-.mn-no-plans-hint  { font-size:0.78rem; color:var(--muted); }
+/* MODAL */
+.fm-modal-bg{display:none;position:fixed;inset:0;background:rgba(2,2,10,0.92);z-index:200;align-items:flex-end;justify-content:center;}
+.fm-modal-bg.show{display:flex;animation:fm-bg-in .2s ease;}
+@keyframes fm-bg-in{from{opacity:0}to{opacity:1}}
+.fm-modal{background:var(--surface2);border:1px solid rgba(0,152,234,0.25);border-bottom:none;box-shadow:0 -20px 60px rgba(0,152,234,0.12);width:100%;max-width:500px;padding:24px 20px 32px;position:relative;animation:fm-sheet .25s cubic-bezier(.22,.77,.42,1) both;}
+@keyframes fm-sheet{from{transform:translateY(80px);opacity:0}to{transform:translateY(0);opacity:1}}
+.fm-modal-handle{width:36px;height:3px;background:var(--border);margin:0 auto 20px;border-radius:2px;}
+.fm-modal-title{font-family:var(--font-px);font-size:0.56rem;color:var(--text);text-align:center;letter-spacing:.08em;margin-bottom:8px;}
+.fm-modal-msg{font-size:0.8rem;color:var(--text2);text-align:center;margin-bottom:18px;line-height:1.5;}
+.fm-modal-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.fm-modal-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface3);border:1px solid var(--border);padding:10px 14px;}
+.fm-modal-lbl{font-size:0.72rem;color:var(--text2);}
+.fm-modal-val{font-family:var(--font-px);font-size:0.42rem;color:var(--blue);}
+.fm-modal-btns{display:grid;grid-template-columns:1fr 2fr;gap:10px;}
+.fm-btn-cancel{font-family:var(--font-px);font-size:0.42rem;letter-spacing:.06em;padding:14px;background:transparent;color:var(--muted);border:1px solid var(--border);cursor:pointer;transition:color .1s;}
+.fm-btn-cancel:hover{color:var(--text);}
+.fm-btn-confirm{font-family:var(--font-px);font-size:0.46rem;letter-spacing:.08em;padding:14px;background:linear-gradient(135deg,rgba(0,152,234,0.2),rgba(0,100,180,0.15));color:var(--blue);border:1px solid rgba(0,152,234,0.45);box-shadow:0 0 20px rgba(0,152,234,0.15);cursor:pointer;transition:transform .1s,box-shadow .1s;}
+.fm-btn-confirm:hover{transform:translateY(-1px);box-shadow:0 4px 24px rgba(0,152,234,0.25);}
+.fm-btn-confirm:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.fm-spinner{display:inline-block;width:10px;height:10px;border:2px solid rgba(0,152,234,0.2);border-top-color:var(--blue);animation:fm-spin .5s linear infinite;border-radius:50%;}
+@keyframes fm-spin{to{transform:rotate(360deg)}}
 </style>
 
-<div class="mn-shell">
-  <div class="mn-ticker" aria-hidden="true">
-    <span>
-      ★ MINING STATION ★&nbsp;&nbsp;
-      PURCHASE MACHINES &amp; EARN AUTOMATICALLY &nbsp;★&nbsp;&nbsp;
-      CLAIM PENDING REWARDS ANYTIME &nbsp;★&nbsp;&nbsp;
-      MORE MACHINES = MORE TON PER HOUR &nbsp;★&nbsp;&nbsp;
-      MUCH MINE. VERY PASSIVE. SO TON. &nbsp;★&nbsp;&nbsp;
-    </span>
-  </div>
+{# ─── SVG HELPERS ─── #}
+{% set TON_ICON %}<svg viewBox="0 0 56 56" fill="none" width="14" height="14"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>{% endset %}
 
-  <div class="mn-page">
+<div class="fm-shell">
 
-    <!-- ── HERO ── -->
-    <div class="mn-hero">
-      <div class="mn-hero-glow" aria-hidden="true"></div>
-      <div class="mn-hero-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span>
+  <div class="fm-ticker" aria-hidden="true"><span>◆ TON FARM ◆&nbsp;&nbsp; ACTIVA NODOS Y GENERA TON AUTOMÁTICAMENTE &nbsp;◆&nbsp;&nbsp; MÁS NODOS = MÁS TON POR HORA &nbsp;◆&nbsp;&nbsp; DEPOSITA AL BALANCE EN UN CLICK &nbsp;◆&nbsp;&nbsp; STARTER GRATIS PARA TODOS &nbsp;◆&nbsp;&nbsp;</span></div>
+
+  <div class="fm-page">
+
+    <!-- HERO: contador vivo + depositar -->
+    <div class="fm-hero">
+      <div class="fm-hero-glow" aria-hidden="true"></div>
+      <div class="fm-pending-label">TON ACUMULADO</div>
+      <div class="fm-pending-amount" id="livePending">{{ "%.6f"|format(pending_rewards) }}</div>
+      <div class="fm-pending-unit">PENDIENTE DE DEPÓSITO</div>
+      <div class="fm-rate-row">
+        Generando <strong id="liveRateLabel">{{ "%.6f"|format(mining_stats.total_hourly_rate if mining_stats else 0) }} TON/hr</strong>
+        &nbsp;·&nbsp; Próximo en <strong id="nextTimer">—</strong>
       </div>
-      <div class="mn-hero-title">MINING STATION</div>
-      <div class="mn-hero-sub">Purchase mining machines and earn TON automatically!</div>
-    </div>
-
-    <!-- ── STATS ── -->
-    <div class="mn-card" style="padding:0; overflow:hidden;">
-      <div class="mn-stats">
-        <div class="mn-stat">
-          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span></div>
-          <span class="mn-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
-          <span class="mn-stat-lbl">Machines</span>
-        </div>
-        <div class="mn-stat" style="background:rgba(255,215,0,0.03); border-top:2px solid rgba(255,215,0,0.12);">
-          <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">
-            <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
-          </div>
-          <span class="mn-stat-val">{{ format_ton(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
-          <span class="mn-stat-lbl">TON/Hour</span>
-        </div>
-        <div class="mn-stat">
-          <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
-            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-          </div>
-          <span class="mn-stat-val" id="pendingRewards">{{ format_ton(pending_rewards) }}</span>
-          <span class="mn-stat-lbl">Pending</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── CLAIM ── -->
-    {% if pending_rewards > 0 %}
-    <div class="mn-claim">
-      <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-        CLAIM {{ format_ton(pending_rewards) }} TON
+      <button class="fm-deposit-btn" id="depositBtn" onclick="depositRewards()"
+        {% if not pending_rewards or pending_rewards <= 0 %}disabled{% endif %}>
+        ⬇&nbsp; DEPOSITAR AL BALANCE
       </button>
-    </div>
-    {% endif %}
-
-    <!-- ── YOUR MACHINES ── -->
-    {% if user_machines %}
-    <div class="mn-card">
-      <div class="mn-label">
-        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span>
-        Your Machines
+      <div class="fm-stats">
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
+          <span class="fm-stat-lbl">Nodos</span>
+        </div>
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ "%.4f"|format(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
+          <span class="fm-stat-lbl">TON/hr</span>
+        </div>
+        <div class="fm-stat">
+          <span class="fm-stat-val">{{ "%.4f"|format((mining_stats.total_hourly_rate if mining_stats else 0) * 24) }}</span>
+          <span class="fm-stat-lbl">TON/día</span>
+        </div>
       </div>
-      <div class="mn-machines">
-        {% for machine in user_machines %}
-        <div class="mn-machine">
-          <div class="mn-machine-icon">
-            {% if 'Diamond' in machine.plan_name or 'diamond' in machine.plan_name %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#80deea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 3L8 9l4 12 4-12L12 3z" stroke-opacity="0.5"/></svg></span>
-            {% elif 'Gold' in machine.plan_name or 'gold' in machine.plan_name %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-            {% elif 'Silver' in machine.plan_name or 'silver' in machine.plan_name %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v7c0 5-3.5 9-8 10C8.5 21 5 17 5 12V5l7-3z"/><path d="M9 12l2 2 4-4" stroke="#40c4ff" stroke-width="2"/></svg></span>
-            {% elif 'Bronze' in machine.plan_name or 'bronze' in machine.plan_name %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6d00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.5 0 7-2.5 7-6 0-4-2.5-6-4-8-1 2-1.5 3-3 4-1-2-1.5-4-1-6C8 8 5 10.5 5 15c0 4 2.5 7 7 7z"/><path d="M12 22c1.5 0 3-1 3-3s-1.5-3-3-4c-1.5 1-3 2-3 4s1.5 3 3 3z" fill="#ffd700" stroke="#ffd700" stroke-width="1"/></svg></span>
-            {% elif 'Legendary' in machine.plan_name or 'legendary' in machine.plan_name %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ce93d8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18h18l-3-10-4.5 5L12 5l-1.5 8L6 8z"/><path d="M3 18v2h18v-2"/><circle cx="12" cy="5" r="1" fill="#ffd700"/><circle cx="3" cy="8" r="1" fill="#ce93d8"/><circle cx="21" cy="8" r="1" fill="#ce93d8"/></svg></span>
-            {% else %}
-              <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-            {% endif %}
+    </div>
+
+    <!-- NODOS ACTIVOS -->
+    {% if user_machines %}
+    <div class="fm-card" style="animation-delay:.06s">
+      <div class="fm-label">{{ TON_ICON|safe }} Nodos Activos</div>
+      <div class="fm-nodes">
+        {% for m in user_machines %}
+        <div class="fm-node">
+          <div class="fm-node-icon">{{ node_svg(m.plan_name|lower)|safe }}</div>
+          <div class="fm-node-body">
+            <span class="fm-node-name">{{ m.plan_name }}</span>
+            <span class="fm-node-rate">{{ format_ton(m.hourly_rate) }} TON/hr</span>
           </div>
-          <div class="mn-machine-body">
-            <span class="mn-machine-name">{{ machine.plan_name }}</span>
-            <span class="mn-machine-rate">{{ format_ton(machine.hourly_rate) }} TON/hr</span>
-          </div>
-          <div class="mn-machine-right">
-            <div class="mn-machine-status">
-              <div class="mn-status-dot"></div> MINING
-            </div>
-            <div class="mn-machine-exp">
-              Exp: {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
-            </div>
+          <div class="fm-node-right">
+            <div class="fm-node-status"><div class="fm-node-dot"></div>ACTIVO</div>
+            <div class="fm-node-exp">{{ m.expires_at.strftime('%d/%m/%Y') if m.expires_at else '—' }}</div>
           </div>
         </div>
         {% endfor %}
@@ -641,223 +225,202 @@
     </div>
     {% endif %}
 
-    <!-- ── AVAILABLE PLANS ── -->
-    <div class="mn-card">
-      <div class="mn-label">
-        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
-        Mining Machines
+    <!-- TIENDA -->
+    <div class="fm-card" style="animation-delay:.1s">
+      <div class="fm-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Tienda de Nodos
       </div>
-      <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
-        Purchase a miner to start earning TON automatically!
-      </p>
+      <p style="font-size:.74rem;color:var(--text2);margin-bottom:14px;line-height:1.5;">Activa nodos para generar TON pasivamente. Cada activación dura 30 días y es renovable.</p>
 
       {% if plans %}
-      <div class="mn-plans">
+      <div class="fm-shop">
         {% for plan in plans %}
         {% set is_free = plan.price == 0 %}
-        {% set roi_pct = 20 if plan.tier == 'starter' else
-                         30 if plan.tier == 'basic' else
-                         50 if plan.tier == 'pro' else
-                         70 if plan.tier == 'elite' else
-                         85 if plan.tier == 'master' else
-                         100 %}
-        {% set daily_earn = plan.hourly_rate * 24 %}
-        {% set monthly_earn = plan.hourly_rate * 720 %}
+        {% set roi = 20 if plan.tier=='starter' else 30 if plan.tier=='basic' else 50 if plan.tier=='pro' else 70 if plan.tier=='elite' else 85 if plan.tier=='master' else 100 %}
+        <div class="fm-tree-card {{ plan.tier }}" id="tc{{ plan.id }}">
 
-        <div class="mn-plan {{ plan.tier }}" data-plan-id="{{ plan.id }}">
-
-          <!-- Header: nombre + precio -->
-          <div class="mn-plan-head">
-            <div class="mn-plan-name-block">
-              <span class="mn-plan-badge">
-                {% if is_free %}★ GRATIS{% else %}{{ plan.tier|upper }}{% endif %}
-              </span>
-              <span class="mn-plan-name">{{ plan.name }}</span>
+          <div class="fm-tree-top">
+            <div class="fm-tree-icon">{{ tier_svg(plan.tier)|safe }}</div>
+            <div class="fm-tree-info">
+              <span class="fm-tree-badge">{% if is_free %}★ GRATIS{% else %}{{ plan.tier|upper }}{% endif %}</span>
+              <span class="fm-tree-name">{{ plan.name }}</span>
+              <div class="fm-tree-owned">Retorno <strong>+{{ roi }}%</strong> en 30 días</div>
             </div>
-            <div class="mn-plan-price-block">
-              <span class="mn-plan-price">
-                {% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}
-              </span>
-              <span class="mn-plan-price-unit">30 DÍAS</span>
+            <div class="fm-tree-price-col">
+              <span class="fm-tree-price" id="tp{{ plan.id }}">{% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}</span>
+              <span class="fm-tree-price-each" id="tpe{{ plan.id }}">{% if not is_free %}por activación{% endif %}</span>
             </div>
           </div>
 
-          <!-- ROI bar -->
-          <div class="mn-plan-roi">
-            <div class="mn-plan-roi-label">
-              <span>Retorno en 30 días</span>
-              <span class="mn-plan-roi-pct">+{{ roi_pct }}%</span>
+          <div class="fm-tree-roi">
+            <div class="fm-tree-roi-head"><span>Rentabilidad 30d</span><span class="fm-tree-roi-pct">+{{ roi }}%</span></div>
+            <div class="fm-roi-track"><div class="fm-roi-fill"></div></div>
+          </div>
+
+          <div class="fm-tree-metrics">
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mhr{{ plan.id }}">{{ "%.5f"|format(plan.hourly_rate) }}</span>
+              <span class="fm-tree-metric-lbl">TON/hr</span>
             </div>
-            <div class="mn-plan-roi-track">
-              <div class="mn-plan-roi-fill"></div>
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mday{{ plan.id }}">{{ "%.4f"|format(plan.hourly_rate * 24) }}</span>
+              <span class="fm-tree-metric-lbl">TON/día</span>
+            </div>
+            <div class="fm-tree-metric">
+              <span class="fm-tree-metric-val" id="mmo{{ plan.id }}">{{ "%.2f"|format(plan.hourly_rate * 720) }}</span>
+              <span class="fm-tree-metric-lbl">TON/mes</span>
             </div>
           </div>
 
-          <!-- Métricas -->
-          <div class="mn-plan-metrics">
-            <div class="mn-plan-metric">
-              <span class="mn-plan-metric-val">{{ "%.4f"|format(plan.hourly_rate) }}</span>
-              <span class="mn-plan-metric-lbl">TON/hr</span>
+          <div class="fm-tree-buy">
+            {% if not is_free %}
+            <div class="fm-qty-wrap">
+              <button class="fm-qty-btn" onclick="chQty({{ plan.id }},{{ plan.price }},{{ plan.hourly_rate }},-1)">−</button>
+              <span class="fm-qty-num" id="qn{{ plan.id }}">1</span>
+              <button class="fm-qty-btn" onclick="chQty({{ plan.id }},{{ plan.price }},{{ plan.hourly_rate }},1)">+</button>
             </div>
-            <div class="mn-plan-metric">
-              <span class="mn-plan-metric-val">{{ "%.4f"|format(daily_earn) }}</span>
-              <span class="mn-plan-metric-lbl">TON/día</span>
-            </div>
-            <div class="mn-plan-metric">
-              <span class="mn-plan-metric-val">{{ "%.2f"|format(monthly_earn) }}</span>
-              <span class="mn-plan-metric-lbl">TON/mes</span>
-            </div>
-          </div>
-
-          <!-- Botón -->
-          <button class="mn-btn-purchase" onclick="purchaseMachine({{ plan.id }}, '{{ plan.name }}', {{ plan.price }})">
-            {% if is_free %}
-              ★ ACTIVAR GRATIS
-            {% else %}
-              ⚡ ACTIVAR POR {{ plan.price|int }} TON
             {% endif %}
-          </button>
-          <div class="mn-plan-cycle">↻ Renovable cada 30 días</div>
-
+            <button class="fm-buy-btn" id="bb{{ plan.id }}"
+                    onclick="openConfirm({{ plan.id }},'{{ plan.name }}',{{ plan.price }},{{ 1 if is_free else 0 }},{{ plan.hourly_rate }})">
+              {% if is_free %}★ ACTIVAR GRATIS{% else %}⚡ ACTIVAR{% endif %}
+            </button>
+          </div>
+          <div class="fm-tree-cycle">↻ Renovable cada 30 días</div>
         </div>
         {% endfor %}
       </div>
-
       {% else %}
-      <div class="mn-no-plans">
-        <div class="mn-no-plans-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span></div>
-        <div class="mn-no-plans-title">NO PLANS AVAILABLE</div>
-        <div class="mn-no-plans-hint">Check back soon!</div>
-      </div>
+      <p style="text-align:center;color:var(--muted);font-size:.76rem;padding:30px 0;">Sin nodos disponibles por ahora.</p>
       {% endif %}
-    </div>
-
-    <!-- ── HOW IT WORKS ── -->
-    <div class="mn-card">
-      <div class="mn-label">
-        <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
-        How It Works
-      </div>
-      <div class="mn-steps">
-        <div class="mn-step">
-          <div class="mn-step-num">1</div>
-          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
-          <div class="mn-step-lbl">Purchase a miner</div>
-        </div>
-        <div class="mn-step-arrow">→</div>
-        <div class="mn-step">
-          <div class="mn-step-num">2</div>
-          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span></div>
-          <div class="mn-step-lbl">Mining starts auto</div>
-        </div>
-        <div class="mn-step-arrow">→</div>
-        <div class="mn-step">
-          <div class="mn-step-num">3</div>
-          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div>
-          <div class="mn-step-lbl">Claim rewards</div>
-        </div>
-        <div class="mn-step-arrow">→</div>
-        <div class="mn-step">
-          <div class="mn-step-num">4</div>
-          <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span></div>
-          <div class="mn-step-lbl">Withdraw TON!</div>
-        </div>
-      </div>
     </div>
 
   </div>
 </div>
 
-<!-- ── PURCHASE MODAL ── -->
-<div id="purchaseModal" class="mn-modal-bg">
-  <div class="mn-modal">
-    <div class="mn-modal-handle"></div>
-    <div class="mn-modal-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
-    <div class="mn-modal-title">CONFIRMAR PLAN</div>
-    <p class="mn-modal-msg" id="purchaseMessage">¿Activar este plan?</p>
-    <div class="mn-modal-details">
-      <div class="mn-detail-row">
-        <span class="mn-detail-lbl">Costo</span>
-        <span class="mn-detail-val" id="purchaseCost">0 TON</span>
-      </div>
-      <div class="mn-detail-row">
-        <span class="mn-detail-lbl">Your Balance</span>
-        <span class="mn-detail-val">{{ format_ton(user.doge_balance) }} TON</span>
-      </div>
+<!-- MODAL CONFIRMACIÓN -->
+<div id="confirmModal" class="fm-modal-bg">
+  <div class="fm-modal">
+    <div class="fm-modal-handle"></div>
+    <div class="fm-modal-title" id="modalTitle">CONFIRMAR ACTIVACIÓN</div>
+    <p class="fm-modal-msg" id="modalMsg">¿Activar este nodo por 30 días?</p>
+    <div class="fm-modal-rows">
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Costo</span><span class="fm-modal-val" id="modalCost">—</span></div>
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Tu balance</span><span class="fm-modal-val">{{ format_ton(user.doge_balance) }} TON</span></div>
+      <div class="fm-modal-row"><span class="fm-modal-lbl">Ganarás en 30 días</span><span class="fm-modal-val" id="modalEarn">—</span></div>
     </div>
-    <div class="mn-modal-btns">
-      <button class="mn-btn-cancel" onclick="closePurchaseModal()">CANCEL</button>
-      <button class="mn-btn-confirm" id="confirmPurchaseBtn" onclick="confirmPurchase()">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        CONFIRM
-      </button>
+    <div class="fm-modal-btns">
+      <button class="fm-btn-cancel" onclick="closeConfirm()">CANCELAR</button>
+      <button class="fm-btn-confirm" id="confirmBtn" onclick="doActivate()">⚡ CONFIRMAR</button>
     </div>
   </div>
 </div>
 
 <script>
-let currentPlanId = null;
-let currentPlanName = '';
-let currentPlanPrice = 0;
+const RATE = {{ mining_stats.total_hourly_rate if mining_stats else 0 }};
+let pending = {{ pending_rewards }};
+let _lt = Date.now();
+let _planId = null;
 
-function purchaseMachine(planId, planName, price) {
-  currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
-  document.getElementById('purchaseMessage').textContent = `¿Activar el plan ${planName} por 30 días?`;
-  document.getElementById('purchaseCost').textContent = price === 0 ? '✨ GRATIS' : `${price} TON`;
-  document.getElementById('purchaseModal').classList.add('show');
+// Live tick
+function tick() {
+  const now = Date.now(), dt = (now - _lt) / 1000; _lt = now;
+  if (RATE > 0) {
+    pending += (RATE / 3600) * dt;
+    const el = document.getElementById('livePending');
+    if (el) el.textContent = pending.toFixed(6);
+    const ni = 1 / (RATE / 3600);
+    const nt = document.getElementById('nextTimer');
+    if (nt) nt.textContent = ni < 2 ? '¡Ya!' : ni < 60 ? Math.ceil(ni) + 's' : (ni/60).toFixed(1) + 'm';
+    const db = document.getElementById('depositBtn');
+    if (db && pending > 0.000001) db.disabled = false;
+  }
 }
-function closePurchaseModal() {
-  document.getElementById('purchaseModal').classList.remove('show');
-  currentPlanId = null;
+setInterval(tick, 500);
+
+// Qty selector
+function chQty(id, price, hr, d) {
+  const QTY = window._QTY || {}; window._QTY = QTY;
+  QTY[id] = Math.max(1, (QTY[id] || 1) + d);
+  const q = QTY[id];
+  const qn = document.getElementById('qn' + id); if (qn) qn.textContent = q;
+  const tp = document.getElementById('tp' + id);  if (tp) tp.textContent = (price * q) + ' TON';
+  const tpe= document.getElementById('tpe' + id); if (tpe) tpe.textContent = q > 1 ? price + ' TON × ' + q : 'por activación';
+  const mhr = document.getElementById('mhr'  + id); if (mhr)  mhr.textContent  = (hr * q).toFixed(5);
+  const mday= document.getElementById('mday' + id); if (mday) mday.textContent = (hr * q * 24).toFixed(4);
+  const mmo = document.getElementById('mmo'  + id); if (mmo)  mmo.textContent  = (hr * q * 720).toFixed(2);
 }
-async function confirmPurchase() {
-  if (!currentPlanId) return;
-  const btn = document.getElementById('confirmPurchaseBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="mn-spinner"></span> PROCESSING...';
+
+function openConfirm(planId, planName, price, isFree, hr) {
+  _planId = planId;
+  const qty = (window._QTY && window._QTY[planId]) || 1;
+  const total = price * qty;
+  const earn = (hr * qty * 720).toFixed(4);
+  document.getElementById('modalMsg').textContent  = '¿Activar ' + (qty > 1 ? qty + '× ' : '') + planName + ' por 30 días?';
+  document.getElementById('modalCost').textContent = isFree ? '✨ GRATIS' : total + ' TON';
+  document.getElementById('modalEarn').textContent = '~' + earn + ' TON';
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+  _planId = null;
+}
+async function doActivate() {
+  if (!_planId) return;
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="fm-spinner"></span> ACTIVANDO...';
   try {
-    const res = await fetch('/api/mining/purchase', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({plan_id:currentPlanId})
-    });
-    const data = await res.json();
-    if (data.success) {
-      closePurchaseModal();
-      showToast(data.message,'success');
-      createPixelExplosion(window.innerWidth/2,window.innerHeight/2,'#00ff66');
-      setTimeout(()=>location.reload(),1500);
-    } else { showToast(data.message||'Purchase failed','error'); }
-  } catch(e){ showToast('Connection error','error'); }
-  btn.disabled=false;
-  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> CONFIRM';
+    const r = await fetch('/api/mining/purchase', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plan_id:_planId}) });
+    const d = await r.json();
+    if (d.success) {
+      closeConfirm(); showToast(d.message, 'success');
+      if (window.DogeQuest && DogeQuest.createPixelExplosion) DogeQuest.createPixelExplosion(window.innerWidth/2, window.innerHeight/2, '#0098EA');
+      setTimeout(() => location.reload(), 1400);
+    } else { showToast(d.message || 'Error', 'error'); }
+  } catch(e) { showToast('Error de conexión', 'error'); }
+  btn.disabled = false; btn.innerHTML = '⚡ CONFIRMAR';
 }
-async function claimMiningRewards() {
-  const btn = document.querySelector('.claim-mining-btn');
-  if(!btn||btn.disabled) return;
-  btn.disabled=true;
-  btn.innerHTML='<span class="mn-spinner"></span> CLAIMING...';
+async function depositRewards() {
+  const btn = document.getElementById('depositBtn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true; btn.textContent = '⏳ DEPOSITANDO...';
   try {
-    const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
-    const data = await res.json();
-    if(data.success){ showToast(data.message,'success'); createCoinRain(10); setTimeout(()=>location.reload(),1500); }
-    else{ showToast(data.message||'Claim failed','error'); }
-  } catch(e){ showToast('Connection error','error'); }
-  btn.disabled=false;
-  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> CLAIM';
-}
-function updatePendingRewards(){
-  fetch('/api/mining/stats').then(r=>r.json()).then(data=>{
-    if(data.success&&data.pending_rewards){
-      const el=document.getElementById('pendingRewards');
-      if(el) el.textContent=data.pending_rewards.toFixed(8).replace(/\.?0+$/,'');
+    const r = await fetch('/api/mining/claim', { method:'POST', headers:{'Content-Type':'application/json'} });
+    const d = await r.json();
+    if (d.success) {
+      showToast(d.message, 'success'); pending = 0;
+      document.getElementById('livePending').textContent = '0.000000';
+      if (window.DogeQuest && DogeQuest.createCoinRain) DogeQuest.createCoinRain(12);
+      setTimeout(() => location.reload(), 1400);
+    } else {
+      showToast(d.message || 'Sin saldo pendiente', 'error');
+      btn.disabled = false; btn.textContent = '⬇ DEPOSITAR AL BALANCE';
     }
-  }).catch(()=>{});
+  } catch(e) { showToast('Error de conexión', 'error'); btn.disabled = false; btn.textContent = '⬇ DEPOSITAR AL BALANCE'; }
 }
-setInterval(updatePendingRewards,30000);
-function showToast(m,t){ if(window.DogeQuest&&window.DogeQuest.showToast){window.DogeQuest.showToast(m,t);}else{alert(m);} }
-function createPixelExplosion(x,y,c){ if(window.DogeQuest&&window.DogeQuest.createPixelExplosion){window.DogeQuest.createPixelExplosion(x,y,c);} }
-function createCoinRain(n){ if(window.DogeQuest&&window.DogeQuest.createCoinRain){window.DogeQuest.createCoinRain(n);} }
-// Close modal on backdrop
-document.getElementById('purchaseModal').addEventListener('click',function(e){if(e.target===this)closePurchaseModal();});
+function showToast(m, t) { if (window.DogeQuest && DogeQuest.showToast) DogeQuest.showToast(m, t); else alert(m); }
+document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target===this) closeConfirm(); });
 </script>
+
+{# ── Macros de iconos ── #}
+{% macro tier_svg(tier) %}
+{% if tier=='legendary' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(156,39,176,0.1)" stroke="rgba(206,147,216,0.3)"/><path d="M28 10 L44 38 L28 46 L12 38 Z" fill="none" stroke="#ce93d8" stroke-width="1.8"/><path d="M12 38 L44 38 M20 24 L28 10 L36 24" stroke="rgba(206,147,216,0.35)" stroke-width="1"/><circle cx="28" cy="10" r="3" fill="#ffd700"/><circle cx="12" cy="38" r="2.5" fill="#ff4081"/><circle cx="44" cy="38" r="2.5" fill="#ff4081"/></svg>
+{% elif tier=='master' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(255,111,0,0.1)" stroke="rgba(255,111,0,0.3)"/><path d="M28 9 L47 35 L28 47 L9 35 Z" fill="none" stroke="#ff6f00" stroke-width="1.8"/><path d="M28 9 L28 47 M9 35 L47 35" stroke="rgba(255,111,0,0.25)" stroke-width="1"/><circle cx="28" cy="9" r="3" fill="#ffd700"/></svg>
+{% elif tier=='elite' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.3)"/><path d="M28 11 L32 21 L43 22 L35 30 L37 41 L28 36 L19 41 L21 30 L13 22 L24 21 Z" fill="none" stroke="#ffd700" stroke-width="1.8" stroke-linejoin="round"/></svg>
+{% elif tier=='pro' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(0,152,234,0.1)" stroke="rgba(0,152,234,0.3)"/><path d="M20 17.5 Q20 15 22 15 L34 15 Q36 15 36 17.5 Q36 19.5 34.5 21 L29 36 Q28.4 38 28 38 Q27.6 38 27 36 L21.5 21 Q20 19.5 20 17.5 Z" fill="none" stroke="#0098EA" stroke-width="2.2" stroke-linejoin="round"/><line x1="28" y1="17" x2="28" y2="32" stroke="#0098EA" stroke-width="2.2" stroke-linecap="round"/></svg>
+{% elif tier=='basic' %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(100,181,246,0.08)" stroke="rgba(100,181,246,0.28)"/><rect x="14" y="14" width="28" height="28" rx="4" fill="none" stroke="#64b5f6" stroke-width="1.8"/><path d="M19 28 L24 33 L37 20" stroke="#64b5f6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{% else %}<svg viewBox="0 0 56 56" fill="none" width="52" height="52"><circle cx="28" cy="28" r="27" fill="rgba(0,230,118,0.08)" stroke="rgba(0,230,118,0.28)"/><circle cx="28" cy="28" r="11" fill="none" stroke="#00e676" stroke-width="1.8"/><path d="M28 17 L28 39 M17 28 L39 28" stroke="#00e676" stroke-width="2" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% macro node_svg(name) %}
+{% if 'legend' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(156,39,176,0.12)" stroke="rgba(206,147,216,0.4)"/><path d="M20 8 L32 30 L20 36 L8 30 Z" fill="none" stroke="#ce93d8" stroke-width="1.5"/><circle cx="20" cy="8" r="2.5" fill="#ffd700"/></svg>
+{% elif 'master' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(255,111,0,0.1)" stroke="rgba(255,111,0,0.4)"/><path d="M20 7 L33 27 L20 35 L7 27 Z" fill="none" stroke="#ff6f00" stroke-width="1.5"/></svg>
+{% elif 'elite' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(255,215,0,0.08)" stroke="rgba(255,215,0,0.4)"/><path d="M20 9 L23 16 L31 17 L25 23 L26.5 31 L20 27.5 L13.5 31 L15 23 L9 17 L17 16 Z" fill="none" stroke="#ffd700" stroke-width="1.5" stroke-linejoin="round"/></svg>
+{% elif 'pro' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(0,152,234,0.1)" stroke="rgba(0,152,234,0.4)"/><path d="M14 15 Q14 12.5 16.5 12.5 L23.5 12.5 Q26 12.5 26 15 Q26 17 24.5 18.5 L21 29 Q20.5 30.5 20 30.5 Q19.5 30.5 19 29 L15.5 18.5 Q14 17 14 15 Z" fill="none" stroke="#0098EA" stroke-width="1.8" stroke-linejoin="round"/><line x1="20" y1="15" x2="20" y2="26" stroke="#0098EA" stroke-width="1.8" stroke-linecap="round"/></svg>
+{% elif 'basic' in name %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(100,181,246,0.08)" stroke="rgba(100,181,246,0.35)"/><rect x="10" y="10" width="20" height="20" rx="3" fill="none" stroke="#64b5f6" stroke-width="1.5"/><path d="M14 20 L18 24 L26 16" stroke="#64b5f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{% else %}<svg viewBox="0 0 40 40" fill="none" width="36" height="36"><circle cx="20" cy="20" r="19" fill="rgba(0,230,118,0.08)" stroke="rgba(0,230,118,0.35)"/><circle cx="20" cy="20" r="8" fill="none" stroke="#00e676" stroke-width="1.5"/><path d="M20 12 L20 28 M12 20 L28 20" stroke="#00e676" stroke-width="1.8" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
 {% endblock %}
