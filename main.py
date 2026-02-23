@@ -10,7 +10,7 @@ import logging
 import html
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
 
 # Load environment
@@ -53,6 +53,14 @@ try:
 except ImportError:
     DB_AVAILABLE = False
     logger.warning("Database module not available")
+
+# Import notification helpers
+try:
+    from notifications import detect_lang, notify_welcome, notify_generic
+    NOTIF_AVAILABLE = True
+except ImportError:
+    NOTIF_AVAILABLE = False
+    logger.warning("Notifications module not available")
 
 
 def escape_html(text):
@@ -193,6 +201,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Create or update user in database
     if DB_AVAILABLE:
         existing_user = get_user(user_id)
+        is_new_user = existing_user is None
         if existing_user:
             update_user(user_id, username=username, first_name=first_name)
         else:
@@ -201,9 +210,15 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Increment stats
         increment_stat('total_starts')
+    else:
+        is_new_user = False
 
     # Check ALL channels membership
     is_member_all, missing_channels = await check_all_channels_membership(user_id, context)
+
+    # Detect user language
+    language_code = user.language_code if hasattr(user, 'language_code') else None
+    lang = detect_lang(language_code) if NOTIF_AVAILABLE else 'es'
 
     if not is_member_all:
         # Build list of channels for the message
@@ -279,6 +294,11 @@ async def verify_channels_callback(update: Update, context: ContextTypes.DEFAULT
             show_alert=True
         )
         return
+
+    # Send private welcome notification
+    if NOTIF_AVAILABLE:
+        language_code = user.language_code if hasattr(user, 'language_code') else None
+        notify_welcome(user_id, user.first_name or 'Usuario', language_code)
 
     # Show main menu
     welcome_text = (
@@ -517,6 +537,40 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
 
 
+async def generic_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde a CUALQUIER mensaje de texto que el usuario envíe al bot.
+    Siempre devuelve el menú principal con botón de apertura de la app,
+    en el idioma detectado automáticamente.
+    """
+    user = update.effective_user
+    if not user:
+        return
+
+    user_id = user.id
+    first_name = user.first_name or 'Usuario'
+    safe_first_name = escape_html(first_name)
+    language_code = user.language_code if hasattr(user, 'language_code') else None
+
+    # Send localized generic reply via notifications module
+    if NOTIF_AVAILABLE:
+        notify_generic(user_id, first_name, language_code)
+    else:
+        # Fallback: direct reply in Spanish
+        welcome_text = (
+            f"👋 <b>Hola {safe_first_name}!</b>\n\n"
+            "Usa el botón de abajo para acceder a SALLY-E. 👇"
+        )
+        try:
+            await update.message.reply_text(
+                welcome_text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_main_menu_keyboard(user_id)
+            )
+        except Exception as e:
+            logger.error(f"Error in generic handler: {e}")
+
+
 def main():
     """Función principal"""
     if not BOT_TOKEN:
@@ -540,6 +594,9 @@ def main():
 
     # Error handler
     application.add_error_handler(error_handler)
+
+    # Generic message handler — responds to any text message
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generic_message_handler))
 
     # Start bot
     print("🤖 SALLY-E Bot starting...")

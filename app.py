@@ -49,6 +49,17 @@ from database import (
     get_or_create_user_deposit_address, create_ton_deposit_pending
 )
 
+# ── NOTIFICATION HELPERS ──────────────────────────────────────────
+try:
+    from notifications import (
+        detect_lang,
+        notify_deposit, notify_withdrawal_approved, notify_withdrawal_rejected,
+        notify_plan_activated, notify_referral_validated, notify_welcome
+    )
+    _NOTIF_OK = True
+except ImportError:
+    _NOTIF_OK = False
+
 # Flask App Setup
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
@@ -343,21 +354,39 @@ def _validate_referral_on_purchase(user_id):
     if not referrer_id:
         return
 
+    referred_name = user.get('first_name') or user.get('username') or 'Usuario'
+
     # Check there is an unvalidated referral record
     ref_row = execute_query(
         "SELECT id, validated FROM referrals WHERE referrer_id = %s AND referred_id = %s LIMIT 1",
         (str(referrer_id), str(user_id)), fetch_one=True
     )
+    validated = False
     if not ref_row:
-        # Record may be missing — add and validate
         referrer = get_user(referrer_id)
         if referrer:
             add_referral(referrer_id, user_id, user.get('username'), user.get('first_name', 'Player'))
             validate_referral(str(referrer_id), str(user_id))
             logger.info(f"Referral validated on plan purchase: referrer={referrer_id} referred={user_id}")
+            validated = True
     elif not ref_row.get('validated'):
         validate_referral(str(referrer_id), str(user_id))
         logger.info(f"Referral validated on plan purchase: referrer={referrer_id} referred={user_id}")
+        validated = True
+
+    # ── Notificación al referidor ──
+    if validated and _NOTIF_OK:
+        try:
+            referrer_obj = get_user(referrer_id)
+            lang_code = referrer_obj.get('language_code') if referrer_obj else None
+            notify_referral_validated(
+                referrer_id=int(referrer_id),
+                referred_name=referred_name,
+                reward='1',
+                language_code=lang_code,
+            )
+        except Exception as _ne:
+            logger.warning(f"Referral notification error: {_ne}")
 
 def format_doge(amount):
     """Format DOGE amount for display"""
@@ -776,6 +805,24 @@ def _scan_and_credit_deposit(user_id, deposit_id):
 
             confirm_ton_deposit(deposit_id, tx_hash)
             logger.info(f"TON deposit auto-credited: {ton_amount} TON → {doge_credited} DOGE for user {user_id}")
+
+            # ── Notificación de depósito confirmado ──
+            if _NOTIF_OK:
+                try:
+                    user_obj = get_user(user_id)
+                    lang_code = user_obj.get('language_code') if user_obj else None
+                    from datetime import datetime as _dt
+                    notify_deposit(
+                        user_id=int(user_id),
+                        amount=ton_amount,
+                        currency='TON',
+                        credited=doge_credited,
+                        deposit_id=str(deposit_id),
+                        date=_dt.now().strftime('%Y-%m-%d %H:%M'),
+                        language_code=lang_code,
+                    )
+                except Exception as _ne:
+                    logger.warning(f"Deposit notification error: {_ne}")
             return
 
     except Exception as e:
@@ -802,6 +849,27 @@ def admin_ton_approve(deposit_id):
     data = request.get_json() or {}
     result = confirm_ton_deposit(deposit_id, data.get('tx_hash') or None)
     if result:
+        # ── Notificación de depósito aprobado por admin ──
+        if _NOTIF_OK:
+            try:
+                from database import execute_query as _eq
+                from datetime import datetime as _dt
+                dep = _eq("SELECT user_id, ton_amount, doge_credited FROM ton_deposits WHERE deposit_id=%s",
+                          (deposit_id,), fetch_one=True)
+                if dep:
+                    user_obj = get_user(dep['user_id'])
+                    lang_code = user_obj.get('language_code') if user_obj else None
+                    notify_deposit(
+                        user_id=int(dep['user_id']),
+                        amount=dep.get('ton_amount', '?'),
+                        currency='TON',
+                        credited=dep.get('doge_credited', '?'),
+                        deposit_id=str(deposit_id),
+                        date=_dt.now().strftime('%Y-%m-%d %H:%M'),
+                        language_code=lang_code,
+                    )
+            except Exception as _ne:
+                logger.warning(f"Admin deposit notification error: {_ne}")
         return jsonify({'success': True, 'message': 'DOGE acreditado correctamente'})
     return jsonify({'success': False, 'message': 'No encontrado o ya procesado'})
 
@@ -1104,6 +1172,26 @@ def api_mining_purchase(user):
     # ── Validate referral on first plan purchase ──────────────────
     if translated.get('success'):
         _validate_referral_on_purchase(user['user_id'])
+
+        # ── Notificación: plan activado ──
+        if _NOTIF_OK:
+            try:
+                plan = get_mining_plan(plan_id)
+                machines = get_user_machines(user['user_id'])
+                expires = None
+                if machines:
+                    exp = machines[0].get('expires_at')
+                    expires = exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else str(exp) if exp else 'N/A'
+                lang_code = user.get('language_code')
+                notify_plan_activated(
+                    user_id=int(user['user_id']),
+                    plan_name=plan.get('name', plan_id) if plan else str(plan_id),
+                    ton_per_hour=plan.get('ton_per_hour', '?') if plan else '?',
+                    expires=expires or 'N/A',
+                    language_code=lang_code,
+                )
+            except Exception as _ne:
+                logger.warning(f"Plan notification error: {_ne}")
 
     return jsonify(translated)
 
@@ -1831,6 +1919,28 @@ def admin_api_approve_withdrawal():
     if not withdrawal_id:
         return jsonify({'success': False, 'message': 'Missing withdrawal_id'})
     update_withdrawal(str(withdrawal_id), 'completed', tx_hash or None, note or None)
+
+    # ── Notificación al usuario ──
+    if _NOTIF_OK:
+        try:
+            from database import execute_query as _eq
+            from datetime import datetime as _dt
+            w = _eq("SELECT user_id, amount, currency, wallet_address FROM withdrawals WHERE withdrawal_id=%s OR id=%s",
+                    (str(withdrawal_id), str(withdrawal_id)), fetch_one=True)
+            if w:
+                user_obj = get_user(w['user_id'])
+                lang_code = user_obj.get('language_code') if user_obj else None
+                notify_withdrawal_approved(
+                    user_id=int(w['user_id']),
+                    amount=w.get('amount', '?'),
+                    currency=w.get('currency', 'DOGE'),
+                    wallet=w.get('wallet_address', '?'),
+                    withdrawal_id=str(withdrawal_id),
+                    date=_dt.now().strftime('%Y-%m-%d %H:%M'),
+                    language_code=lang_code,
+                )
+        except Exception as _ne:
+            logger.warning(f"Withdrawal approve notification error: {_ne}")
     return jsonify({'success': True})
 
 
@@ -1855,6 +1965,22 @@ def admin_api_reject_withdrawal():
         refund = float(w.get('amount', 0))
         if refund > 0:
             update_balance(w['user_id'], refund, 'withdrawal_refund', f'Withdrawal rejected: {reason}')
+
+        # ── Notificación al usuario ──
+        if _NOTIF_OK:
+            try:
+                user_obj = get_user(w['user_id'])
+                lang_code = user_obj.get('language_code') if user_obj else None
+                notify_withdrawal_rejected(
+                    user_id=int(w['user_id']),
+                    amount=w.get('amount', '?'),
+                    currency=w.get('currency', 'DOGE'),
+                    withdrawal_id=str(w['withdrawal_id']),
+                    reason=reason,
+                    language_code=lang_code,
+                )
+            except Exception as _ne:
+                logger.warning(f"Withdrawal reject notification error: {_ne}")
     return jsonify({'success': True})
 
 
