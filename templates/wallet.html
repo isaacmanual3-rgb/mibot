@@ -741,7 +741,7 @@
 
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
         {{ t.wl_deposit_from_any }}<br>
-        <span style="color:#ffd700;font-size:0.75rem">⚠ Incluye el MEMO/Comentario obligatoriamente</span>
+        <span style="color:#ffd700;font-size:0.75rem">{{ t.wl_dep_memo_warning }}</span>
       </p>
 
       <!-- QR Code -->
@@ -753,7 +753,7 @@
 
       <!-- Dirección del bot -->
       <div style="margin-bottom:12px">
-        <div style="font-family:var(--font-px);font-size:0.32rem;color:var(--muted);margin-bottom:5px;letter-spacing:.08em">DIRECCIÓN TON (envía aquí)</div>
+        <div style="font-family:var(--font-px);font-size:0.32rem;color:var(--muted);margin-bottom:5px;letter-spacing:.08em">{{ t.wl_dep_address_lbl }}</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div id="ton-dep-address" style="flex:1;background:var(--surface3);border:1px solid #333;padding:10px;font-size:0.68rem;color:#0098EA;word-break:break-all;line-height:1.4">{{ ton_wallet_address }}</div>
           <button onclick="copyDepAddr()" style="flex-shrink:0;background:#0098EA;border:none;color:#fff;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em" id="ton-copy-addr-btn">{{ t.wl_copy }}</button>
@@ -762,13 +762,13 @@
 
       <!-- MEMO obligatorio -->
       <div style="margin-bottom:16px">
-        <div style="font-family:var(--font-px);font-size:0.32rem;color:#ffd700;margin-bottom:5px;letter-spacing:.08em">MEMO / COMENTARIO (obligatorio ⚠)</div>
+        <div style="font-family:var(--font-px);font-size:0.32rem;color:#ffd700;margin-bottom:5px;letter-spacing:.08em">{{ t.wl_dep_memo_lbl }}</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div id="ton-dep-memo" style="flex:1;background:rgba(255,215,0,0.07);border:2px solid #ffd700;padding:10px;font-family:var(--font-px);font-size:0.5rem;color:#ffd700;letter-spacing:.1em;text-align:center">{{ user_deposit_memo }}</div>
           <button onclick="copyDepMemo()" style="flex-shrink:0;background:#c8a200;border:none;color:#1a1a2e;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em;font-weight:bold" id="ton-copy-memo-btn">{{ t.wl_copy }}</button>
         </div>
         <div style="font-size:0.72rem;color:#ff4d6a;margin-top:6px;line-height:1.4">
-          ⚠ Si no incluyes el MEMO tu depósito no se acreditará automáticamente.
+          {{ t.wl_dep_memo_warn2 }}
         </div>
       </div>
 
@@ -776,9 +776,9 @@
       <div id="ton-waiting-box" style="background:rgba(0,152,234,0.08);border:1px solid rgba(0,152,234,0.3);padding:12px;text-align:center;margin-bottom:14px">
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px">
           <div id="ton-pulse" style="width:10px;height:10px;background:#0098EA;border-radius:50%;animation:ton-pulse 1.5s ease-in-out infinite"></div>
-          <span style="font-family:var(--font-px);font-size:0.36rem;color:#0098EA;letter-spacing:.06em">ESPERANDO DEPÓSITO...</span>
+          <span style="font-family:var(--font-px);font-size:0.36rem;color:#0098EA;letter-spacing:.06em">{{ t.wl_dep_waiting }}</span>
         </div>
-        <div style="font-size:0.74rem;color:var(--text2)">Se acreditará automáticamente en segundos</div>
+        <div style="font-size:0.74rem;color:var(--text2)">{{ t.wl_dep_auto_credit }}</div>
       </div>
 
       <button id="ton-btn-cancel" class="wl-btn-cancel" style="width:100%">{{ t.wl_cancel }}</button>
@@ -789,7 +789,7 @@
       <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡TON ACREDITADO!</div>
+      <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">{{ t.wl_dep_credited }}</div>
       <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
       <button id="ton-btn-success-close" class="wl-btn-confirm">{{ t.wl_available }}</button>
     </div>

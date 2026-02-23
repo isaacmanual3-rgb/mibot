@@ -564,21 +564,21 @@
         <div class="mn-stat">
           <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span></div>
           <span class="mn-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
-          <span class="mn-stat-lbl">Machines</span>
+          <span class="mn-stat-lbl">{{ t.mn_stat_machines }}</span>
         </div>
         <div class="mn-stat" style="background:rgba(255,215,0,0.03); border-top:2px solid rgba(255,215,0,0.12);">
           <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
           </div>
           <span class="mn-stat-val">{{ format_ton(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
-          <span class="mn-stat-lbl">TON/Hour</span>
+          <span class="mn-stat-lbl">{{ t.mn_stat_ton_hour }}</span>
         </div>
         <div class="mn-stat">
           <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
           </div>
           <span class="mn-stat-val" id="pendingRewards">{{ format_ton(pending_rewards) }}</span>
-          <span class="mn-stat-lbl">Pending</span>
+          <span class="mn-stat-lbl">{{ t.mn_stat_pending }}</span>
         </div>
       </div>
     </div>
@@ -598,7 +598,7 @@
     <div class="mn-card">
       <div class="mn-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span>
-        Your Machines
+        {{ t.mn_your_machines }}
       </div>
       <div class="mn-machines">
         {% for machine in user_machines %}
@@ -627,7 +627,7 @@
               <div class="mn-status-dot"></div> {{ t.mn_mining_status }}
             </div>
             <div class="mn-machine-exp">
-              Exp: {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
+              {{ t.mn_expires }} {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
             </div>
           </div>
         </div>
@@ -640,7 +640,7 @@
     <div class="mn-card">
       <div class="mn-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
-        Mining Machines
+        {{ t.mn_machines_label }}
       </div>
       <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
         {{ t.mn_purchase_desc }}
@@ -671,7 +671,7 @@
             </div>
             <div class="mn-plan-price-block">
               <span class="mn-plan-price">
-                {% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}
+                {% if is_free %}{{ t.mn_free_label }}{% else %}{{ plan.price|int }} TON{% endif %}
               </span>
               <span class="mn-plan-price-unit">{{ t.mn_30_days }}</span>
             </div>
@@ -731,7 +731,7 @@
     <div class="mn-card">
       <div class="mn-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
-        How It Works
+        {{ t.mn_how_title }}
       </div>
       <div class="mn-steps">
         <div class="mn-step">
@@ -784,7 +784,7 @@
       <button class="mn-btn-cancel" onclick="closePurchaseModal()">{{ t.mn_modal_cancel }}</button>
       <button class="mn-btn-confirm" id="confirmPurchaseBtn" onclick="confirmPurchase()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-        CONFIRM
+        {{ t.mn_modal_confirm }}
       </button>
     </div>
   </div>
@@ -797,7 +797,8 @@ let currentPlanPrice = 0;
 
 function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
-  document.getElementById('purchaseMessage').textContent = `¿Activar el plan ${planName} por 30 días?`;
+  var msg = (window.I18N?.mn_activate_plan || '¿Activar el plan {name} por 30 días?').replace('{name}', planName);
+  document.getElementById('purchaseMessage').textContent = msg;
   document.getElementById('purchaseCost').textContent = price === 0 ? '{{ t.mn_modal_free }}' : `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
 }
@@ -809,7 +810,7 @@ async function confirmPurchase() {
   if (!currentPlanId) return;
   const btn = document.getElementById('confirmPurchaseBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="mn-spinner"></span> PROCESSING...';
+  btn.innerHTML = '<span class="mn-spinner"></span> ' + (window.I18N?.mn_processing || 'PROCESSING...');
   try {
     const res = await fetch('/api/mining/purchase', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -821,24 +822,24 @@ async function confirmPurchase() {
       showToast(data.message,'success');
       createPixelExplosion(window.innerWidth/2,window.innerHeight/2,'#00ff66');
       setTimeout(()=>location.reload(),1500);
-    } else { showToast(data.message||'{{ t.mn_purchase_failed }}','error'); }
-  } catch(e){ showToast('{{ t.mn_conn_error }}','error'); }
+    } else { showToast(data.message||(window.I18N?.mn_purchase_failed||'{{ t.mn_purchase_failed }}'),'error'); }
+  } catch(e){ showToast(window.I18N?.mn_conn_error||'{{ t.mn_conn_error }}','error'); }
   btn.disabled=false;
-  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> CONFIRM';
+  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> ' + (window.I18N?.mn_confirm||'{{ t.mn_modal_confirm }}');
 }
 async function claimMiningRewards() {
   const btn = document.querySelector('.claim-mining-btn');
   if(!btn||btn.disabled) return;
   btn.disabled=true;
-  btn.innerHTML='<span class="mn-spinner"></span> CLAIMING...';
+  btn.innerHTML='<span class="mn-spinner"></span> ' + (window.I18N?.mn_claiming||'CLAIMING...');
   try {
     const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
     const data = await res.json();
     if(data.success){ showToast(data.message,'success'); createCoinRain(10); setTimeout(()=>location.reload(),1500); }
-    else{ showToast(data.message||'{{ t.mn_claim_failed }}','error'); }
-  } catch(e){ showToast('{{ t.mn_conn_error }}','error'); }
+    else{ showToast(data.message||(window.I18N?.mn_claim_failed||'{{ t.mn_claim_failed }}'),'error'); }
+  } catch(e){ showToast(window.I18N?.mn_conn_error||'{{ t.mn_conn_error }}','error'); }
   btn.disabled=false;
-  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> CLAIM';
+  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> ' + (window.I18N?.mn_claim_btn||'{{ t.mn_claim_btn }}');
 }
 function updatePendingRewards(){
   fetch('/api/mining/stats').then(r=>r.json()).then(data=>{
