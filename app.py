@@ -1523,7 +1523,20 @@ def admin_config():
 @require_admin
 def admin_mining():
     """Admin panel: manage mining plans"""
-    plans = get_all_mining_plans(active_only=False)
+    raw_plans = get_all_mining_plans(active_only=False)
+    # Convert Decimal/other non-serializable types to plain Python types
+    plans = []
+    for p in (raw_plans or []):
+        plans.append({
+            'id':            p.get('id'),
+            'name':          p.get('name', ''),
+            'tier':          p.get('tier', ''),
+            'price':         float(p.get('price', 0)),
+            'hourly_rate':   float(p.get('hourly_rate', 0)),
+            'duration_days': int(p.get('duration_days', 30)),
+            'description':   p.get('description', '') or '',
+            'active':        int(p.get('active', 1)),
+        })
     return render_template('admin_mining.html', plans=plans, active_page='mining')
 
 @app.route('/admin/mining/plan/create', methods=['POST'])

@@ -1077,17 +1077,17 @@ def update_mining_plan(plan_id, name=None, price=None, hourly_rate=None, duratio
     """Update fields of an existing mining plan"""
     fields = []
     values = []
-    if name is not None:
-        fields.append("name = %s"); values.append(name)
-    if price is not None:
+    if name is not None and str(name).strip() != '':
+        fields.append("name = %s"); values.append(str(name).strip())
+    if price is not None and str(price).strip() != '':
         fields.append("price = %s"); values.append(float(price))
-    if hourly_rate is not None:
+    if hourly_rate is not None and str(hourly_rate).strip() != '':
         fields.append("hourly_rate = %s"); values.append(float(hourly_rate))
-    if duration_days is not None:
+    if duration_days is not None and str(duration_days).strip() != '':
         fields.append("duration_days = %s"); values.append(int(duration_days))
     if description is not None:
-        fields.append("description = %s"); values.append(description)
-    if active is not None:
+        fields.append("description = %s"); values.append(str(description))
+    if active is not None and str(active).strip() != '':
         fields.append("active = %s"); values.append(int(active))
     if not fields:
         return None
