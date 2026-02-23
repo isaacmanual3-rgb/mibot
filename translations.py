@@ -164,6 +164,20 @@ TRANSLATIONS = {
     'wl_copy':           {'en': 'COPY',                      'es': 'COPIAR'},
     'wl_copied':         {'en': 'COPIED!',                   'es': '¡COPIADO!'},
     'wl_available':      {'en': 'Available',                 'es': 'Disponible'},
+    'wl_processing_wd':  {'en': 'PROCESSING WITHDRAWAL...', 'es': 'PROCESANDO RETIRO...'},
+    'wl_withdrawal_sent':{'en': 'WITHDRAWAL SENT!',         'es': '¡RETIRO ENVIADO!'},
+    'wl_retry':          {'en': 'TRY AGAIN',                'es': 'INTENTAR DE NUEVO'},
+    'wl_enter_address':  {'en': 'Enter your TON address',   'es': 'Ingresa tu dirección TON'},
+    'wl_min_amount':     {'en': 'Minimum',                  'es': 'Mínimo'},
+    'wl_invalid_addr_hint': {
+        'en': '⚠ Invalid TON address. Must start with UQ or EQ and be 48 characters. Copy it directly from your wallet or exchange.',
+        'es': '⚠ Dirección TON inválida. Debe empezar con UQ o EQ y tener 48 caracteres. Cópiala directamente de tu wallet o exchange.'
+    },
+    'wl_amount_placeholder': {'en': 'Enter amount',         'es': 'Ingresa cantidad'},
+    'wl_ton_addr_placeholder': {
+        'en': 'UQ... or EQ... (any wallet or exchange)',
+        'es': 'UQ... o EQ... (cualquier wallet o exchange)'
+    },
 
     # ── TASKS PAGE ─────────────────────────────────────────────
     'tq_ticker': {
