@@ -297,7 +297,7 @@ const DogeQuest = {
             return result;
         } catch (error) {
             console.error('API Error:', error);
-            this.showToast('Connection error', 'error');
+            this.showToast((window.I18N?.connection_error || 'Connection error'), 'error');
             return { success: false, error: error.message };
         }
     },
@@ -342,7 +342,7 @@ const DogeQuest = {
         } else {
             btn.disabled = false;
             btn.innerHTML = 'CLAIM REWARD';
-            this.showToast(result.message || 'Already claimed today!', 'error');
+            this.showToast(result.message || (window.I18N?.already_claimed || 'Already claimed today!'), 'error');
         }
     },
 
@@ -356,7 +356,7 @@ const DogeQuest = {
             window.open(url, '_blank');
             
             // Show verification message
-            this.showToast('Verifying completion...', 'info');
+            this.showToast((window.I18N?.verifying || 'Verifying completion...'), 'info');
             
             // Wait a bit before verifying
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -389,7 +389,7 @@ const DogeQuest = {
             if (result.requires_join) {
                 this.showChannelModal(result.channel, taskId);
             } else {
-                this.showToast(result.message || 'Could not complete task', 'error');
+                this.showToast(result.message || (window.I18N?.task_failed || 'Could not complete task'), 'error');
             }
         }
     },
@@ -421,7 +421,7 @@ const DogeQuest = {
             '#00aaff'
         );
 
-        this.showToast('Link copied!', 'success');
+        this.showToast((window.I18N?.link_copied || 'Link copied!'), 'success');
     },
 
     shareReferralLink() {
@@ -463,12 +463,12 @@ const DogeQuest = {
         const wallet = walletInput.value.trim();
 
         if (!amount || amount <= 0) {
-            this.showToast('Enter a valid amount', 'error');
+            this.showToast((window.I18N?.enter_valid_amount || 'Enter a valid amount'), 'error');
             return;
         }
 
         if (!wallet || !wallet.startsWith('D') || wallet.length < 30) {
-            this.showToast('Enter a valid DOGE wallet address', 'error');
+            this.showToast((window.I18N?.enter_valid_wallet || 'Enter a valid DOGE wallet address'), 'error');
             return;
         }
 
@@ -479,12 +479,12 @@ const DogeQuest = {
 
         if (result.success) {
             this.closeModal('withdraw-modal');
-            this.showToast('Withdrawal request submitted!', 'success');
+            this.showToast((window.I18N?.withdrawal_submitted || 'Withdrawal request submitted!'), 'success');
             
             // Refresh page to show updated balance
             setTimeout(() => location.reload(), 1500);
         } else {
-            this.showToast(result.message || 'Withdrawal failed', 'error');
+            this.showToast(result.message || (window.I18N?.withdrawal_failed || 'Withdrawal failed'), 'error');
         }
     },
 
@@ -498,7 +498,7 @@ const DogeQuest = {
 
         const code = input.value.trim();
         if (!code) {
-            this.showToast('Enter a promo code', 'error');
+            this.showToast((window.I18N?.enter_promo || 'Enter a promo code'), 'error');
             return;
         }
 
@@ -516,7 +516,7 @@ const DogeQuest = {
             input.value = '';
             this.updateBalance(result.reward);
         } else {
-            this.showToast(result.message || 'Invalid code', 'error');
+            this.showToast(result.message || (window.I18N?.invalid_code || 'Invalid code'), 'error');
         }
 
         if (btn) {
