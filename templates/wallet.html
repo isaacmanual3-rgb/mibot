@@ -907,16 +907,16 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
       showWdStep('success');
       var msg = '';
       if (data.auto_sent) {
-        msg  = '✅ ¡TON enviado automáticamente!\n\n';
-        msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
-        msg += 'A: ' + addr;
+        msg  = (window.I18N?.wl_wd_auto_sent || '✅ ¡TON enviado automáticamente!') + '\n\n';
+        msg += data.doge_amount.toFixed(2) + ' TON → ' + data.ton_amount.toFixed(4) + ' TON\n';
+        msg += (window.I18N?.wl_wd_to || 'A:') + ' ' + addr;
         if (data.tx_hash) msg += '\nTX: ' + data.tx_hash.slice(0, 24) + '...';
       } else {
-        msg  = '⏳ Retiro registrado y en proceso\n\n';
-        msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
-        msg += 'A: ' + addr + '\n\n';
-        msg += 'ID: ' + (data.withdrawal_id || '—') + '\n';
-        msg += 'El TON se enviará en los próximos minutos.';
+        msg  = (window.I18N?.wl_wd_in_process || '⏳ Retiro registrado y en proceso') + '\n\n';
+        msg += data.doge_amount.toFixed(2) + ' TON → ' + data.ton_amount.toFixed(4) + ' TON\n';
+        msg += (window.I18N?.wl_wd_to || 'A:') + ' ' + addr + '\n\n';
+        msg += (window.I18N?.wl_wd_id || 'ID:') + ' ' + (data.withdrawal_id || '—') + '\n';
+        msg += (window.I18N?.wl_wd_send_soon || 'El TON se enviará en los próximos minutos.');
       }
       el('ton-wd-success-msg').textContent = msg;
 
@@ -1009,8 +1009,8 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
         if (d.status === 'credited' || d.status === 'confirmed') {
           clearInterval(pollTimer);
           showDepStep('success');
-          var msg = '✅ ' + d.ton_amount.toFixed(4) + ' TON recibidos\n';
-          msg += '+ ' + d.doge_credited.toFixed(2) + ' DOGE acreditados a tu cuenta';
+          var msg = '✅ ' + d.ton_amount.toFixed(4) + ' TON ' + (window.I18N?.wl_dep_received || 'recibidos') + '\n';
+          msg += '+ ' + d.doge_credited.toFixed(2) + ' DOGE ' + (window.I18N?.wl_dep_credited_to || 'acreditados a tu cuenta');
           el('ton-success-msg').textContent = msg;
         }
       } catch(e) { /* ignorar, seguir intentando */ }

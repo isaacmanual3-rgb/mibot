@@ -839,13 +839,7 @@
 
   <!-- Ticker -->
   <div class="tq-ticker" aria-hidden="true">
-    <span>
-      ★ TASKS ★&nbsp;&nbsp;&nbsp;
-      COMPLETE QUESTS TO EARN TON &nbsp;★&nbsp;&nbsp;&nbsp;
-      DAILY TASKS RESET EVERY 24H &nbsp;★&nbsp;&nbsp;&nbsp;
-      SPECIAL QUESTS = BIG REWARDS &nbsp;★&nbsp;&nbsp;&nbsp;
-      MUCH TASK. VERY TON. SO EARN. &nbsp;★&nbsp;&nbsp;&nbsp;
-    </span>
+    <span>{{ t.tq_ticker }}</span>
   </div>
 
   <div class="tq-page">
@@ -919,12 +913,12 @@
               <span class="tq-reward-val">+{{ format_ton(task.reward) }}</span>
             </div>
             {% if task.completed %}
-              <span class="tq-badge tq-badge-done">CLAIMED</span>
+              <span class="tq-badge tq-badge-done">{{ t.tq_claimed_badge }}</span>
             {% elif task.locked %}
               <span class="tq-badge tq-badge-locked">{{ t.tq_locked_badge }}</span>
             {% else %}
               <button class="tq-btn-start" onclick="startTask({{ task.id }}, '{{ task.link|default('#') }}', '{{ task.channel_id|default('') }}')">
-                START ▶
+                {{ t.tq_start_btn }}
               </button>
             {% endif %}
           </div>
@@ -952,7 +946,7 @@
     <div class="tq-modal-icon">◈</div>
     <div class="tq-modal-title">{{ t.tq_verify_membership }}</div>
     <p class="tq-modal-desc" id="verifyMessage">
-      Join the channel and click verify to claim your reward!
+      {{ t.tq_verify_hint }}
     </p>
 
     <!-- Steps -->
@@ -974,9 +968,9 @@
     </div>
 
     <div class="tq-modal-btns">
-      <button class="tq-modal-cancel" onclick="closeVerifyModal()">CANCEL</button>
+      <button class="tq-modal-cancel" onclick="closeVerifyModal()">{{ t.tq_cancel }}</button>
       <button class="tq-modal-verify" id="verifyBtn" onclick="verifyTask()">
-        <span>✓</span> VERIFY
+        <span>✓</span> {{ t.tq_verify }}
       </button>
     </div>
   </div>
@@ -1025,7 +1019,8 @@ async function verifyTask() {
     const data = await response.json();
     if (data.success) {
       closeVerifyModal();
-      showToast('Quest completed! +' + data.reward + ' TON', 'success');
+      const doneMsg = (window.I18N?.tq_quest_done || 'Quest completed! +{reward} TON').replace('{reward}', data.reward);
+      showToast(doneMsg, 'success');
       const taskCard = document.querySelector(`[data-task-id="${currentTaskId}"]`);
       if (taskCard) {
         taskCard.classList.add('tq-task-done');
@@ -1033,18 +1028,18 @@ async function verifyTask() {
         taskCard.querySelector('.tq-task-icon').innerHTML = '<i class="px-icon px-icon-check"></i>';
         taskCard.querySelector('.tq-task-right').innerHTML =
           '<div class="tq-reward"><span class="tq-reward-icon">Ð</span><span class="tq-reward-val">+' + data.reward + '</span></div>' +
-          '<span class="tq-badge tq-badge-done">CLAIMED</span>';
+          '<span class="tq-badge tq-badge-done">' + (window.I18N?.tq_claimed || 'CLAIMED') + '</span>';
       }
       if (data.new_balance) updateBalance(data.new_balance);
       createPixelExplosion(taskCard);
     } else {
-      showToast(data.message || 'Verification failed', 'error');
+      showToast(data.message || (window.I18N?.tq_verify_fail || 'Verification failed'), 'error');
     }
   } catch (error) {
-    showToast('Connection error', 'error');
+    showToast(window.I18N?.connection_error || 'Connection error', 'error');
   }
   btn.disabled = false;
-  btn.innerHTML = '<span>✓</span> {{ t.tq_verify }}';
+  btn.innerHTML = '<span>✓</span> ' + (window.I18N?.tq_verify || '{{ t.tq_verify }}');
 }
 
 async function completeTaskDirect(taskId) {
@@ -1056,13 +1051,14 @@ async function completeTaskDirect(taskId) {
     });
     const data = await response.json();
     if (data.success) {
-      showToast('Quest completed! +' + data.reward + ' TON', 'success');
+      const doneMsg = (window.I18N?.tq_quest_done || 'Quest completed! +{reward} TON').replace('{reward}', data.reward);
+      showToast(doneMsg, 'success');
       setTimeout(() => location.reload(), 1000);
     } else {
-      showToast(data.message || 'Task failed', 'error');
+      showToast(data.message || (window.I18N?.tq_task_fail || 'Task failed'), 'error');
     }
   } catch (error) {
-    showToast('Connection error', 'error');
+    showToast(window.I18N?.connection_error || 'Connection error', 'error');
   }
 }
 
