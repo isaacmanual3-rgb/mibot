@@ -1,80 +1,854 @@
 {% extends "base.html" %}
-{% block title %}Apple Farm{% endblock %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/apple_game.css') }}">
-{% endblock %}
+{% block title %}Mining - {{ user.first_name or 'Miner' }}{% endblock %}
 
 {% block content %}
-<div class="farm-container">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
 
-    <!-- ══ TOP STATS ══ -->
-    <div class="farm-stats-bar">
-        <div class="stat-chip">
-            <span class="stat-icon">🍎</span>
-            <div class="stat-info">
-                <span class="stat-label">Manzanas</span>
-                <span class="stat-value" id="appleCount">{{ user.apples | default(0) | int }}</span>
-            </div>
-        </div>
-        <div class="stat-chip">
-            <span class="stat-icon">⚡</span>
-            <div class="stat-info">
-                <span class="stat-label">Por hora</span>
-                <span class="stat-value" id="applesPerHour">0</span>
-            </div>
-        </div>
-        <div class="stat-chip">
-            <span class="stat-icon">🏅</span>
-            <div class="stat-info">
-                <span class="stat-label">Nivel</span>
-                <span class="stat-value" id="userLevel">{{ user.level | default(1) }}</span>
-            </div>
-        </div>
+/* ═══════════════════════════════
+   ROOT — GREEN ORB MINING THEME
+═══════════════════════════════ */
+:root {
+  --bg:          #080b08;
+  --bg2:         #0c110c;
+  --surface:     #101810;
+  --surface2:    #141f14;
+  --green:       #4dff6e;
+  --green2:      #2eff52;
+  --green-dim:   rgba(77,255,110,0.12);
+  --green-glow:  rgba(77,255,110,0.25);
+  --green-dark:  rgba(30,80,35,0.6);
+  --text:        #e2f0e4;
+  --text2:       #7a9b7d;
+  --muted:       #3a5a3d;
+  --border:      rgba(77,255,110,0.12);
+  --border2:     rgba(77,255,110,0.06);
+  --font:        'Space Grotesk', sans-serif;
+  --font2:       'Rajdhani', sans-serif;
+}
+
+/* ═══════════════════════════════
+   SHELL & RESET
+═══════════════════════════════ */
+.lm-shell *, .lm-shell *::before, .lm-shell *::after {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+}
+.lm-shell {
+  font-family: var(--font);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* subtle noise texture overlay */
+.lm-shell::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+  opacity: 0.4;
+}
+
+/* ═══════════════════════════════
+   TOP HEADER
+═══════════════════════════════ */
+.lm-header {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 0;
+}
+.lm-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--green);
+  box-shadow: 0 0 12px rgba(77,255,110,0.15);
+}
+.lm-greeting {
+  flex: 1;
+  padding: 0 14px;
+}
+.lm-greeting-text {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.lm-greeting-text span { color: var(--green); }
+.lm-bell {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.lm-bell:hover { background: var(--surface); }
+.lm-bell svg { stroke: var(--green); width: 20px; height: 20px; }
+
+/* ═══════════════════════════════
+   ORB SECTION
+═══════════════════════════════ */
+.lm-orb-section {
+  position: relative; z-index: 5;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 0;
+}
+
+/* The glowing animated blob */
+.lm-orb-wrap {
+  position: relative;
+  width: 260px; height: 260px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Background radial glow */
+.lm-orb-wrap::before {
+  content: '';
+  position: absolute;
+  width: 320px; height: 320px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(30,120,40,0.18) 0%, transparent 70%);
+  pointer-events: none;
+  animation: lm-pulse-bg 4s ease-in-out infinite;
+}
+@keyframes lm-pulse-bg {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50%       { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+}
+
+/* SVG Orb */
+.lm-orb-svg {
+  width: 240px; height: 240px;
+  animation: lm-morph 8s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(60,200,80,0.5)) drop-shadow(0 0 60px rgba(60,200,80,0.2));
+}
+
+@keyframes lm-morph {
+  0%   { d: path("M120,20 C165,18 200,55 205,95 C212,138 200,175 170,195 C140,215 95,215 70,195 C42,173 28,138 32,98 C36,58 75,22 120,20 Z"); }
+  20%  { d: path("M118,18 C166,22 205,52 208,98 C211,140 196,178 165,198 C136,216 90,218 65,196 C38,172 25,132 30,92 C35,52 70,14 118,18 Z"); }
+  40%  { d: path("M122,22 C168,16 208,58 210,100 C213,144 198,180 168,200 C138,218 90,216 66,194 C40,170 28,130 34,90 C40,50 76,28 122,22 Z"); }
+  60%  { d: path("M116,20 C162,14 202,50 207,92 C213,136 202,172 172,194 C142,214 96,218 68,198 C40,176 26,136 30,96 C34,56 70,26 116,20 Z"); }
+  80%  { d: path("M120,16 C168,20 207,54 210,96 C213,140 200,176 170,197 C140,216 94,218 68,197 C40,175 28,134 31,94 C34,54 72,12 120,16 Z"); }
+  100% { d: path("M120,20 C165,18 200,55 205,95 C212,138 200,175 170,195 C140,215 95,215 70,195 C42,173 28,138 32,98 C36,58 75,22 120,20 Z"); }
+}
+
+/* ── INNER GLOW LAYERS ── */
+.lm-orb-inner {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.lm-orb-layer {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.lm-orb-layer:nth-child(1) {
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(50,160,65,0.45) 0%, rgba(30,100,45,0.2) 50%, transparent 75%);
+  animation: lm-pulse 4s ease-in-out infinite;
+}
+.lm-orb-layer:nth-child(2) {
+  width: 130px; height: 130px;
+  background: radial-gradient(circle, rgba(70,220,90,0.5) 0%, rgba(40,150,60,0.3) 50%, transparent 75%);
+  animation: lm-pulse 4s ease-in-out infinite 0.5s;
+}
+.lm-orb-layer:nth-child(3) {
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(100,255,120,0.6) 0%, rgba(60,200,80,0.3) 60%, transparent 80%);
+  animation: lm-pulse 4s ease-in-out infinite 1s;
+}
+@keyframes lm-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.8; }
+  50%       { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+}
+
+/* Mining text inside orb */
+.lm-orb-label {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+}
+.lm-orb-status {
+  font-family: var(--font2);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(77,255,110,0.8);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════
+   EARNED AMOUNT
+═══════════════════════════════ */
+.lm-earned {
+  text-align: center;
+  margin-top: 18px;
+}
+.lm-earned-amount {
+  display: flex; align-items: baseline;
+  justify-content: center; gap: 6px;
+}
+.lm-earned-num {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.lm-earned-ticker {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--green);
+}
+.lm-earned-label {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════
+   ACTION BUTTONS ROW
+═══════════════════════════════ */
+.lm-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 20px 20px 0;
+  position: relative; z-index: 5;
+}
+.lm-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 50px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 0 0 0 transparent;
+}
+.lm-btn:hover, .lm-btn:active {
+  background: var(--surface2);
+  border-color: rgba(77,255,110,0.3);
+  box-shadow: 0 0 14px rgba(77,255,110,0.1);
+  transform: translateY(-1px);
+}
+.lm-btn svg { width: 18px; height: 18px; stroke: var(--green); flex-shrink: 0; }
+.lm-btn-primary {
+  background: var(--green-dark);
+  border-color: rgba(77,255,110,0.35);
+  color: var(--green);
+  box-shadow: 0 0 16px rgba(77,255,110,0.1);
+}
+.lm-btn-primary:hover {
+  background: rgba(40,100,45,0.8);
+  box-shadow: 0 0 20px rgba(77,255,110,0.2);
+}
+
+/* ═══════════════════════════════
+   STATS GRID
+═══════════════════════════════ */
+.lm-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px 20px 0;
+  position: relative; z-index: 5;
+}
+.lm-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+.lm-stat-card:hover { border-color: var(--border); }
+.lm-stat-title {
+  font-size: 0.72rem;
+  color: var(--text2);
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.lm-stat-title svg { width: 14px; height: 14px; stroke: var(--text2); flex-shrink: 0; }
+.lm-stat-value {
+  font-family: var(--font2);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex; align-items: center; gap: 6px;
+}
+.lm-stat-icon-circle {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--green-dim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lm-stat-icon-circle svg { width: 13px; height: 13px; stroke: var(--green); }
+.lm-stat-unit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+/* Timer specifically */
+.lm-stat-value.timer {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════
+   DIVIDER
+═══════════════════════════════ */
+.lm-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 20px 20px 0;
+}
+
+/* ═══════════════════════════════
+   BALANCE CARD
+═══════════════════════════════ */
+.lm-balance-card {
+  margin: 16px 20px 0;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 5;
+}
+.lm-balance-left {}
+.lm-balance-label { font-size: 0.72rem; color: var(--text2); margin-bottom: 6px; }
+.lm-balance-val {
+  font-family: var(--font2);
+  font-size: 1.7rem; font-weight: 700;
+  color: var(--text);
+}
+.lm-balance-val span { font-size: 1rem; color: var(--text2); margin-left: 4px; }
+.lm-balance-right {
+  display: flex; gap: 8px;
+}
+.lm-mini-btn {
+  height: 36px; padding: 0 14px;
+  border-radius: 10px;
+  background: var(--green-dark);
+  border: 1px solid rgba(77,255,110,0.3);
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 0.8rem; font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex; align-items: center;
+  transition: all 0.2s;
+}
+.lm-mini-btn:hover {
+  background: rgba(50,130,55,0.7);
+  box-shadow: 0 0 12px rgba(77,255,110,0.15);
+}
+
+/* ═══════════════════════════════
+   BOTTOM NAVIGATION
+═══════════════════════════════ */
+.lm-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 72px;
+  background: rgba(8,11,8,0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: space-around;
+  z-index: 100;
+  padding: 0 4px;
+}
+.lm-nav-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  flex: 1;
+  padding: 8px 0;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.lm-nav-item svg { width: 22px; height: 22px; stroke: var(--text2); transition: stroke 0.2s; }
+.lm-nav-item.active, .lm-nav-item:hover { color: var(--green); }
+.lm-nav-item.active svg, .lm-nav-item:hover svg { stroke: var(--green); }
+
+/* Center mining button */
+.lm-nav-center {
+  flex: 0 0 64px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.lm-nav-mine-btn {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 0 20px rgba(77,255,110,0.4), 0 4px 12px rgba(0,0,0,0.4);
+  transition: all 0.2s;
+  margin-top: -10px;
+}
+.lm-nav-mine-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 28px rgba(77,255,110,0.6);
+}
+.lm-nav-mine-btn svg {
+  width: 26px; height: 26px;
+  stroke: #080b08;
+  stroke-width: 2.5;
+}
+
+/* ═══════════════════════════════
+   ACTIVE/INACTIVE STATES
+═══════════════════════════════ */
+.lm-state-inactive .lm-orb-svg {
+  filter: drop-shadow(0 0 20px rgba(60,200,80,0.25)) drop-shadow(0 0 40px rgba(60,200,80,0.1));
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════
+   ANIMATIONS
+═══════════════════════════════ */
+@keyframes lm-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lm-header  { animation: lm-fade-up 0.4s ease both 0s; }
+.lm-orb-section { animation: lm-fade-up 0.4s ease both 0.08s; }
+.lm-earned  { animation: lm-fade-up 0.4s ease both 0.14s; }
+.lm-actions { animation: lm-fade-up 0.4s ease both 0.2s; }
+.lm-balance-card { animation: lm-fade-up 0.4s ease both 0.24s; }
+.lm-stats   { animation: lm-fade-up 0.4s ease both 0.3s; }
+
+/* countdown blink when < 1 min */
+@keyframes lm-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.lm-blink { animation: lm-blink 1s steps(1) infinite; }
+</style>
+
+<div class="lm-shell" id="lumiraShell">
+
+  <!-- ── HEADER ── -->
+  <div class="lm-header">
+    <div class="lm-avatar" id="lmAvatar">
+      {{ (user.first_name or 'M')[0] | upper }}
+    </div>
+    <div class="lm-greeting">
+      <div class="lm-greeting-text">
+        Hello, <span>{{ user.first_name or 'Miner' }}</span> 👋
+      </div>
+    </div>
+    <div class="lm-bell" title="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ── ORB SECTION ── -->
+  <div class="lm-orb-section" id="lmOrbSection">
+    <div class="lm-orb-wrap">
+      <!-- Glow layers -->
+      <div class="lm-orb-inner">
+        <div class="lm-orb-layer"></div>
+        <div class="lm-orb-layer"></div>
+        <div class="lm-orb-layer"></div>
+      </div>
+
+      <!-- Morphing SVG blob -->
+      <svg class="lm-orb-svg" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="orbGrad1" cx="40%" cy="35%" r="60%">
+            <stop offset="0%"   stop-color="#6aff82" stop-opacity="0.9"/>
+            <stop offset="45%"  stop-color="#2dbe48" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="#0d4018" stop-opacity="0.8"/>
+          </radialGradient>
+          <radialGradient id="orbGrad2" cx="65%" cy="65%" r="50%">
+            <stop offset="0%"   stop-color="#1a5c28" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#071508" stop-opacity="0.9"/>
+          </radialGradient>
+          <filter id="orbBlur">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+
+        <!-- Main blob shape -->
+        <path id="orbPath"
+          d="M120,20 C165,18 200,55 205,95 C212,138 200,175 170,195 C140,215 95,215 70,195 C42,173 28,138 32,98 C36,58 75,22 120,20 Z"
+          fill="url(#orbGrad2)"
+        />
+        <!-- Highlight layer -->
+        <path id="orbPathHL"
+          d="M120,20 C165,18 200,55 205,95 C212,138 200,175 170,195 C140,215 95,215 70,195 C42,173 28,138 32,98 C36,58 75,22 120,20 Z"
+          fill="url(#orbGrad1)"
+          opacity="0.7"
+        />
+        <!-- Inner bright spot -->
+        <ellipse cx="95" cy="82" rx="28" ry="22"
+          fill="rgba(180,255,190,0.15)"
+          transform="rotate(-20 95 82)"
+        />
+      </svg>
+
+      <!-- Mining status label -->
+      <div class="lm-orb-label">
+        <div class="lm-orb-status" id="lmOrbStatus">Mining (0%)</div>
+      </div>
     </div>
 
-    <!-- ══ NEXT APPLE TIMER ══ -->
-    <div class="timer-row">
-        <div class="timer-pill">
-            <span class="timer-dot"></span>
-            <span id="nextAppleTimer">Calculando...</span>
+    <!-- Earned amount -->
+    <div class="lm-earned">
+      <div class="lm-earned-amount">
+        <span class="lm-earned-num" id="lmEarnedNum">{{ "%.4f"|format(user.doge_balance|float) }}</span>
+        <span class="lm-earned-ticker">LUM</span>
+      </div>
+      <div class="lm-earned-label">Earned Lumira</div>
+    </div>
+  </div>
+
+  <!-- ── ACTION BUTTONS ── -->
+  <div class="lm-actions">
+    <button class="lm-btn" id="lmPingBtn" onclick="pingInactive()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+      Ping Inactive
+    </button>
+    <a href="{{ url_for('referrals') }}" class="lm-btn lm-btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+      Invite &amp; Earn
+    </a>
+  </div>
+
+  <!-- ── BALANCE CARD ── -->
+  <div class="lm-balance-card">
+    <div class="lm-balance-left">
+      <div class="lm-balance-label">TON Balance</div>
+      <div class="lm-balance-val">
+        {{ format_ton(user.doge_balance) }}<span>TON</span>
+      </div>
+    </div>
+    <div class="lm-balance-right">
+      <a href="{{ url_for('wallet') }}" class="lm-mini-btn">Wallet</a>
+      <a href="{{ url_for('mining') }}" class="lm-mini-btn">Plans</a>
+    </div>
+  </div>
+
+  <!-- ── STATS GRID ── -->
+  <div class="lm-stats">
+
+    <!-- Active Members -->
+    <div class="lm-stat-card">
+      <div class="lm-stat-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+        Active members
+      </div>
+      <div class="lm-stat-value">
+        <div class="lm-stat-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
         </div>
+        <span id="lmActiveMembers">{{ user.referral_count or 0 }}</span>
+      </div>
     </div>
 
-    <!-- ══ MAP IMAGE ══ -->
-    <div class="island-map-wrap">
-        <img src="{{ url_for('static', filename='img/tavukaltlik.webp') }}" 
-             alt="Apple Farm Islands" class="island-map-img" id="islandMap">
-
-        <!-- Tree overlays — positioned over each island -->
-        <div class="tree-nodes" id="treeNodes">
-            <!-- Rendered by JS -->
+    <!-- Bonus from mining team -->
+    <div class="lm-stat-card">
+      <div class="lm-stat-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        Bonus from mining team
+      </div>
+      <div class="lm-stat-value">
+        <div class="lm-stat-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
         </div>
+        <span id="lmTeamBonus">0.0</span>
+        <span class="lm-stat-unit">LUM / h</span>
+      </div>
     </div>
 
-    <!-- ══ TREE CARDS ══ -->
-    <div class="tree-cards-section">
-        <h2 class="section-title">🌳 Tus Árboles</h2>
-        <div class="tree-cards" id="treeCards">
-            <!-- Rendered by JS -->
+    <!-- Mining time left -->
+    <div class="lm-stat-card">
+      <div class="lm-stat-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Mining time left
+      </div>
+      <div class="lm-stat-value timer">
+        <div class="lm-stat-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
         </div>
+        <span id="lmTimeLeft">—</span>
+      </div>
     </div>
+
+    <!-- Current mining rate -->
+    <div class="lm-stat-card">
+      <div class="lm-stat-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Current mining rate
+      </div>
+      <div class="lm-stat-value">
+        <div class="lm-stat-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <span id="lmMiningRate">0.03</span>
+        <span class="lm-stat-unit">LUM / h</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── BOTTOM NAV ── -->
+  <nav class="lm-nav">
+    <a href="{{ url_for('explore') }}" class="lm-nav-item {% if request.endpoint == 'explore' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+      Airdrops
+    </a>
+    <a href="{{ url_for('tasks') }}" class="lm-nav-item {% if request.endpoint == 'tasks' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="2 17 12 22 22 17"/>
+        <polyline points="2 12 12 17 22 12"/>
+        <polyline points="12 2 2 7 12 12 22 7 12 2"/>
+      </svg>
+      Rewards
+    </a>
+
+    <!-- Center pickaxe -->
+    <div class="lm-nav-center">
+      <a href="{{ url_for('mining') }}" class="lm-nav-mine-btn" title="Mining">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2l8 8-10 10-2-2 2-2-6-6 2-2-2-2z"/>
+          <path d="M3 21l4-4"/>
+          <path d="M12 6l6 6"/>
+        </svg>
+      </a>
+    </div>
+
+    <a href="{{ url_for('wallet') }}" class="lm-nav-item {% if request.endpoint == 'wallet' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      Gaming
+    </a>
+    <a href="{{ url_for('index') }}" class="lm-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93l-1.41 1.41M5.34 5.34l1.41 1.41M19.07 19.07l-1.41-1.41M5.34 18.66l1.41-1.41M2 12h2M20 12h2M12 2v2M12 20v2"/>
+      </svg>
+      Settings
+    </a>
+  </nav>
 
 </div>
 
-<!-- ══ UNLOCK MODAL ══ -->
-<div class="modal-overlay" id="unlockModal" style="display:none">
-    <div class="modal-box">
-        <button class="modal-close" id="modalClose">✕</button>
-        <div class="modal-icon" id="modalIcon">🌳</div>
-        <h3 class="modal-title" id="modalTitle">Árbol de Manzana</h3>
-        <div class="modal-stats" id="modalStats"></div>
-        <button class="btn-buy" id="modalBuyBtn">Comprar</button>
-        <p class="modal-note" id="modalNote"></p>
-    </div>
-</div>
-{% endblock %}
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/apple_game.js') }}"></script>
+  /* ── State ── */
+  let miningActive = false;
+  let miningPct    = 0;
+  let timeLeft     = 0;     /* seconds */
+  let orbAnim;
+  let countdownTimer;
+  let tickTimer;
+  let loadTime = Date.now();
+  let localBase = 0;
+  let ratePerMs = 0;
+
+  /* ── Orb morphing paths ── */
+  const PATHS = [
+    "M120,20 C165,18 200,55 205,95 C212,138 200,175 170,195 C140,215 95,215 70,195 C42,173 28,138 32,98 C36,58 75,22 120,20 Z",
+    "M118,18 C166,22 205,52 208,98 C211,140 196,178 165,198 C136,216 90,218 65,196 C38,172 25,132 30,92 C35,52 70,14 118,18 Z",
+    "M122,22 C168,16 208,58 210,100 C213,144 198,180 168,200 C138,218 90,216 66,194 C40,170 28,130 34,90 C40,50 76,28 122,22 Z",
+    "M116,20 C162,14 202,50 207,92 C213,136 202,172 172,194 C142,214 96,218 68,198 C40,176 26,136 30,96 C34,56 70,26 116,20 Z",
+    "M120,16 C168,20 207,54 210,96 C213,140 200,176 170,197 C140,216 94,218 68,197 C40,175 28,134 31,94 C34,54 72,12 120,16 Z"
+  ];
+  let pathIdx = 0;
+
+  function animateOrb() {
+    const p  = $('orbPath');
+    const ph = $('orbPathHL');
+    if (!p) return;
+    pathIdx = (pathIdx + 1) % PATHS.length;
+    const next = PATHS[pathIdx];
+    if (p.animate) {
+      p.animate([{ d: next }], { duration: 3000, fill: 'forwards', easing: 'ease-in-out' });
+      ph.animate([{ d: next }], { duration: 3000, fill: 'forwards', easing: 'ease-in-out' });
+    } else {
+      p.setAttribute('d', next);
+      ph.setAttribute('d', next);
+    }
+    orbAnim = setTimeout(animateOrb, 3000);
+  }
+
+  /* ── Countdown ── */
+  function formatTime(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function startCountdown(seconds) {
+    timeLeft = seconds;
+    if (countdownTimer) clearInterval(countdownTimer);
+    const el = $('lmTimeLeft');
+    if (!el) return;
+    el.textContent = formatTime(timeLeft);
+    countdownTimer = setInterval(() => {
+      timeLeft = Math.max(0, timeLeft - 1);
+      el.textContent = formatTime(timeLeft);
+      if (timeLeft < 60) el.classList.add('lm-blink');
+      if (timeLeft === 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
+
+  /* ── Live earning ticker ── */
+  function startTicker(pending, hourlyRate) {
+    if (tickTimer) clearInterval(tickTimer);
+    loadTime   = Date.now();
+    localBase  = parseFloat(pending) || 0;
+    ratePerMs  = (parseFloat(hourlyRate) || 0) / 3600000;
+
+    tickTimer = setInterval(() => {
+      const elapsed = Date.now() - loadTime;
+      const total   = localBase + elapsed * ratePerMs;
+      const el = $('lmEarnedNum');
+      if (el) el.textContent = total.toFixed(4);
+
+      /* update orb pct */
+      const threshold = Math.max(0.001, (parseFloat(hourlyRate)||0.03) * 24);
+      miningPct = Math.min(99, (total / threshold) * 100);
+      const statusEl = $('lmOrbStatus');
+      if (statusEl) statusEl.textContent = `Mining (${miningPct.toFixed(0)}%)`;
+    }, 500);
+  }
+
+  /* ── Render active state ── */
+  function renderActive(data) {
+    miningActive = true;
+    const hourlyRate  = data.total_hourly_rate || 0.03;
+    const pending     = data.pending_rewards   || 0;
+    const timeSeconds = data.time_left_seconds || 86400;
+    const teamBonus   = data.team_bonus_rate   || 0;
+    const activeRef   = data.active_referrals  || 0;
+
+    if ($('lmActiveMembers')) $('lmActiveMembers').textContent = activeRef;
+    if ($('lmTeamBonus'))     $('lmTeamBonus').textContent     = teamBonus.toFixed(2);
+    if ($('lmMiningRate'))    $('lmMiningRate').textContent    = hourlyRate.toFixed(2);
+
+    startCountdown(timeSeconds);
+    startTicker(pending, hourlyRate);
+  }
+
+  /* ── Render inactive state ── */
+  function renderInactive() {
+    miningActive = false;
+    const el = $('lmOrbStatus');
+    if (el) el.textContent = 'Mining (0%)';
+    if ($('lmTimeLeft')) $('lmTimeLeft').textContent = '—';
+  }
+
+  /* ── Ping inactive button ── */
+  window.pingInactive = async function() {
+    const btn = $('lmPingBtn');
+    if (btn) { btn.textContent = 'Pinging…'; btn.disabled = true; }
+    try {
+      await fetch('/api/mining/ping', { method: 'POST' });
+    } catch(e) {}
+    setTimeout(() => {
+      if (btn) { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> Ping Inactive`; btn.disabled = false; }
+    }, 2000);
+  };
+
+  /* ── Load stats ── */
+  async function load() {
+    try {
+      const res  = await fetch('/api/mining/stats');
+      const data = await res.json();
+      if (data.success && data.total_machines > 0) renderActive(data);
+      else renderInactive();
+    } catch(e) {
+      renderInactive();
+    }
+  }
+
+  /* ── Boot ── */
+  animateOrb();
+  load();
+
+  /* silent poll every 30s */
+  setInterval(async () => {
+    try {
+      const res  = await fetch('/api/mining/stats');
+      const data = await res.json();
+      if (data.success && data.total_machines > 0) {
+        localBase = data.pending_rewards || 0;
+        loadTime  = Date.now();
+      }
+    } catch(e) {}
+  }, 30000);
+
+})();
+</script>
 {% endblock %}
