@@ -349,6 +349,41 @@ def validate_referral(referrer_id, referred_id):
 
     return True
 
+
+def pay_referral_commission(user_id, amount, source):
+    """Pay 5% lifetime commission to the referrer whenever user earns from mining or deposits.
+    Only pays if a validated referral exists (i.e. referred user already purchased a plan)."""
+    if not amount or float(amount) <= 0:
+        return
+
+    user = get_user(user_id)
+    if not user or not user.get('referred_by'):
+        return
+
+    referrer_id = user['referred_by']
+
+    # Only pay if the referral is validated (plan was purchased)
+    ref_row = execute_query(
+        "SELECT validated FROM referrals WHERE referrer_id = %s AND referred_id = %s LIMIT 1",
+        (str(referrer_id), str(user_id)), fetch_one=True
+    )
+    if not ref_row or not ref_row.get('validated'):
+        return
+
+    commission_pct = float(get_config('referral_commission_pct', '5')) / 100.0
+    commission = round(float(amount) * commission_pct, 8)
+    if commission <= 0:
+        return
+
+    # Credit referrer and track earnings
+    update_balance(referrer_id, commission, 'referral_commission',
+                   f"5% commission from {source} of user {user_id}")
+    execute_query(
+        "UPDATE users SET referral_earnings = referral_earnings + %s WHERE user_id = %s",
+        (commission, str(referrer_id))
+    )
+    logger.info(f"Referral commission: {commission:.8f} TON → referrer={referrer_id} from {source} of user={user_id}")
+
 def get_referrals(user_id, limit=50):
     """Get user's referrals"""
     query = """
@@ -1059,6 +1094,9 @@ def claim_mining_rewards(user_id):
         update_balance(user_id, total_claimed, 'mining_reward', 'Mining rewards claimed')
         increment_stat('total_doge_distributed', int(total_claimed * 100000000))
 
+        # Pay 5% lifetime commission to referrer (if any)
+        pay_referral_commission(user_id, total_claimed, 'mining')
+
         return {
             'success': True,
             'err_code': 'api_claimed_rewards',
@@ -1559,6 +1597,7 @@ def init_all_tables():
         ('daily_max_streak_bonus',   '0.05'),
         ('referral_bonus',           '0.05'),
         ('referral_commission',      '0.10'),
+        ('referral_commission_pct',  '5'),
         ('min_withdrawal',           '1.0'),
         ('withdrawal_fee',           '0.5'),
         ('withdrawal_mode',          'manual'),
@@ -1689,6 +1728,10 @@ def confirm_ton_deposit(deposit_id, ton_tx_hash=None):
             SET status = 'credited', ton_tx_hash = COALESCE(%s, ton_tx_hash), confirmed_at = NOW()
             WHERE deposit_id = %s
         """, (ton_tx_hash, deposit_id))
+
+        # Pay 5% lifetime commission to referrer (if any)
+        pay_referral_commission(deposit['user_id'], deposit['doge_credited'], 'deposit')
+
         return True
     return False
 
