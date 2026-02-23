@@ -236,6 +236,23 @@ TRANSLATIONS = {
     'tq_verify':      {'en': 'VERIFY',                    'es': 'VERIFICAR'},
     'tq_checking':    {'en': 'CHECKING...',               'es': 'VERIFICANDO...'},
     'tq_tasks_label': {'en': '★  ACTIVE QUESTS',          'es': '★  MISIONES ACTIVAS'},
+    'tq_start_btn':   {'en': 'START ▶',                   'es': 'INICIAR ▶'},
+    'tq_verify_hint': {
+        'en': 'Join the channel and click verify to claim your reward!',
+        'es': '¡Únete al canal y haz clic en verificar para reclamar tu recompensa!'
+    },
+    'tq_quest_done':  {'en': 'Quest completed! +{reward} TON', 'es': '¡Misión completada! +{reward} TON'},
+    'tq_verify_fail': {'en': 'Verification failed',       'es': 'Verificación fallida'},
+    'tq_task_fail':   {'en': 'Task failed',               'es': 'Error en la tarea'},
+    # Wallet withdrawal success messages
+    'wl_wd_auto_sent':{'en': '✅ TON sent automatically!', 'es': '✅ ¡TON enviado automáticamente!'},
+    'wl_wd_in_process':{'en': '⏳ Withdrawal registered and being processed', 'es': '⏳ Retiro registrado y en proceso'},
+    'wl_wd_to':       {'en': 'To:',                       'es': 'A:'},
+    'wl_wd_id':       {'en': 'ID:',                       'es': 'ID:'},
+    'wl_wd_send_soon':{'en': 'TON will be sent in the next few minutes.', 'es': 'El TON se enviará en los próximos minutos.'},
+    # Wallet deposit success messages
+    'wl_dep_received':{'en': 'TON received',              'es': 'TON recibidos'},
+    'wl_dep_credited_to':{'en': 'DOGE credited to your account', 'es': 'DOGE acreditados a tu cuenta'},
 
     # ── REFERRALS PAGE ─────────────────────────────────────────
     'rf_ticker': {
