@@ -1507,6 +1507,62 @@ def init_all_tables():
     """)
     log.info("✓ admin_sessions")
 
+    # ── Apple Farm tables ──────────────────────────────────────
+    execute_query("""
+        CREATE TABLE IF NOT EXISTS apple_trees (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            cost INT DEFAULT 0,
+            apples_per_hour DECIMAL(10,4) DEFAULT 1.0,
+            level_required INT DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """)
+    log.info("✓ apple_trees")
+
+    execute_query("""
+        CREATE TABLE IF NOT EXISTS apple_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id VARCHAR(50) NOT NULL UNIQUE,
+            apples DECIMAL(20,4) DEFAULT 0.0,
+            level INT DEFAULT 1,
+            last_claim DATETIME DEFAULT NULL,
+            total_earned DECIMAL(20,4) DEFAULT 0.0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """)
+    log.info("✓ apple_users")
+
+    execute_query("""
+        CREATE TABLE IF NOT EXISTS apple_user_trees (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id VARCHAR(50) NOT NULL,
+            tree_id INT NOT NULL,
+            quantity INT DEFAULT 1,
+            UNIQUE KEY unique_user_tree (user_id, tree_id),
+            INDEX idx_user_id (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """)
+    log.info("✓ apple_user_trees")
+
+    # Seed default apple trees if table is empty
+    tree_count = execute_query("SELECT COUNT(*) as c FROM apple_trees", fetch_one=True)
+    if tree_count and tree_count.get('c', 0) == 0:
+        default_trees = [
+            (1, 'Manzano Básico',    0,    1.0,  1),
+            (2, 'Manzano Verde',     100,  3.0,  2),
+            (3, 'Manzano Dorado',    500,  10.0, 5),
+            (4, 'Manzano Mágico',    2000, 30.0, 10),
+            (5, 'Manzano Legendario',10000,100.0, 20),
+        ]
+        for t in default_trees:
+            execute_query(
+                "INSERT IGNORE INTO apple_trees (id, name, cost, apples_per_hour, level_required) VALUES (%s,%s,%s,%s,%s)",
+                t
+            )
+        log.info("✓ default apple trees seeded")
+
     # ── Default config values ──────────────────────────────────
     config_defaults = [
         ('daily_base_reward',        '0.01'),
