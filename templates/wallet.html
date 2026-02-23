@@ -434,6 +434,23 @@
 .wl-btn-confirm:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 0 var(--gold-dark); }
 .wl-btn-confirm:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 var(--gold-dark); }
 .wl-btn-confirm:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* ── PAGINATION ── */
+.paginated-item.pag-hidden { display: none !important; }
+.pag-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 10px 0 2px;
+}
+.pag-btn {
+  font-family: var(--font-pixel); font-size: 0.38rem; letter-spacing: 0.06em;
+  padding: 6px 10px; border: 2px solid var(--border); background: var(--surface3);
+  color: var(--text2); cursor: pointer; box-shadow: 2px 2px 0 0 #020205;
+  transition: transform .07s, box-shadow .07s;
+}
+.pag-btn:hover  { color: var(--gold); border-color: var(--gold-dark); transform: translate(-1px,-1px); box-shadow: 3px 3px 0 0 #020205; }
+.pag-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+.pag-btn.active { background: var(--gold); color: #0a0800; border-color: var(--gold2); box-shadow: 2px 2px 0 0 var(--gold-dark); }
+.pag-info { font-family: var(--font-pixel); font-size: 0.36rem; color: var(--muted); }
 </style>
 
 <div class="wl-shell">
@@ -508,9 +525,9 @@
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         {{ t.wl_transactions }}
       </div>
-      <div class="wl-tx-list">
+      <div class="wl-tx-list" id="wd-list">
         {% for wd in withdrawals %}
-        <div class="wl-tx debit">
+        <div class="wl-tx debit paginated-item" data-list="wd-list">
           <div class="wl-tx-icon">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
           </div>
@@ -527,6 +544,7 @@
         </div>
         {% endfor %}
       </div>
+      <div id="wd-list-pagination" class="pag-bar"></div>
     </div>
     {% endif %}
 
@@ -538,9 +556,9 @@
       </div>
 
       {% if history %}
-      <div class="wl-tx-list">
+      <div class="wl-tx-list" id="tx-list">
         {% for tx in history %}
-        <div class="wl-tx {% if tx.amount > 0 %}credit{% else %}debit{% endif %}">
+        <div class="wl-tx {% if tx.amount > 0 %}credit{% else %}debit{% endif %} paginated-item" data-list="tx-list">
           <div class="wl-tx-icon">
             {% if tx.amount > 0 %}
               <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></span>
@@ -558,6 +576,7 @@
         </div>
         {% endfor %}
       </div>
+      <div id="tx-list-pagination" class="pag-bar"></div>
 
       {% else %}
       <div class="wl-empty">
@@ -1060,4 +1079,71 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
 })();
 </script>
 {% endif %}
+
+<script>
+/* ── Pagination helper ── */
+function initPagination(listId, pageSize) {
+  pageSize = pageSize || 5;
+  var items = document.querySelectorAll('#' + listId + ' .paginated-item');
+  if (!items.length) return;
+  var total = items.length;
+  var totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return; // no pagination needed
+
+  var current = 1;
+  var bar = document.getElementById(listId + '-pagination');
+
+  function render(page) {
+    current = page;
+    items.forEach(function(el, i) {
+      var inPage = i >= (page - 1) * pageSize && i < page * pageSize;
+      el.classList.toggle('pag-hidden', !inPage);
+    });
+    bar.innerHTML = '';
+
+    // Prev
+    var prev = document.createElement('button');
+    prev.className = 'pag-btn'; prev.textContent = '◀';
+    prev.disabled = (page === 1);
+    prev.onclick = function() { render(current - 1); };
+    bar.appendChild(prev);
+
+    // Page numbers (show max 5 around current)
+    var start = Math.max(1, page - 2);
+    var end   = Math.min(totalPages, start + 4);
+    start = Math.max(1, end - 4);
+    for (var p = start; p <= end; p++) {
+      (function(pg) {
+        var btn = document.createElement('button');
+        btn.className = 'pag-btn' + (pg === page ? ' active' : '');
+        btn.textContent = pg;
+        btn.onclick = function() { render(pg); };
+        bar.appendChild(btn);
+      })(p);
+    }
+
+    // Next
+    var next = document.createElement('button');
+    next.className = 'pag-btn'; next.textContent = '▶';
+    next.disabled = (page === totalPages);
+    next.onclick = function() { render(current + 1); };
+    bar.appendChild(next);
+
+    // Count info
+    var info = document.createElement('span');
+    info.className = 'pag-info';
+    var from = (page - 1) * pageSize + 1;
+    var to   = Math.min(page * pageSize, total);
+    info.textContent = from + '-' + to + ' / ' + total;
+    bar.appendChild(info);
+  }
+
+  render(1);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initPagination('wd-list', 5);
+  initPagination('tx-list', 5);
+});
+</script>
 {% endblock %}
