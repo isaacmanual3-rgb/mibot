@@ -1047,185 +1047,44 @@ canvas#oscCanvas {
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         MINING DASHBOARD — ULTRA PRO
-    ══════════════════════════════════════ -->
-    <div class="mdb-card" id="miningCard">
-      <div class="mdb-ambglow" id="mdbAmbglow"></div>
+    <!-- APPLE FARM CARD -->
+    <div class="px-card px-card-gold" id="appleFarmCard">
+      <div class="px-label">🍎 &nbsp;APPLE FARM</div>
 
-      <!-- ── HEADER BAR ── -->
-      <div class="mdb-header">
-        <div class="mdb-header-left">
-          <div class="mdb-tier-badge" id="mdbTierBadge">LOADING</div>
-          <span class="mdb-header-title">MINING RIG</span>
+      <!-- Stats row: árboles / manzanas por hora / pendiente -->
+      <div class="px-stats" style="margin-bottom:14px;">
+        <div class="px-stat-box">
+          <span class="px-stat-val" id="af-trees">0</span>
+          <span class="px-stat-lbl">ÁRBOLES</span>
         </div>
-        <div class="mdb-status-pill off" id="mdbStatusPill">
-          <div class="mdb-led off" id="mdbLed"></div>
-          <span id="mdbStatusTxt">OFFLINE</span>
+        <div class="px-stat-box">
+          <span class="px-stat-val" id="af-rate">0</span>
+          <span class="px-stat-lbl">🍎 / HORA</span>
         </div>
-      </div>
-
-      <!-- ══ ACTIVE STATE ══ -->
-      <div id="mdbActiveZone" style="display:none">
-
-        <!-- ── RIG VISUAL + LIVE COUNTER ── -->
-        <div class="mdb-canvas-zone">
-          <!-- GPU Rig -->
-          <div class="mdb-rig" id="mdbRig">
-            <div class="mdb-gpu-slot">
-              <div class="mdb-slot-led" style="--ld:1.1s;--ldel:0s"></div>
-              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:1.8s;--hdel:0s"></div></div>
-              <div class="mdb-gpu-fan fast">✦</div>
-            </div>
-            <div class="mdb-gpu-slot">
-              <div class="mdb-slot-led" style="--ld:0.9s;--ldel:0.3s"></div>
-              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:2.2s;--hdel:0.4s"></div></div>
-              <div class="mdb-gpu-fan fast">✦</div>
-            </div>
-            <div class="mdb-gpu-slot">
-              <div class="mdb-slot-led" style="--ld:1.3s;--ldel:0.6s"></div>
-              <div class="mdb-gpu-body"><div class="mdb-gpu-heat" style="--hd:1.6s;--hdel:0.2s"></div></div>
-              <div class="mdb-gpu-fan">✦</div>
-            </div>
-            <div class="mdb-psu">
-              <div class="mdb-psu-bar"><div class="mdb-psu-fill"></div></div>
-              <span class="mdb-psu-lbl">PSU</span>
-            </div>
-          </div>
-
-          <!-- Live earnings + rate -->
-          <div class="mdb-live-panel">
-            <div class="mdb-live-counter">
-              <span class="mdb-live-lbl">⛏ TOTAL PENDING</span>
-              <span class="mdb-live-amount" id="mdbLiveAmount">0.00000000</span>
-              <span class="mdb-live-unit">TON/span>
-            </div>
-            <div class="mdb-rate-row">
-              <div class="mdb-rate-cell">
-                <span class="mdb-rate-val" id="mdbRateHr">—</span>
-                <span class="mdb-rate-lbl">PER HOUR</span>
-              </div>
-              <div class="mdb-rate-cell">
-                <span class="mdb-rate-val blue" id="mdbRateDay">—</span>
-                <span class="mdb-rate-lbl">PER DAY</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── PROGRESS BAR ── -->
-        <div class="mdb-progress-section">
-          <div class="mdb-progress-header">
-            <span class="mdb-progress-title">⚡ MINING PROGRESS</span>
-            <span class="mdb-progress-pct" id="mdbPct">0%</span>
-          </div>
-          <div class="mdb-progress-track">
-            <div class="mdb-progress-fill" id="mdbProgressFill" style="width:0%">
-              <div class="mdb-progress-blocks">
-                <div class="mdb-pb"></div><div class="mdb-pb"></div><div class="mdb-pb"></div>
-                <div class="mdb-pb"></div><div class="mdb-pb"></div><div class="mdb-pb"></div>
-                <div class="mdb-pb"></div><div class="mdb-pb"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── OSCILLOSCOPE ── -->
-        <div class="mdb-osc-wrap">
-          <div class="mdb-osc-header">
-            <span class="mdb-osc-lbl">HASHRATE MONITOR</span>
-            <span class="mdb-osc-val" id="mdbHashVal">0 MH/s</span>
-          </div>
-          <div class="mdb-osc">
-            <canvas id="oscCanvas" height="36"></canvas>
-          </div>
-        </div>
-
-        <!-- ── UPTIME ROW ── -->
-        <div class="mdb-uptime-row">
-          <div class="mdb-uptime-item">
-            <span class="mdb-uptime-val" id="mdbUptimeMachines">1</span>
-            <span class="mdb-uptime-lbl">MACHINES</span>
-          </div>
-          <div class="mdb-uptime-sep"></div>
-          <div class="mdb-uptime-item">
-            <span class="mdb-uptime-val" id="mdbUptimePlan">—</span>
-            <span class="mdb-uptime-lbl">PLAN</span>
-          </div>
-          <div class="mdb-uptime-sep"></div>
-          <div class="mdb-uptime-item">
-            <span class="mdb-uptime-val" id="mdbUptimeExp">—</span>
-            <span class="mdb-uptime-lbl">EXPIRES</span>
-          </div>
-          <div class="mdb-uptime-sep"></div>
-          <div class="mdb-uptime-item">
-            <span class="mdb-uptime-val" id="mdbUptimeSince">—</span>
-            <span class="mdb-uptime-lbl">UPTIME</span>
-          </div>
-        </div>
-
-        <!-- ── TERMINAL LOG ── -->
-        <div class="mdb-terminal">
-          <div class="mdb-terminal-bar">
-            <div class="mdb-terminal-dot"></div>
-            <div class="mdb-terminal-dot"></div>
-            <div class="mdb-terminal-dot"></div>
-            <span class="mdb-terminal-title">MINING CONSOLE</span>
-          </div>
-          <div class="mdb-terminal-body">
-            <div class="mdb-log-stream" id="mdbLogStream"></div>
-          </div>
-        </div>
-
-        <!-- ── FOOTER ACTIONS ── -->
-        <div class="mdb-footer">
-          <button class="mdb-claim-btn" id="mdbClaimBtn" onclick="MDB.claim()" disabled>
-            ⏳ LOADING REWARDS...
-          </button>
-          <a class="mdb-sub-link" href="/mining">⛏ MANAGE MINING PLANS →</a>
-        </div>
-
-      </div>
-
-      <!-- ══ NO PLAN STATE ══ -->
-      <div id="mdbNoplanZone">
-        <div class="mdb-noplan">
-          <div class="mdb-noplan-rig">⛏</div>
-          <div class="mdb-noplan-title">RIG OFFLINE</div>
-          <div class="mdb-noplan-sub">PURCHASE A PLAN TO START<br>EARNING TON AUTOMATICALLY</div>
-
-          <!-- Plan preview -->
-          <div class="mdb-plan-preview">
-            <div class="mdb-plan-preview-row">
-              <span class="mdb-plan-preview-tier" style="color:#ff8a65">🔥 BRONZE</span>
-              <span class="mdb-plan-preview-rate">STARTER TIER</span>
-              <span class="mdb-plan-preview-earn">EARN TON/HR</span>
-            </div>
-            <div class="mdb-plan-preview-row">
-              <span class="mdb-plan-preview-tier" style="color:#b0bec5">🛡 SILVER</span>
-              <span class="mdb-plan-preview-rate">INTERMEDIATE</span>
-              <span class="mdb-plan-preview-earn">2× FASTER</span>
-            </div>
-            <div class="mdb-plan-preview-row">
-              <span class="mdb-plan-preview-tier" style="color:var(--px-gold)">★ GOLD</span>
-              <span class="mdb-plan-preview-rate">ADVANCED</span>
-              <span class="mdb-plan-preview-earn">5× FASTER</span>
-            </div>
-            <div class="mdb-plan-preview-row">
-              <span class="mdb-plan-preview-tier" style="color:#ce93d8">♛ LEGENDARY</span>
-              <span class="mdb-plan-preview-rate">MAXIMUM POWER</span>
-              <span class="mdb-plan-preview-earn">🔥 MAX TON</span>
-            </div>
-          </div>
-
-          <a class="mdb-cta-btn" href="/mining">
-            ⛏ GET STARTED NOW
-          </a>
+        <div class="px-stat-box" style="grid-column:span 2; background:#06060f; border-color:rgba(0,230,118,0.18);">
+          <span class="px-stat-val" id="af-pending" style="color:var(--px-green); text-shadow:0 0 14px rgba(0,230,118,0.5), 2px 2px 0 #003318;">0</span>
+          <span class="px-stat-lbl">🍎 PENDIENTES</span>
         </div>
       </div>
+
+      <!-- Harvest button (only visible when apples > 0) -->
+      <button class="px-btn px-btn-gold" id="af-harvest-btn"
+        style="display:none; margin-bottom:10px; background:var(--px-green); color:#020f06; border-color:#00c853; box-shadow:4px 4px 0 0 #003318;"
+        onclick="AF.harvest()">
+        🍎 COSECHAR <span id="af-harvest-count">0</span> MANZANAS
+      </button>
+
+      <!-- Link to tree shop -->
+      <a class="px-btn px-btn-gold" href="{{ url_for('mining') }}" style="text-align:center;">
+        🌳 COMPRAR ÁRBOLES →
+      </a>
+
+      <!-- Active trees list (populated by JS) -->
+      <div id="af-tree-list" style="margin-top:14px; display:flex; flex-direction:column; gap:6px;"></div>
 
     </div>
 
+    <!-- STATS -->
     <!-- STATS -->
     <div class="px-card">
       <div class="px-label">📊 &nbsp;YOUR STATS</div>
@@ -1287,352 +1146,165 @@ canvas#oscCanvas {
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════
-   MINING DASHBOARD ENGINE — ULTRA PRO
-   MDB = Mining Dashboard namespace
-═══════════════════════════════════════════════ */
-const MDB = (() => {
+/* ══════════════════════════════
+   APPLE FARM — index widget
+   Lógica: árboles producen 🍎/hr,
+   cosechar suma al balance TON
+══════════════════════════════ */
+const AF = (() => {
   'use strict';
 
-  /* ── State ─────────────────────────────────── */
-  let state = {
-    active: false,
-    pending: 0,
-    hourlyRate: 0,
-    dailyRate: 0,
-    planName: '',
-    tier: '',
-    expires: '',
-    machines: 0,
-    uptimeStart: null
-  };
+  let pending   = 0;   // manzanas acumuladas
+  let pph       = 0;   // manzanas por hora
+  let trees     = 0;   // total de árboles
+  let machines  = [];  // lista de máquinas activas
+  let lastTick  = Date.now();
+  let tickTimer = null;
 
-  /* realtime ticker: how much earned since last page load */
-  let localEarned = 0;
-  let localBase   = 0;
-  let loadTime    = Date.now();
-  let tickTimer   = null;
-
-  /* ── Helpers ────────────────────────────────── */
   const $ = id => document.getElementById(id);
-  const fmt = (n, d=8) => {
-    const v = parseFloat(n)||0;
-    return v.toFixed(d).replace(/\.?0+$/,'') || '0';
-  };
-  const fmtShort = n => {
-    const v = parseFloat(n)||0;
-    if (v === 0) return '0';
-    if (v < 0.001) return v.toFixed(8);
-    if (v < 1) return v.toFixed(6).replace(/0+$/,'');
-    return v.toFixed(4).replace(/\.?0+$/,'');
-  };
 
-  /* ── Oscilloscope Canvas ────────────────────── */
-  const oscBuf = new Array(80).fill(0);
-  let oscAnim = null;
-
-  function initOsc() {
-    const canvas = $('oscCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.offsetWidth; const H = 36;
-    canvas.width = W; canvas.height = H;
-
-    function drawOsc() {
-      /* add new sample with noise */
-      const base = 0.55 + (parseFloat(state.hourlyRate) / Math.max(1, parseFloat(state.hourlyRate)) * 0.3);
-      const noise = (Math.random() - 0.5) * 0.3;
-      oscBuf.shift();
-      oscBuf.push(Math.max(0.05, Math.min(0.95, base + noise)));
-
-      ctx.clearRect(0, 0, W, H);
-
-      /* grid */
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < W; x += 20) {
-        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-      }
-
-      /* glow line */
-      const grad = ctx.createLinearGradient(0,0,W,0);
-      grad.addColorStop(0,'rgba(0,230,118,0)');
-      grad.addColorStop(0.5,'rgba(0,230,118,0.9)');
-      grad.addColorStop(1,'rgba(0,230,118,0.4)');
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = '#00e676';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      oscBuf.forEach((v, i) => {
-        const x = (i / (oscBuf.length-1)) * W;
-        const y = H - v * H;
-        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      });
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      /* fill under line */
-      ctx.fillStyle = 'rgba(0,230,118,0.04)';
-      ctx.beginPath();
-      oscBuf.forEach((v, i) => {
-        const x = (i / (oscBuf.length-1)) * W;
-        const y = H - v * H;
-        i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      });
-      ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
-
-      oscAnim = requestAnimationFrame(drawOsc);
-    }
-    if (oscAnim) cancelAnimationFrame(oscAnim);
-    drawOsc();
-
-    /* hashrate label */
-    setInterval(() => {
-      const base = parseFloat(state.hourlyRate)||0;
-      const mhs = (base * 1000 + (Math.random()-0.5)*base*200).toFixed(1);
-      const el = $('mdbHashVal');
-      if (el) el.textContent = `${mhs} MH/s`;
-    }, 800);
+  function fmt(n) {
+    const v = Math.floor(n);
+    if (v >= 1e6) return (v/1e6).toFixed(1)+'M';
+    if (v >= 1e3) return (v/1e3).toFixed(1)+'k';
+    return v.toString();
   }
 
-  /* ── Terminal Log ──────────────────────────── */
-  const LOG_TEMPLATES = [
-    { t:'ok',   msgs: [
-        () => `BLOCK #${(Math.floor(Math.random()*9000000)+1000000)} FOUND`,
-        () => `HASH ${randHex(8)}...${randHex(4)} VERIFIED ✓`,
-        () => `+${fmtShort(state.hourlyRate/3600)} TON AWARDED`,
-        () => `SHARE ACCEPTED BY POOL`,
-      ]},
-    { t:'info', msgs: [
-        () => `NETWORK DIFF ${(Math.random()*20+5).toFixed(2)}T`,
-        () => `PING TO POOL: ${Math.floor(Math.random()*30+8)}ms`,
-        () => `HASHRATE STABLE @ ${((parseFloat(state.hourlyRate)||1)*1000).toFixed(0)} MH/s`,
-      ]},
-    { t:'warn', msgs: [
-        () => `STALE SHARE DETECTED — RETRYING`,
-        () => `RECONNECTING TO POOL...`,
-      ]},
-    { t:'hash', msgs: [
-        () => `${randHex(32)}`,
-        () => `nonce:${randHex(8)} target:${randHex(6)}ff`,
-      ]},
-  ];
+  // Tick: acumula manzanas en tiempo real
+  function tick() {
+    const now = Date.now();
+    const dt  = (now - lastTick) / 1000;  // segundos
+    lastTick  = now;
 
-  function randHex(n) {
-    return Array.from({length:n},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+    pending += (pph / 3600) * dt;
+
+    const pendingInt = Math.floor(pending);
+
+    // Actualiza display
+    const pe = $('af-pending'); if (pe) pe.textContent = fmt(pending);
+
+    // Muestra/oculta botón de cosechar
+    const hBtn = $('af-harvest-btn');
+    const hCnt = $('af-harvest-count');
+    if (hBtn) hBtn.style.display = pendingInt >= 1 ? '' : 'none';
+    if (hCnt) hCnt.textContent   = fmt(pending);
   }
 
-  const LOG_MAX = 6;
-  let logLines = [];
+  // Renderiza la lista de árboles activos
+  function renderTrees() {
+    const list = $('af-tree-list');
+    if (!list) return;
+    if (!machines.length) { list.innerHTML = ''; return; }
 
-  function pushLog() {
-    const pool = LOG_TEMPLATES;
-    const group = pool[Math.floor(Math.random()*pool.length)];
-    const msg = group.msgs[Math.floor(Math.random()*group.msgs.length)]();
-    logLines.push({ t: group.t, msg });
-    if (logLines.length > LOG_MAX) logLines.shift();
-
-    const stream = $('mdbLogStream');
-    if (!stream) return;
-    stream.innerHTML = logLines.map(l =>
-      `<span class="mdb-log-line ${l.t}">&gt; ${l.msg}</span>`
-    ).join('');
-    /* scroll to bottom */
-    const body = stream.closest('.mdb-terminal-body');
-    if (body) body.scrollTop = body.scrollHeight;
+    list.innerHTML = machines.map(m => {
+      const emoji = getEmoji(m.plan_name || '');
+      return `
+        <div style="background:var(--px-panel2);border:2px solid var(--px-border);
+          box-shadow:2px 2px 0 0 #020205;display:flex;align-items:center;
+          gap:10px;padding:8px 10px;position:relative;">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;
+            background:var(--px-green);box-shadow:0 0 6px rgba(0,230,118,.5);"></div>
+          <div style="flex-shrink:0;width:32px;height:32px;background:#07070f;
+            border:1px solid var(--px-border);display:flex;align-items:center;
+            justify-content:center;font-size:1.1rem;">${emoji}</div>
+          <div style="flex:1;">
+            <div style="font-size:0.38rem;color:var(--px-text);letter-spacing:.04em;
+              margin-bottom:4px;">${(m.plan_name||'Árbol').toUpperCase()}</div>
+            <div style="font-size:0.32rem;color:var(--px-muted);">
+              ${Math.floor(m.hourly_rate||0)} 🍎/hr
+            </div>
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:0.32rem;
+            color:var(--px-green);text-shadow:0 0 6px rgba(0,230,118,.4);">
+            ● ACTIVO
+          </div>
+        </div>`;
+    }).join('');
   }
 
-  /* ── Live Earning Ticker ────────────────────── */
-  function startTicker() {
-    if (tickTimer) clearInterval(tickTimer);
-    loadTime = Date.now();
-    localBase = parseFloat(state.pending) || 0;
-    localEarned = 0;
-    const ratePerMs = (parseFloat(state.hourlyRate)||0) / 3600000;
-
-    tickTimer = setInterval(() => {
-      const elapsed = Date.now() - loadTime;
-      localEarned = elapsed * ratePerMs;
-      const total = localBase + localEarned;
-
-      const el = $('mdbLiveAmount');
-      if (el) el.textContent = total.toFixed(8);
-
-      /* update progress % (target = 0.1 TON = 1 claim threshold) */
-      const threshold = Math.max(0.001, parseFloat(state.hourlyRate) * 0.5);
-      const pct = Math.min(100, (total / threshold) * 100);
-      const fill = $('mdbProgressFill');
-      const pctEl = $('mdbPct');
-      if (fill) fill.style.width = pct.toFixed(1)+'%';
-      if (pctEl) pctEl.textContent = pct.toFixed(0)+'%';
-
-      /* update claim button */
-      const btn = $('mdbClaimBtn');
-      if (btn && !btn.disabled) {
-        btn.innerHTML = `💰 CLAIM ${total.toFixed(6)} TON`;
-      }
-    }, 250);
+  function getEmoji(name) {
+    const n = name.toLowerCase();
+    if (n.includes('mísic') || n.includes('mistico') || n.includes('legendary')) return '🌸';
+    if (n.includes('dorad') || n.includes('elite'))   return '✨';
+    if (n.includes('granny') || n.includes('master')) return '🌿';
+    if (n.includes('gala')  || n.includes('pro'))     return '🌼';
+    if (n.includes('fuji')  || n.includes('basic'))   return '🍃';
+    return '🌱';
   }
 
-  /* ── Uptime timer ────────────────────────── */
-  function startUptime() {
-    state.uptimeStart = Date.now();
-    setInterval(() => {
-      const secs = Math.floor((Date.now() - state.uptimeStart) / 1000);
-      const h = Math.floor(secs/3600);
-      const m = Math.floor((secs%3600)/60);
-      const s = secs%60;
-      const el = $('mdbUptimeSince');
-      if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    }, 1000);
-  }
-
-  /* ── Render Active ──────────────────────────── */
-  function renderActive(data) {
-    state.active       = true;
-    state.pending      = data.pending_rewards || 0;
-    state.hourlyRate   = data.total_hourly_rate || 0;
-    state.dailyRate    = state.hourlyRate * 24;
-    state.planName     = (data.plan_name || 'CUSTOM').toUpperCase();
-    state.tier         = (data.tier || guessTier(state.planName)).toLowerCase();
-    state.expires      = data.expires_at ? data.expires_at.split('T')[0] : '—';
-    state.machines     = data.total_machines || 1;
-
-    /* header */
-    const badge = $('mdbTierBadge');
-    if (badge) {
-      badge.textContent = state.tier.toUpperCase();
-      badge.className = `mdb-tier-badge ${state.tier}`;
-    }
-    const pill = $('mdbStatusPill');
-    const led  = $('mdbLed');
-    const txt  = $('mdbStatusTxt');
-    if (pill) pill.className = 'mdb-status-pill on';
-    if (led)  led.className  = 'mdb-led';
-    if (txt)  txt.textContent = 'ONLINE';
-
-    /* ambient glow — green when active */
-    const glow = $('mdbAmbglow');
-    if (glow) glow.className = 'mdb-ambglow green';
-
-    /* uptime row */
-    if ($('mdbUptimeMachines')) $('mdbUptimeMachines').textContent = state.machines;
-    if ($('mdbUptimePlan'))     $('mdbUptimePlan').textContent     = state.planName.substring(0,8);
-    if ($('mdbUptimeExp'))      $('mdbUptimeExp').textContent      = state.expires;
-
-    /* rate cells */
-    if ($('mdbRateHr'))  $('mdbRateHr').textContent  = fmtShort(state.hourlyRate);
-    if ($('mdbRateDay')) $('mdbRateDay').textContent  = fmtShort(state.dailyRate);
-
-    /* stat box in summary */
-    if ($('statMachines')) $('statMachines').textContent = state.machines;
-
-    /* show active, hide noplan */
-    $('mdbActiveZone').style.display = '';
-    $('mdbNoplanZone').style.display = 'none';
-
-    /* enable claim btn */
-    const btn = $('mdbClaimBtn');
-    if (btn) {
-      btn.disabled = state.pending <= 0;
-      btn.innerHTML = state.pending > 0
-        ? `💰 CLAIM ${fmtShort(state.pending)} TON`
-        : `⛏ MINING... REWARDS ACCUMULATING`;
-    }
-
-    /* start subsystems */
-    startTicker();
-    startUptime();
-    initOsc();
-
-    /* log push every 2.5s */
-    pushLog();
-    setInterval(pushLog, 2500);
-  }
-
-  function guessTier(name) {
-    if (/legendary/i.test(name)) return 'legendary';
-    if (/diamond/i.test(name))   return 'diamond';
-    if (/gold/i.test(name))      return 'gold';
-    if (/silver/i.test(name))    return 'silver';
-    if (/bronze/i.test(name))    return 'bronze';
-    return 'basic';
-  }
-
-  /* ── Render Inactive ────────────────────────── */
-  function renderInactive() {
-    state.active = false;
-
-    const badge = $('mdbTierBadge');
-    if (badge) { badge.textContent = 'OFFLINE'; badge.className = 'mdb-tier-badge basic'; }
-    const pill = $('mdbStatusPill');
-    const led  = $('mdbLed');
-    const txt  = $('mdbStatusTxt');
-    if (pill) pill.className = 'mdb-status-pill off';
-    if (led)  led.className  = 'mdb-led off';
-    if (txt)  txt.textContent = 'OFFLINE';
-
-    if ($('statMachines')) $('statMachines').textContent = '0';
-
-    $('mdbActiveZone').style.display = 'none';
-    $('mdbNoplanZone').style.display = '';
-  }
-
-  /* ── Claim ──────────────────────────────────── */
-  async function claim() {
-    const btn = $('mdbClaimBtn');
+  // Cosechar: llama /api/mining/claim
+  async function harvest() {
+    const btn = $('af-harvest-btn');
     if (!btn || btn.disabled) return;
     btn.disabled = true;
-    btn.innerHTML = '<span style="animation:mdb-blink .4s steps(1) infinite;display:inline-block">⏳</span> PROCESSING...';
+    btn.innerHTML = '⏳ COSECHANDO...';
+
     try {
-      const res  = await fetch('/api/mining/claim', {method:'POST',headers:{'Content-Type':'application/json'}});
+      const res  = await fetch('/api/mining/claim', {
+        method:'POST', headers:{'Content-Type':'application/json'}
+      });
       const data = await res.json();
       if (data.success) {
-        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message, 'success');
-        if (window.DogeQuest?.createCoinRain) DogeQuest.createCoinRain(16);
+        pending = 0;
+        tick();
+        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message || '🍎 Cosecha exitosa!', 'success');
+        if (window.DogeQuest?.createCoinRain) DogeQuest.createCoinRain(12);
         setTimeout(() => location.reload(), 1500);
       } else {
-        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message || 'Claim failed', 'error');
+        if (window.DogeQuest?.showToast) DogeQuest.showToast(data.message || 'Error', 'error');
         btn.disabled = false;
-        btn.innerHTML = '💰 CLAIM REWARDS';
+        btn.innerHTML = '🍎 COSECHAR <span id="af-harvest-count">' + fmt(pending) + '</span> MANZANAS';
       }
     } catch(e) {
-      if (window.DogeQuest?.showToast) DogeQuest.showToast('Connection error', 'error');
+      if (window.DogeQuest?.showToast) DogeQuest.showToast('Error de conexión', 'error');
       btn.disabled = false;
-      btn.innerHTML = '💰 CLAIM REWARDS';
+      btn.innerHTML = '🍎 COSECHAR <span id="af-harvest-count">' + fmt(pending) + '</span> MANZANAS';
     }
   }
 
-  /* ── Load & Poll ──────────────────────────── */
+  // Carga estado inicial desde /api/mining/stats
   async function load() {
     try {
       const res  = await fetch('/api/mining/stats');
       const data = await res.json();
-      if (data.success && data.total_machines > 0) renderActive(data);
-      else renderInactive();
-    } catch(e) { renderInactive(); }
+
+      if (data.success) {
+        pending  = parseFloat(data.pending_rewards) || 0;
+        pph      = parseFloat(data.total_hourly_rate) || 0;
+        trees    = parseInt(data.total_machines)  || 0;
+        machines = data.machines || [];
+
+        const te = $('af-trees'); if (te) te.textContent = trees;
+        const re = $('af-rate');  if (re) re.textContent = fmt(pph);
+
+        renderTrees();
+      }
+    } catch(e) {}
+
+    // Inicia ticker en tiempo real
+    lastTick  = Date.now();
+    if (tickTimer) clearInterval(tickTimer);
+    tickTimer = setInterval(tick, 500);
+    tick();
   }
 
-  /* silent poll every 30s — only update pending */
+  // Refresca pendiente cada 30s sin recargar
   setInterval(async () => {
     try {
       const res  = await fetch('/api/mining/stats');
       const data = await res.json();
-      if (data.success && data.total_machines > 0) {
-        /* reset base so ticker stays accurate */
-        localBase   = data.pending_rewards || 0;
-        localEarned = 0;
-        loadTime    = Date.now();
-        state.pending = localBase;
+      if (data.success) {
+        pending  = parseFloat(data.pending_rewards) || 0;
+        pph      = parseFloat(data.total_hourly_rate) || 0;
+        trees    = parseInt(data.total_machines) || 0;
+        lastTick = Date.now();
       }
     } catch(e) {}
   }, 30000);
 
-  /* boot */
   load();
 
-  return { claim };
+  return { harvest };
 })();
 </script>
 {% endblock %}
