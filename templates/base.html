@@ -233,6 +233,23 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- I18N: traducciones para JS (generado desde Jinja2) -->
+    <script>
+    window.I18N = {
+      connection_error:    "{{ t.js_connection_error }}",
+      link_copied:         "{{ t.js_link_copied }}",
+      enter_valid_amount:  "{{ t.js_enter_valid_amount }}",
+      enter_valid_wallet:  "{{ t.js_enter_valid_wallet }}",
+      withdrawal_submitted:"{{ t.js_withdrawal_submitted }}",
+      withdrawal_failed:   "{{ t.js_withdrawal_failed }}",
+      enter_promo:         "{{ t.js_enter_promo }}",
+      invalid_code:        "{{ t.js_invalid_code }}",
+      verifying:           "{{ t.js_verifying }}",
+      task_failed:         "{{ t.js_task_failed }}",
+      already_claimed:     "{{ t.js_already_claimed }}"
+    };
+    </script>
+
     <!-- JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 

@@ -987,7 +987,8 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
       var btn = el('ton-copy-addr-btn');
       if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = '{{ t.wl_copy }}'; }, 2000); }
     });
-  }\n  window.copyDepAddr = copyDepAddr;
+  }
+  window.copyDepAddr = copyDepAddr;
 
   function copyDepMemo() {
     navigator.clipboard.writeText(MEMO).then(function() {
