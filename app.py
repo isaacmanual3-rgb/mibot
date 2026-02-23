@@ -2432,41 +2432,232 @@ def _handle_callback(cq):
 
 # ─── Ruta webhook ────────────────────────────────────────
 
+def _process_update(update):
+    """Procesa un update de Telegram."""
+    if 'message' in update:
+        msg = update['message']
+        text = msg.get('text', '')
+        chat_type = msg.get('chat', {}).get('type', '')
+        if chat_type != 'private':
+            return
+        if text.startswith('/start'):
+            _handle_start(msg)
+        elif text.startswith('/help'):
+            user = msg['from']
+            lang = _detect_lang_from_update(user)
+            _bot_send(user['id'], _welcome_text(user.get('first_name', ''), lang), _main_keyboard(user['id'], lang))
+        elif text and not text.startswith('/'):
+            _handle_message(msg)
+    elif 'callback_query' in update:
+        _handle_callback(update['callback_query'])
+
+
 @app.route(f'/webhook/{BOT_TOKEN}', methods=['POST'])
 def telegram_webhook():
-    """Recibe los updates de Telegram vía webhook."""
+    """Recibe updates de Telegram vía webhook (URL con token)."""
     try:
         update = request.get_json(force=True, silent=True) or {}
-        logger.debug(f"Webhook update: {update.get('update_id')}")
-
-        if 'message' in update:
-            msg = update['message']
-            text = msg.get('text','')
-            # Solo mensajes privados
-            if msg.get('chat',{}).get('type') != 'private':
-                return 'ok', 200
-            if text.startswith('/start'):
-                _handle_start(msg)
-            elif text.startswith('/help'):
-                user = msg['from']
-                lang = _detect_lang_from_update(user)
-                _bot_send(user['id'], _welcome_text(user.get('first_name',''), lang), _main_keyboard(user['id'], lang))
-            elif not text.startswith('/'):
-                _handle_message(msg)
-
-        elif 'callback_query' in update:
-            _handle_callback(update['callback_query'])
-
+        _process_update(update)
     except Exception as e:
-        logger.error(f"Webhook handler error: {e}", exc_info=True)
-
+        logger.error(f"Webhook error: {e}", exc_info=True)
     return 'ok', 200
+
+
+@app.route('/tgwebhook', methods=['POST'])
+def telegram_webhook_simple():
+    """Ruta alternativa de webhook sin token en URL (para PythonAnywhere/proxies)."""
+    # Verificar que viene de Telegram con el token en header o body
+    try:
+        update = request.get_json(force=True, silent=True) or {}
+        _process_update(update)
+    except Exception as e:
+        logger.error(f"Webhook simple error: {e}", exc_info=True)
+    return 'ok', 200
+
+
+# ─── Diagnóstico público ─────────────────────────────────
+
+@app.route('/bot-status')
+def bot_status():
+    """Página de diagnóstico del bot — accesible sin login."""
+    token = BOT_TOKEN
+    webapp = _WEBAPP_URL
+    channels = _OFFICIAL_CHANNELS
+
+    results = {}
+
+    # 1. Verificar BOT_TOKEN
+    results['bot_token_set'] = bool(token)
+
+    # 2. Verificar WEBAPP_URL
+    results['webapp_url'] = webapp or '❌ NO CONFIGURADO'
+    results['webapp_url_ok'] = bool(webapp and webapp.startswith('http'))
+
+    # 3. Verificar canales configurados
+    results['channels'] = channels or ['⚠️ Ningún canal configurado']
+
+    # 4. Llamar getMe para verificar el token
+    if token:
+        try:
+            r = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=8)
+            data = r.json()
+            if data.get('ok'):
+                bot_info = data['result']
+                results['bot_info'] = {
+                    'ok': True,
+                    'username': bot_info.get('username'),
+                    'first_name': bot_info.get('first_name'),
+                    'id': bot_info.get('id'),
+                }
+            else:
+                results['bot_info'] = {'ok': False, 'error': data.get('description', 'Token inválido')}
+        except Exception as e:
+            results['bot_info'] = {'ok': False, 'error': str(e)}
+    else:
+        results['bot_info'] = {'ok': False, 'error': 'BOT_TOKEN no configurado'}
+
+    # 5. Verificar webhook actual
+    if token:
+        try:
+            r = requests.get(f"https://api.telegram.org/bot{token}/getWebhookInfo", timeout=8)
+            wh = r.json()
+            if wh.get('ok'):
+                info = wh['result']
+                results['webhook'] = {
+                    'url': info.get('url') or '❌ NO REGISTRADO',
+                    'has_custom_certificate': info.get('has_custom_certificate'),
+                    'pending_update_count': info.get('pending_update_count', 0),
+                    'last_error': info.get('last_error_message', 'Ninguno'),
+                    'last_error_date': info.get('last_error_date'),
+                }
+                results['webhook_registered'] = bool(info.get('url'))
+            else:
+                results['webhook'] = {'error': wh.get('description')}
+                results['webhook_registered'] = False
+        except Exception as e:
+            results['webhook'] = {'error': str(e)}
+            results['webhook_registered'] = False
+
+    # 6. Determinar URLs de webhook correctas
+    host = request.host_url.rstrip('/')
+    results['correct_webhook_url'] = f"{host}/webhook/{token}"
+    results['simple_webhook_url'] = f"{host}/tgwebhook"
+
+    # Generar HTML de diagnóstico
+    def badge(ok):
+        return '<span style="color:green;font-weight:bold">✅ OK</span>' if ok else '<span style="color:red;font-weight:bold">❌ FALLO</span>'
+
+    html_out = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Bot Status — SALLY-E</title>
+<style>
+  body{{font-family:monospace;background:#0d1117;color:#e6edf3;padding:2rem;}}
+  h1{{color:#58a6ff;}} h2{{color:#79c0ff;border-bottom:1px solid #30363d;padding-bottom:.3rem;}}
+  .card{{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.2rem;margin:1rem 0;}}
+  .ok{{color:#3fb950;}} .err{{color:#f85149;}} .warn{{color:#e3b341;}}
+  code{{background:#0d1117;padding:.2rem .4rem;border-radius:4px;color:#79c0ff;word-break:break-all;}}
+  a.btn{{display:inline-block;background:#238636;color:#fff;padding:.5rem 1.2rem;border-radius:6px;text-decoration:none;margin:.3rem;}}
+  a.btn.red{{background:#b62324;}} a.btn.blue{{background:#1f6feb;}}
+  table{{width:100%;border-collapse:collapse;}} td,th{{padding:.4rem .8rem;border:1px solid #30363d;text-align:left;}}
+</style></head><body>
+<h1>🤖 SALLY-E Bot — Diagnóstico</h1>
+
+<div class="card">
+  <h2>1. Bot Token</h2>
+  {"<p class='ok'>✅ Token configurado</p>" if results['bot_token_set'] else "<p class='err'>❌ BOT_TOKEN no configurado en variables de entorno</p>"}
+  {f"<p>Bot: <b>@{results['bot_info'].get('username','?')}</b> (ID: {results['bot_info'].get('id','?')})</p>" if results.get('bot_info',{}).get('ok') else f"<p class='err'>Error: {results.get('bot_info',{}).get('error','?')}</p>"}
+</div>
+
+<div class="card">
+  <h2>2. WEBAPP_URL</h2>
+  {"<p class='ok'>✅ Configurado: <code>" + results['webapp_url'] + "</code></p>" if results['webapp_url_ok'] else "<p class='err'>❌ WEBAPP_URL no configurado o inválido: <code>" + results['webapp_url'] + "</code></p>"}
+  <p class='warn'>⚠️ Debe ser la URL pública de tu servidor Flask (ej: <code>https://miapp.pythonanywhere.com</code>)</p>
+</div>
+
+<div class="card">
+  <h2>3. Webhook</h2>
+  {"<p class='ok'>✅ Webhook registrado: <code>" + results.get('webhook',{}).get('url','') + "</code></p>" if results.get('webhook_registered') else "<p class='err'>❌ Webhook NO registrado. El bot no puede recibir mensajes.</p>"}
+  {"<p class='err'>⚠️ Último error: " + str(results.get('webhook',{}).get('last_error','')) + "</p>" if results.get('webhook',{}).get('last_error','Ninguno') != 'Ninguno' else ""}
+  {"<p class='warn'>Pending updates: " + str(results.get('webhook',{}).get('pending_update_count',0)) + "</p>" if results.get('webhook',{}).get('pending_update_count',0) > 0 else ""}
+  <p>URL correcta para tu servidor:<br><code>{results['correct_webhook_url']}</code></p>
+  <p>URL alternativa (más simple):<br><code>{results['simple_webhook_url']}</code></p>
+  <br>
+  <a class="btn" href="/bot-setup-webhook">🔧 Registrar Webhook Ahora</a>
+  <a class="btn blue" href="/bot-status">🔄 Actualizar diagnóstico</a>
+</div>
+
+<div class="card">
+  <h2>4. Canales Oficiales</h2>
+  {"".join(f"<p>📢 {ch}</p>" for ch in results['channels'])}
+  <p class='warn'>Configura OFFICIAL_CHANNELS en tus variables de entorno</p>
+</div>
+
+<div class="card">
+  <h2>5. Acciones</h2>
+  <a class="btn" href="/bot-setup-webhook">🔧 Registrar Webhook</a>
+  <a class="btn red" href="/bot-delete-webhook">🗑️ Eliminar Webhook</a>
+  <a class="btn blue" href="/bot-send-test">📨 Enviar Mensaje de Prueba</a>
+</div>
+</body></html>"""
+    return html_out
+
+
+@app.route('/bot-setup-webhook')
+def bot_setup_webhook_public():
+    """Registra el webhook — accesible sin login para facilitar setup."""
+    if not BOT_TOKEN:
+        return jsonify({'ok': False, 'error': 'BOT_TOKEN no configurado'}), 400
+
+    base_url = request.host_url.rstrip('/')
+    webhook_url = f"{base_url}/webhook/{BOT_TOKEN}"
+
+    result = _bot_api("setWebhook", {
+        "url": webhook_url,
+        "allowed_updates": ["message", "callback_query"],
+        "drop_pending_updates": True,
+        "max_connections": 40,
+    })
+
+    if result and result.get('ok'):
+        logger.info(f"Webhook registrado: {webhook_url}")
+        return f"""<html><body style="font-family:monospace;background:#0d1117;color:#e6edf3;padding:2rem;">
+        <h2 style="color:#3fb950">✅ Webhook registrado exitosamente</h2>
+        <p>URL: <code style="color:#79c0ff">{webhook_url}</code></p>
+        <p>El bot ahora puede recibir mensajes.</p>
+        <a href="/bot-status" style="color:#58a6ff">← Ver diagnóstico completo</a>
+        </body></html>"""
+    else:
+        error = result.get('description', 'Error desconocido') if result else 'No se pudo conectar con Telegram'
+        return f"""<html><body style="font-family:monospace;background:#0d1117;color:#e6edf3;padding:2rem;">
+        <h2 style="color:#f85149">❌ Error al registrar webhook</h2>
+        <p>Error: <code>{error}</code></p>
+        <p>URL intentada: <code style="color:#79c0ff">{webhook_url}</code></p>
+        <p>Verifica que tu BOT_TOKEN sea correcto y que tu servidor tenga HTTPS.</p>
+        <a href="/bot-status" style="color:#58a6ff">← Ver diagnóstico completo</a>
+        </body></html>""", 400
+
+
+@app.route('/bot-delete-webhook')
+def bot_delete_webhook_public():
+    """Elimina el webhook."""
+    result = _bot_api("deleteWebhook", {"drop_pending_updates": True})
+    return jsonify(result)
+
+
+@app.route('/bot-send-test')
+def bot_send_test():
+    """Envía un mensaje de prueba al primer admin configurado."""
+    admin_id = ADMIN_IDS[0] if ADMIN_IDS else None
+    if not admin_id or not BOT_TOKEN:
+        return jsonify({'ok': False, 'error': 'No ADMIN_IDS o BOT_TOKEN configurado'})
+    result = _bot_send(admin_id, "🔔 <b>Test de notificación</b>\n\nEl sistema de notificaciones está funcionando correctamente. ✅")
+    return jsonify({'ok': True, 'admin_id': admin_id, 'telegram_response': result})
 
 
 @app.route('/admin/bot/setup-webhook')
 @require_admin
-def bot_setup_webhook():
-    """Registra el webhook de Telegram. Llamar una vez tras desplegar."""
+def bot_setup_webhook_admin():
+    """Registra el webhook (versión admin)."""
     base_url = request.host_url.rstrip('/')
     webhook_url = f"{base_url}/webhook/{BOT_TOKEN}"
     result = _bot_api("setWebhook", {
@@ -2480,17 +2671,69 @@ def bot_setup_webhook():
 @app.route('/admin/bot/webhook-info')
 @require_admin
 def bot_webhook_info():
-    """Consulta el estado actual del webhook."""
     result = _bot_api("getWebhookInfo", {})
     return jsonify(result)
 
 
 @app.route('/admin/bot/delete-webhook')
 @require_admin
-def bot_delete_webhook():
-    """Elimina el webhook (útil para debugging)."""
+def bot_delete_webhook_admin():
     result = _bot_api("deleteWebhook", {"drop_pending_updates": True})
     return jsonify(result)
+
+
+# ─── Auto-setup del webhook al arrancar ──────────────────
+
+def _auto_register_webhook():
+    """
+    Intenta registrar el webhook automáticamente usando WEBAPP_URL.
+    Se llama una vez al arrancar la app.
+    """
+    if not BOT_TOKEN or not _WEBAPP_URL:
+        logger.warning("Auto-webhook: BOT_TOKEN o WEBAPP_URL no configurados, saltando auto-setup.")
+        return
+
+    webhook_url = f"{_WEBAPP_URL.rstrip('/')}/webhook/{BOT_TOKEN}"
+    try:
+        # Primero verifica si ya está registrado correctamente
+        r = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getWebhookInfo", timeout=8)
+        info = r.json()
+        current_url = info.get('result', {}).get('url', '')
+
+        if current_url == webhook_url:
+            logger.info(f"Webhook ya registrado correctamente: {webhook_url}")
+            return
+
+        # Registrar
+        result = requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook",
+            json={
+                "url": webhook_url,
+                "allowed_updates": ["message", "callback_query"],
+                "drop_pending_updates": True,
+                "max_connections": 40,
+            },
+            timeout=10
+        ).json()
+
+        if result.get('ok'):
+            logger.info(f"✅ Webhook auto-registrado: {webhook_url}")
+        else:
+            logger.error(f"❌ Error auto-webhook: {result.get('description')}")
+    except Exception as e:
+        logger.error(f"Auto-webhook exception: {e}")
+
+
+# Registrar webhook al arrancar (solo en producción, no en dev con reloader)
+import threading as _threading
+
+def _delayed_webhook_setup():
+    import time
+    time.sleep(3)  # Espera a que Flask esté listo
+    _auto_register_webhook()
+
+_wh_thread = _threading.Thread(target=_delayed_webhook_setup, daemon=True)
+_wh_thread.start()
 
 
 # ============================================

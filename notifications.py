@@ -10,7 +10,7 @@ import requests as _req
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN    = os.environ.get('BOT_TOKEN', '')
-WEBAPP_URL   = os.environ.get('WEBAPP_URL', '') or os.environ.get('WEBAPP_URL', 'https://M22.pythonanywhere.com')
+WEBAPP_URL   = os.environ.get('WEBAPP_URL', '')
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'SallyEbot')
 
 # ──────────────────────────────────────────────────────────
@@ -104,7 +104,9 @@ def _api(method, payload):
 
 
 def _keyboard(user_id, lang):
-    url = f"{WEBAPP_URL}?user_id={user_id}"
+    if not WEBAPP_URL:
+        return None
+    url = f"{WEBAPP_URL.rstrip('/')}?user_id={user_id}"
     return {"inline_keyboard":[[{"text": _OPEN_BTN.get(lang,'🚀 Open SALLY-E'), "web_app":{"url": url}}]]}
 
 
@@ -117,13 +119,16 @@ def _send(chat_id, notif_type, lang, user_id=None, **kwargs):
         logger.warning(f"Clave faltante {e} en notif '{notif_type}'")
         text = tmpl
     uid = user_id or chat_id
-    _api("sendMessage", {
+    kb = _keyboard(uid, lang)
+    payload = {
         "chat_id": int(chat_id),
         "text": text,
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
-        "reply_markup": json.dumps(_keyboard(uid, lang)),
-    })
+    }
+    if kb:
+        payload["reply_markup"] = json.dumps(kb)
+    _api("sendMessage", payload)
 
 # ──────────────────────────────────────────────────────────
 # API PÚBLICA
