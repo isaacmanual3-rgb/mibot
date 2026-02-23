@@ -589,7 +589,7 @@
       <div class="form-group">
         <label class="form-label">{{ t.wl_amount }}</label>
         <input type="number" id="withdraw-amount" class="form-input"
-               placeholder="Enter amount"
+               placeholder="{{ t.wl_amount_placeholder }}"
                min="{{ min_withdrawal }}" step="0.00000001"
                value="{{ min_withdrawal }}">
         <div class="form-hint">{{ t.wl_available }}: {{ format_ton(user.doge_balance) }} TON</div>
@@ -621,7 +621,7 @@
       <button class="wl-btn-cancel" onclick="DogeQuest.closeModal('withdraw-modal')">{{ t.wl_cancel }}</button>
       <button class="wl-btn-confirm" onclick="DogeQuest.requestWithdrawal()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
-        WITHDRAW
+        {{ t.wl_submit_withdraw }}
       </button>
     </div>
   </div>
@@ -649,10 +649,10 @@
       <div class="form-group">
         <label class="form-label" style="color:#ffd700">{{ t.wl_deposit_addr_lbl }}</label>
         <input type="text" id="ton-wd-address-input" class="form-input"
-               placeholder="UQ... o EQ... (cualquier wallet o exchange)"
+               placeholder="{{ t.wl_ton_addr_placeholder }}"
                autocomplete="off" spellcheck="false"
                style="font-size:0.72rem;letter-spacing:0.02em">
-        <div class="form-hint">Tonkeeper, MyTonWallet, OKX, Bybit, Binance... cualquier dirección TON</div>
+        <div class="form-hint">{{ t.wl_ton_addr_placeholder }}</div>
       </div>
 
       <div class="form-group">
@@ -683,7 +683,7 @@
         <button id="ton-wd-btn-cancel" class="wl-btn-cancel">{{ t.wl_cancel }}</button>
         <button id="ton-wd-btn-submit" class="wl-btn-confirm" style="background:#c8a200;border-color:#ffd700;box-shadow:3px 3px 0 0 #7a6000;color:#1a1a2e;font-weight:bold">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><path d="M12 5v14M19 12l-7 7-7-7" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          RETIRAR
+          {{ t.wl_submit_withdraw }}
         </button>
       </div>
     </div>
@@ -691,7 +691,7 @@
     <!-- Paso 2: Procesando -->
     <div id="ton-wd-step-processing" style="display:none;text-align:center;padding:36px 0">
       <div style="width:52px;height:52px;border:3px solid #ffd700;border-top-color:transparent;border-radius:50%;animation:ton-wd-spin 1s linear infinite;margin:0 auto 20px"></div>
-      <div style="font-family:var(--font-px);font-size:0.46rem;color:#ffd700;letter-spacing:.1em;margin-bottom:12px">PROCESANDO RETIRO...</div>
+      <div style="font-family:var(--font-px);font-size:0.46rem;color:#ffd700;letter-spacing:.1em;margin-bottom:12px">{{ t.wl_processing_wd }}</div>
       <div style="font-size:0.8rem;color:var(--text2);line-height:1.6">Firmando y enviando la transacción TON.<br>Esto puede tomar unos segundos.</div>
       <style>@keyframes ton-wd-spin { to { transform:rotate(360deg) } }</style>
     </div>
@@ -701,7 +701,7 @@
       <div style="width:58px;height:58px;background:rgba(0,230,118,0.1);border:2px solid rgba(0,230,118,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
         <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" width="28"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">¡RETIRO ENVIADO!</div>
+      <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">{{ t.wl_withdrawal_sent }}</div>
       <div id="ton-wd-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
       <button id="ton-wd-btn-success-close" class="wl-btn-confirm">{{ t.wl_cancel }}</button>
     </div>
@@ -713,7 +713,7 @@
       </div>
       <div style="font-family:var(--font-px);font-size:0.48rem;color:#ff4d6a;margin-bottom:10px">ERROR</div>
       <div id="ton-wd-error-msg" style="font-size:0.78rem;color:var(--text2);line-height:1.5;margin-bottom:18px"></div>
-      <button id="ton-wd-btn-retry" class="wl-btn-confirm" style="background:#1a1a2e;border-color:#333;color:#aaa;box-shadow:none">INTENTAR DE NUEVO</button>
+      <button id="ton-wd-btn-retry" class="wl-btn-confirm" style="background:#1a1a2e;border-color:#333;color:#aaa;box-shadow:none">{{ t.wl_retry }}</button>
     </div>
 
   </div>
@@ -728,7 +728,7 @@
     <div class="modal-header">
       <span class="modal-title">
         <svg viewBox="0 0 56 56" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
-        DEPOSITAR TON
+        {{ t.wl_deposit_title }}
       </span>
       <button class="modal-close" id="ton-modal-close">×</button>
     </div>
@@ -736,7 +736,7 @@
     <!-- PASO 1: Mostrando QR y dirección -->
     <div id="ton-step-qr">
       <div style="background:var(--surface3);border:2px solid #0098EA;padding:10px 14px;margin-bottom:14px;font-family:var(--font-px);font-size:0.37rem;color:#0098EA;letter-spacing:.08em;text-align:center">
-        Mínimo: {{ ton_min }} TON &nbsp;·&nbsp; MÍNIMO: {{ ton_min }} TON
+        {{ t.wl_min_amount }}: {{ ton_min }} TON
       </div>
 
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
@@ -756,7 +756,7 @@
         <div style="font-family:var(--font-px);font-size:0.32rem;color:var(--muted);margin-bottom:5px;letter-spacing:.08em">DIRECCIÓN TON (envía aquí)</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div id="ton-dep-address" style="flex:1;background:var(--surface3);border:1px solid #333;padding:10px;font-size:0.68rem;color:#0098EA;word-break:break-all;line-height:1.4">{{ ton_wallet_address }}</div>
-          <button onclick="copyDepAddr()" style="flex-shrink:0;background:#0098EA;border:none;color:#fff;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em" id="ton-copy-addr-btn">COPIAR</button>
+          <button onclick="copyDepAddr()" style="flex-shrink:0;background:#0098EA;border:none;color:#fff;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em" id="ton-copy-addr-btn">{{ t.wl_copy }}</button>
         </div>
       </div>
 
@@ -765,7 +765,7 @@
         <div style="font-family:var(--font-px);font-size:0.32rem;color:#ffd700;margin-bottom:5px;letter-spacing:.08em">MEMO / COMENTARIO (obligatorio ⚠)</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div id="ton-dep-memo" style="flex:1;background:rgba(255,215,0,0.07);border:2px solid #ffd700;padding:10px;font-family:var(--font-px);font-size:0.5rem;color:#ffd700;letter-spacing:.1em;text-align:center">{{ user_deposit_memo }}</div>
-          <button onclick="copyDepMemo()" style="flex-shrink:0;background:#c8a200;border:none;color:#1a1a2e;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em;font-weight:bold" id="ton-copy-memo-btn">COPIAR</button>
+          <button onclick="copyDepMemo()" style="flex-shrink:0;background:#c8a200;border:none;color:#1a1a2e;padding:10px 12px;cursor:pointer;font-family:var(--font-px);font-size:0.32rem;letter-spacing:.06em;font-weight:bold" id="ton-copy-memo-btn">{{ t.wl_copy }}</button>
         </div>
         <div style="font-size:0.72rem;color:#ff4d6a;margin-top:6px;line-height:1.4">
           ⚠ Si no incluyes el MEMO tu depósito no se acreditará automáticamente.
@@ -859,7 +859,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     var v = this.value.trim();
     if (v.length > 5 && !isValidTonAddr(v)) {
       w.style.display = 'block';
-      w.textContent = '⚠ Dirección TON inválida. Debe empezar con UQ o EQ y tener 48 caracteres. Cópiala directamente de tu wallet o exchange.';
+      w.textContent = '{{ t.wl_invalid_addr_hint }}';
     } else {
       w.style.display = 'none';
     }
@@ -882,9 +882,9 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     var addr    = (el('ton-wd-address-input').value || '').trim();
     var dogeAmt = parseFloat(el('ton-wd-amount-input').value || '0');
 
-    if (!addr) { DogeQuest.showToast('Ingresa tu dirección TON', 'error'); return; }
-    if (!isValidTonAddr(addr)) { DogeQuest.showToast('Dirección TON inválida', 'error'); return; }
-    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Mínimo ' + MIN_DOGE + ' TON', 'error'); return; }
+    if (!addr) { DogeQuest.showToast('{{ t.wl_enter_address }}', 'error'); return; }
+    if (!isValidTonAddr(addr)) { DogeQuest.showToast('{{ t.wl_invalid_addr }}', 'error'); return; }
+    if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('{{ t.wl_min_amount }} ' + MIN_DOGE + ' TON', 'error'); return; }
     if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('{{ t.wl_insufficient }}', 'error'); return; }
 
     showWdStep('processing');
@@ -985,15 +985,14 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     if (!addr) return;
     navigator.clipboard.writeText(addr).then(function() {
       var btn = el('ton-copy-addr-btn');
-      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = 'COPIAR'; }, 2000); }
+      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = '{{ t.wl_copy }}'; }, 2000); }
     });
-  }
-  window.copyDepAddr = copyDepAddr;
+  }\n  window.copyDepAddr = copyDepAddr;
 
   function copyDepMemo() {
     navigator.clipboard.writeText(MEMO).then(function() {
       var btn = el('ton-copy-memo-btn');
-      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = 'COPIAR'; }, 2000); }
+      if (btn) { btn.textContent = '✓ OK'; setTimeout(function(){ btn.textContent = '{{ t.wl_copy }}'; }, 2000); }
     });
   }
   window.copyDepMemo = copyDepMemo;
