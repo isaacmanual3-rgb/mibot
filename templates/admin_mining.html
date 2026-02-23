@@ -52,7 +52,15 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-outline" onclick="openEditModal({{ plan|tojson }})">✏️ EDIT</button>
+                        <button class="btn btn-sm btn-outline edit-plan-btn"
+                            data-id="{{ plan.id }}"
+                            data-name="{{ plan.name }}"
+                            data-tier="{{ plan.tier }}"
+                            data-price="{{ plan.price }}"
+                            data-hourly="{{ plan.hourly_rate }}"
+                            data-days="{{ plan.duration_days }}"
+                            data-desc="{{ plan.description | e }}"
+                            data-active="{{ plan.active }}">✏️ EDIT</button>
                         {% if plan.active %}
                         <button class="btn btn-sm btn-danger" onclick="deactivatePlan({{ plan.id }})">✗</button>
                         {% else %}
@@ -274,6 +282,24 @@ function openCreateModal() {
     document.getElementById('modal-summary').style.display = 'none';
     document.getElementById('edit-modal').style.display = 'flex';
 }
+
+// Attach click handlers to edit buttons after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.edit-plan-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            openEditModal({
+                id:           this.dataset.id,
+                name:         this.dataset.name,
+                tier:         this.dataset.tier,
+                price:        this.dataset.price,
+                hourly_rate:  this.dataset.hourly,
+                duration_days:this.dataset.days,
+                description:  this.dataset.desc,
+                active:       this.dataset.active
+            });
+        });
+    });
+});
 
 function openEditModal(plan) {
     isEditMode = true;
