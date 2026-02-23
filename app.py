@@ -296,15 +296,13 @@ def ensure_user(user_id):
         ref = None
 
     if not user:
-        # New user — create and process referral immediately
+        # New user — create and record referral (NOT validated yet, requires plan purchase)
         user = create_user(user_id, username, first_name, ref)
         if ref:
             referrer = get_user(ref)
             if referrer:
-                added = add_referral(ref, user_id, username, first_name)
-                if added:
-                    # Auto-validate immediately (no task requirement)
-                    _auto_validate_referral(ref, user_id)
+                add_referral(ref, user_id, username, first_name)
+                # ⚠ NO auto-validation — referral is validated only after plan purchase
         # Clear pending ref
         session.pop('pending_ref', None)
     else:
@@ -324,54 +322,42 @@ def ensure_user(user_id):
                     (str(ref), str(user_id)), fetch_one=True
                 )
                 if not existing:
-                    added = add_referral(ref, user_id,
-                                         user.get('username'), user.get('first_name', 'Player'))
-                    if added:
-                        _auto_validate_referral(ref, user_id)
+                    add_referral(ref, user_id,
+                                 user.get('username'), user.get('first_name', 'Player'))
+                    # ⚠ NO auto-validation — referral is validated only after plan purchase
             session.pop('pending_ref', None)
             # Refresh user
             user = get_user(user_id)
-        else:
-            # Check for unvalidated referrals that should now be validated
-            if user.get('referred_by'):
-                _check_and_validate_referral(user)
+        # No fallback validation either — only purchase triggers it
 
     return user
 
 
-def _auto_validate_referral(referrer_id, referred_id):
-    """Auto-validate a referral immediately when user registers/visits"""
+def _validate_referral_on_purchase(user_id):
+    """Validate a pending referral when the referred user purchases their first mining plan."""
     from database import execute_query
-    # Check not already validated
-    existing = execute_query(
-        "SELECT validated FROM referrals WHERE referrer_id = %s AND referred_id = %s",
-        (str(referrer_id), str(referred_id)), fetch_one=True
-    )
-    if existing and not existing.get('validated'):
-        validate_referral(str(referrer_id), str(referred_id))
-
-
-def _check_and_validate_referral(user):
-    """Check if user's referral should be validated (fallback for existing users)"""
-    from database import execute_query
+    user = get_user(user_id)
+    if not user:
+        return
     referrer_id = user.get('referred_by')
     if not referrer_id:
         return
-    user_id = user['user_id']
-    # Check if referral exists and is not yet validated
+
+    # Check there is an unvalidated referral record
     ref_row = execute_query(
-        "SELECT id, validated FROM referrals WHERE referrer_id = %s AND referred_id = %s",
+        "SELECT id, validated FROM referrals WHERE referrer_id = %s AND referred_id = %s LIMIT 1",
         (str(referrer_id), str(user_id)), fetch_one=True
     )
     if not ref_row:
-        # Add and validate the missing referral record
+        # Record may be missing — add and validate
         referrer = get_user(referrer_id)
         if referrer:
             add_referral(referrer_id, user_id, user.get('username'), user.get('first_name', 'Player'))
-            _auto_validate_referral(referrer_id, user_id)
+            validate_referral(str(referrer_id), str(user_id))
+            logger.info(f"Referral validated on plan purchase: referrer={referrer_id} referred={user_id}")
     elif not ref_row.get('validated'):
-        # Exists but not validated — validate now
-        _auto_validate_referral(referrer_id, user_id)
+        validate_referral(str(referrer_id), str(user_id))
+        logger.info(f"Referral validated on plan purchase: referrer={referrer_id} referred={user_id}")
 
 def format_doge(amount):
     """Format DOGE amount for display"""
@@ -1010,12 +996,6 @@ def api_complete_task(user):
     if not result:
         return jsonify({'success': False, 'message': 'Could not complete task'})
     
-    # Referral validation is now handled automatically in ensure_user
-    # Keep this as fallback for any unvalidated referrals
-    user_data = get_user(user['user_id'])
-    if user_data and user_data.get('referred_by'):
-        _check_and_validate_referral(user_data)
-    
     return jsonify({
         'success': True,
         'reward': result['reward'],
@@ -1119,7 +1099,13 @@ def api_mining_purchase(user):
         return jsonify({'success': False, 'message': 'Plan ID required'})
     
     result = purchase_mining_machine(user['user_id'], plan_id)
-    return jsonify(translate_result(result))
+    translated = translate_result(result)
+
+    # ── Validate referral on first plan purchase ──────────────────
+    if translated.get('success'):
+        _validate_referral_on_purchase(user['user_id'])
+
+    return jsonify(translated)
 
 @app.route('/api/mining/claim', methods=['POST'])
 @require_user
