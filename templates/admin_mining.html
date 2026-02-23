@@ -1,0 +1,395 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin - Mining Plans{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>⛏️ MINING PLANS</h1>
+    <button class="btn btn-primary" onclick="openCreateModal()">＋ NEW PLAN</button>
+</div>
+
+<!-- Plans Table -->
+<div class="admin-card">
+    <h3 class="card-section-title">📋 EXISTING PLANS</h3>
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>NAME</th>
+                    <th>TIER</th>
+                    <th>PRICE (TON)</th>
+                    <th>HOURLY RATE</th>
+                    <th>DAILY EARNINGS</th>
+                    <th>30D RETURN %</th>
+                    <th>DAYS</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in plans %}
+                <tr id="plan-row-{{ plan.id }}" class="{{ '' if plan.active else 'row-inactive' }}">
+                    <td><span class="id-badge">{{ plan.id }}</span></td>
+                    <td><strong>{{ plan.name }}</strong></td>
+                    <td><span class="tier-badge tier-{{ plan.tier }}">{{ plan.tier }}</span></td>
+                    <td>{{ "%.4f"|format(plan.price|float) }}</td>
+                    <td class="mono">{{ "%.8f"|format(plan.hourly_rate|float) }}</td>
+                    <td class="mono highlight-green">{{ "%.6f"|format(plan.hourly_rate|float * 24) }}</td>
+                    <td class="mono highlight-blue">
+                        {% if plan.price|float > 0 %}
+                            {{ "%.1f"|format((plan.hourly_rate|float * 720 / plan.price|float) * 100) }}%
+                        {% else %}
+                            ∞
+                        {% endif %}
+                    </td>
+                    <td>{{ plan.duration_days }}</td>
+                    <td>
+                        {% if plan.active %}
+                            <span class="status-badge active">ACTIVE</span>
+                        {% else %}
+                            <span class="status-badge inactive">INACTIVE</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="openEditModal({{ plan|tojson }})">✏️ EDIT</button>
+                        {% if plan.active %}
+                        <button class="btn btn-sm btn-danger" onclick="deactivatePlan({{ plan.id }})">✗</button>
+                        {% else %}
+                        <button class="btn btn-sm btn-success" onclick="activatePlan({{ plan.id }})">✓</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:32px">No plans found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Info card -->
+<div class="admin-card" style="border-color:rgba(100,200,100,0.3)">
+    <h3 class="card-section-title" style="color:#4caf50">💡 CÓMO CALCULAR HOURLY RATE</h3>
+    <div style="font-size:0.9rem;color:var(--text-secondary);line-height:1.8">
+        <p>Formula: <code style="background:#111;padding:2px 8px">hourly_rate = precio × (retorno% / 100) / 720</code></p>
+        <p>Ejemplos:</p>
+        <ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
+            <li>📦 1 TON · 30% → <code>1 × 0.30 / 720 = <strong>0.00041667</strong></code></li>
+            <li>📦 5 TON · 50% → <code>5 × 0.50 / 720 = <strong>0.00347222</strong></code></li>
+            <li>📦 20 TON · 70% → <code>20 × 0.70 / 720 = <strong>0.01944444</strong></code></li>
+            <li>📦 50 TON · 85% → <code>50 × 0.85 / 720 = <strong>0.05902778</strong></code></li>
+        </ul>
+        <p style="margin-top:8px">
+            <strong>Calculadora rápida:</strong>
+            Precio <input type="number" id="calc-price" placeholder="5" style="width:70px;background:#111;border:1px solid #333;color:#fff;padding:2px 6px">
+            TON × 
+            <input type="number" id="calc-pct" placeholder="50" style="width:60px;background:#111;border:1px solid #333;color:#fff;padding:2px 6px">
+            % / 720 = <strong id="calc-result" style="color:#4caf50">—</strong>
+        </p>
+    </div>
+</div>
+
+<!-- ─── EDIT MODAL ─────────────────────────────────────────── -->
+<div id="edit-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">✏️ EDIT PLAN</span>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="modal-plan-id">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nombre del Plan</label>
+                    <input type="text" class="form-input" id="modal-name" placeholder="Pro">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tier (slug)</label>
+                    <input type="text" class="form-input" id="modal-tier" placeholder="pro" readonly style="opacity:.6">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Precio (TON)</label>
+                    <input type="number" class="form-input" id="modal-price" placeholder="5.0" step="0.0001" min="0" oninput="recalcRate()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Retorno 30d (%)</label>
+                    <input type="number" class="form-input" id="modal-pct" placeholder="50" step="0.1" min="0" max="9999" oninput="recalcRate()">
+                    <span style="font-size:0.75rem;color:var(--text-muted)">Cambia el % → calcula hourly_rate</span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Hourly Rate (TON/hr) ⭐</label>
+                    <input type="number" class="form-input" id="modal-hourly" placeholder="0.00347222" step="0.00000001" min="0" oninput="recalcPct()">
+                    <span style="font-size:0.75rem;color:var(--text-muted)">También puedes editarlo directamente</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duración (días)</label>
+                    <input type="number" class="form-input" id="modal-days" placeholder="30" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descripción</label>
+                <input type="text" class="form-input" id="modal-desc" placeholder="Gana 50% en 30 días">
+            </div>
+
+            <div id="modal-summary" style="margin-top:12px;padding:10px 14px;background:#0a1a0a;border:1px solid #1a3a1a;font-size:0.82rem;color:#4caf50;display:none">
+                📊 Ganancias estimadas: <span id="summary-daily">—</span>/día · <span id="summary-monthly">—</span>/mes (30d)
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">CANCELAR</button>
+            <button class="btn btn-primary" onclick="savePlan()">💾 GUARDAR</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-table { width:100%; border-collapse:collapse; }
+.admin-table th {
+    font-family: var(--font-pixel);
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+}
+.admin-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+.admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+.row-inactive td { opacity: 0.45; }
+
+.id-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+}
+.tier-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.55rem;
+    padding: 3px 8px;
+    border-radius: 2px;
+}
+.tier-starter  { background:rgba(100,100,100,.25); color:#aaa; }
+.tier-basic    { background:rgba(33,150,243,.2);   color:#42a5f5; }
+.tier-pro      { background:rgba(76,175,80,.2);    color:#66bb6a; }
+.tier-elite    { background:rgba(255,193,7,.2);    color:#ffca28; }
+.tier-master   { background:rgba(233,30,99,.2);    color:#f06292; }
+.tier-legendary{ background:rgba(156,39,176,.2);   color:#ce93d8; }
+
+.status-badge { font-family:var(--font-pixel); font-size:0.55rem; padding:3px 8px; }
+.status-badge.active   { background:rgba(76,175,80,.2);   color:#66bb6a; }
+.status-badge.inactive { background:rgba(255,51,102,.15); color:#ff5577; }
+
+.mono        { font-family: monospace; font-size:0.85rem; }
+.highlight-green { color:#4caf50; }
+.highlight-blue  { color:#42a5f5; }
+
+.btn-sm { padding: 4px 10px; font-size: 0.65rem; }
+.btn-success { background:rgba(76,175,80,.2); color:#66bb6a; border:1px solid #66bb6a; }
+.btn-success:hover { background:rgba(76,175,80,.4); }
+
+/* Modal */
+.modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.7);
+    display:flex; align-items:center; justify-content:center; z-index:1000;
+}
+.modal-box {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    width: min(600px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--border-color);
+    font-family:var(--font-pixel);
+    font-size:0.7rem;
+    color:var(--blue-primary);
+}
+.modal-close { background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; }
+.modal-close:hover { color:var(--text-primary); }
+.modal-body { padding:20px; display:flex; flex-direction:column; gap:14px; }
+.modal-footer { padding:16px 20px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:10px; }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-label { font-family:var(--font-pixel); font-size:0.58rem; color:var(--text-muted); text-transform:uppercase; }
+
+.card-section-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--blue-primary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+</style>
+
+<script>
+let isEditMode = false;
+
+// ── Calculator ──────────────────────────────────────────────
+document.getElementById('calc-price').addEventListener('input', calcQuick);
+document.getElementById('calc-pct').addEventListener('input', calcQuick);
+function calcQuick() {
+    const p = parseFloat(document.getElementById('calc-price').value);
+    const pct = parseFloat(document.getElementById('calc-pct').value);
+    const el = document.getElementById('calc-result');
+    if (p > 0 && pct > 0) {
+        el.textContent = (p * pct / 100 / 720).toFixed(8) + ' TON/hr';
+    } else {
+        el.textContent = '—';
+    }
+}
+
+// ── Modal helpers ───────────────────────────────────────────
+function openCreateModal() {
+    isEditMode = false;
+    document.getElementById('modal-title').textContent = '＋ NUEVO PLAN';
+    document.getElementById('modal-plan-id').value = '';
+    document.getElementById('modal-name').value = '';
+    document.getElementById('modal-tier').value = '';
+    document.getElementById('modal-price').value = '';
+    document.getElementById('modal-pct').value = '';
+    document.getElementById('modal-hourly').value = '';
+    document.getElementById('modal-days').value = '30';
+    document.getElementById('modal-desc').value = '';
+    document.getElementById('modal-summary').style.display = 'none';
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function openEditModal(plan) {
+    isEditMode = true;
+    document.getElementById('modal-title').textContent = '✏️ EDITAR: ' + plan.name;
+    document.getElementById('modal-plan-id').value = plan.id;
+    document.getElementById('modal-name').value = plan.name;
+    document.getElementById('modal-tier').value = plan.tier;
+    document.getElementById('modal-price').value = parseFloat(plan.price).toFixed(4);
+    document.getElementById('modal-hourly').value = parseFloat(plan.hourly_rate).toFixed(8);
+    document.getElementById('modal-days').value = plan.duration_days;
+    document.getElementById('modal-desc').value = plan.description || '';
+    // Calc pct from existing data
+    const p = parseFloat(plan.price);
+    const hr = parseFloat(plan.hourly_rate);
+    if (p > 0) {
+        document.getElementById('modal-pct').value = ((hr * 720 / p) * 100).toFixed(2);
+    }
+    updateSummary();
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+function recalcRate() {
+    const p   = parseFloat(document.getElementById('modal-price').value);
+    const pct = parseFloat(document.getElementById('modal-pct').value);
+    if (p >= 0 && pct > 0) {
+        const hr = p * pct / 100 / 720;
+        document.getElementById('modal-hourly').value = hr.toFixed(8);
+        updateSummary();
+    }
+}
+
+function recalcPct() {
+    const p  = parseFloat(document.getElementById('modal-price').value);
+    const hr = parseFloat(document.getElementById('modal-hourly').value);
+    if (p > 0 && hr > 0) {
+        document.getElementById('modal-pct').value = ((hr * 720 / p) * 100).toFixed(2);
+    }
+    updateSummary();
+}
+
+function updateSummary() {
+    const hr = parseFloat(document.getElementById('modal-hourly').value);
+    const days = parseInt(document.getElementById('modal-days').value) || 30;
+    if (hr > 0) {
+        const daily = hr * 24;
+        const monthly = hr * 24 * days;
+        document.getElementById('summary-daily').textContent   = daily.toFixed(6)   + ' TON';
+        document.getElementById('summary-monthly').textContent = monthly.toFixed(4) + ' TON';
+        document.getElementById('modal-summary').style.display = 'block';
+    }
+}
+
+async function savePlan() {
+    const planId    = document.getElementById('modal-plan-id').value;
+    const name      = document.getElementById('modal-name').value.trim();
+    const hourlyRaw = document.getElementById('modal-hourly').value;
+    const price     = document.getElementById('modal-price').value;
+    const days      = document.getElementById('modal-days').value;
+    const desc      = document.getElementById('modal-desc').value.trim();
+    const tier      = document.getElementById('modal-tier').value.trim() || name.toLowerCase();
+
+    if (!name || !hourlyRaw) {
+        showToast('Nombre y Hourly Rate son obligatorios', 'error');
+        return;
+    }
+
+    const payload = { name, hourly_rate: parseFloat(hourlyRaw), price: parseFloat(price||0),
+                      duration_days: parseInt(days||30), description: desc, tier };
+
+    let url, method = 'POST';
+    if (isEditMode && planId) {
+        url = `/admin/mining/plan/${planId}/update`;
+    } else {
+        url = '/admin/mining/plan/create';
+    }
+
+    try {
+        const res  = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.success) {
+            showToast(isEditMode ? 'Plan actualizado ✓' : 'Plan creado ✓', 'success');
+            closeModal();
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(data.error || 'Error al guardar', 'error');
+        }
+    } catch(e) {
+        showToast('Error de red', 'error');
+    }
+}
+
+async function deactivatePlan(id) {
+    if (!confirm('¿Desactivar este plan? Los usuarios no podrán comprarlo.')) return;
+    const res  = await fetch(`/admin/mining/plan/${id}/delete`, {method:'POST'});
+    const data = await res.json();
+    if (data.success) { showToast('Plan desactivado', 'success'); setTimeout(()=>location.reload(),600); }
+    else showToast(data.error,'error');
+}
+
+async function activatePlan(id) {
+    const res  = await fetch(`/admin/mining/plan/${id}/update`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({active:1})
+    });
+    const data = await res.json();
+    if (data.success) { showToast('Plan activado ✓', 'success'); setTimeout(()=>location.reload(),600); }
+    else showToast(data.error,'error');
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}
