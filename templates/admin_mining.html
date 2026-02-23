@@ -23,6 +23,7 @@
                     <th>DAILY EARNINGS</th>
                     <th>30D RETURN %</th>
                     <th>DAYS</th>
+                    <th>SOLO 1 VEZ</th>
                     <th>STATUS</th>
                     <th>ACTIONS</th>
                 </tr>
@@ -45,6 +46,13 @@
                     </td>
                     <td>{{ plan.duration_days }}</td>
                     <td>
+                        {% if plan.one_time_only %}
+                            <span class="status-badge" style="background:rgba(255,193,7,.15);color:#ffca28">1×</span>
+                        {% else %}
+                            <span style="color:var(--text-muted);font-size:0.8rem">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if plan.active %}
                             <span class="status-badge active">ACTIVE</span>
                         {% else %}
@@ -60,7 +68,8 @@
                             data-hourly="{{ plan.hourly_rate }}"
                             data-days="{{ plan.duration_days }}"
                             data-desc="{{ plan.description | e }}"
-                            data-active="{{ plan.active }}">✏️ EDIT</button>
+                            data-active="{{ plan.active }}"
+                            data-onetimeonly="{{ plan.one_time_only }}">✏️ EDIT</button>
                         {% if plan.active %}
                         <button class="btn btn-sm btn-danger" onclick="deactivatePlan({{ plan.id }})">✗</button>
                         {% else %}
@@ -146,6 +155,27 @@
             <div class="form-group">
                 <label class="form-label">Descripción</label>
                 <input type="text" class="form-input" id="modal-desc" placeholder="Gana 50% en 30 días">
+            </div>
+
+            <div class="form-row" style="align-items:center">
+                <div class="form-group">
+                    <label class="form-label">Precio</label>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary)">
+                            <input type="checkbox" id="modal-free" onchange="toggleFree(this)">
+                            <span>Plan Gratuito (precio = 0)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Restricción de uso</label>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary)">
+                            <input type="checkbox" id="modal-onetimeonly">
+                            <span>Solo se puede activar <strong>una vez</strong> por usuario</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div id="modal-summary" style="margin-top:12px;padding:10px 14px;background:#0a1a0a;border:1px solid #1a3a1a;font-size:0.82rem;color:#4caf50;display:none">
@@ -279,6 +309,10 @@ function openCreateModal() {
     document.getElementById('modal-hourly').value = '';
     document.getElementById('modal-days').value = '30';
     document.getElementById('modal-desc').value = '';
+    document.getElementById('modal-free').checked = false;
+    document.getElementById('modal-onetimeonly').checked = false;
+    document.getElementById('modal-price').disabled = false;
+    document.getElementById('modal-pct').disabled = false;
     document.getElementById('modal-summary').style.display = 'none';
     document.getElementById('edit-modal').style.display = 'flex';
 }
@@ -288,14 +322,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.edit-plan-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             openEditModal({
-                id:           this.dataset.id,
-                name:         this.dataset.name,
-                tier:         this.dataset.tier,
-                price:        this.dataset.price,
-                hourly_rate:  this.dataset.hourly,
-                duration_days:this.dataset.days,
-                description:  this.dataset.desc,
-                active:       this.dataset.active
+                id:            this.dataset.id,
+                name:          this.dataset.name,
+                tier:          this.dataset.tier,
+                price:         this.dataset.price,
+                hourly_rate:   this.dataset.hourly,
+                duration_days: this.dataset.days,
+                description:   this.dataset.desc,
+                active:        this.dataset.active,
+                one_time_only: this.dataset.onetimeonly
             });
         });
     });
@@ -311,14 +346,32 @@ function openEditModal(plan) {
     document.getElementById('modal-hourly').value = parseFloat(plan.hourly_rate).toFixed(8);
     document.getElementById('modal-days').value = plan.duration_days;
     document.getElementById('modal-desc').value = plan.description || '';
+    document.getElementById('modal-free').checked = parseFloat(plan.price) === 0;
+    document.getElementById('modal-onetimeonly').checked = parseInt(plan.one_time_only) === 1;
     // Calc pct from existing data
     const p = parseFloat(plan.price);
     const hr = parseFloat(plan.hourly_rate);
     if (p > 0) {
         document.getElementById('modal-pct').value = ((hr * 720 / p) * 100).toFixed(2);
+    } else {
+        document.getElementById('modal-pct').value = '';
     }
     updateSummary();
     document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function toggleFree(cb) {
+    const priceInput = document.getElementById('modal-price');
+    const pctInput   = document.getElementById('modal-pct');
+    if (cb.checked) {
+        priceInput.value = '0.0000';
+        priceInput.disabled = true;
+        pctInput.value = '';
+        pctInput.disabled = true;
+    } else {
+        priceInput.disabled = false;
+        pctInput.disabled = false;
+    }
 }
 
 function closeModal() {
@@ -376,13 +429,17 @@ async function savePlan() {
         return;
     }
 
+    const isFree      = document.getElementById('modal-free').checked;
+    const oneTimeOnly = document.getElementById('modal-onetimeonly').checked;
+
     const payload = {
         name,
-        hourly_rate:  hourlyNum,
-        price:        parseFloat(price) || 0,
+        hourly_rate:   hourlyNum,
+        price:         isFree ? 0 : (parseFloat(price) || 0),
         duration_days: parseInt(days) || 30,
-        description:  desc,
-        tier
+        description:   desc,
+        tier,
+        one_time_only: oneTimeOnly ? 1 : 0
     };
 
     const url = isEditMode && planId
