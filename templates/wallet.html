@@ -477,7 +477,7 @@
       {% set btn_count = 1 + (1 if ton_enabled else 0) %}
       <div class="wl-actions" style="grid-template-columns: repeat({{ btn_count }}, 1fr)">
 
-        <button class="wl-btn wl-btn-gold" onclick="DogeQuest.openModal('ton-withdraw-modal')">
+        <button class="wl-btn wl-btn-gold" onclick="openWithdrawModal()">
           <span class="px-icon">
             <svg viewBox="0 0 56 56" fill="none" width="26" height="26">
               <circle cx="28" cy="28" r="28" fill="#0098EA"/>
@@ -485,7 +485,7 @@
               <line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
             </svg>
           </span>
-          <span class="btn-label">WITHDRAW</span>
+          <span class="btn-label">{{ t.wl_withdraw_btn }}</span>
           <span class="btn-sub">{{ t.wl_withdraw_desc }}</span>
         </button>
 
@@ -494,10 +494,11 @@
           <span class="px-icon">
             <svg viewBox="0 0 56 56" fill="none" width="26" height="26"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
           </span>
-          <span class="btn-label">DEPOSIT</span>
+          <span class="btn-label">{{ t.wl_deposit_btn }}</span>
           <span class="btn-sub">{{ t.wl_deposit_desc }}</span>
         </button>
         {% endif %}
+      </div>
     </div>
 
     <!-- ── WITHDRAWAL REQUESTS ── -->
@@ -505,7 +506,7 @@
     <div class="wl-card">
       <div class="wl-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-        Withdrawal Requests
+        {{ t.wl_transactions }}
       </div>
       <div class="wl-tx-list">
         {% for wd in withdrawals %}
@@ -533,7 +534,7 @@
     <div class="wl-card">
       <div class="wl-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
-        Transaction History
+        {{ t.wl_transactions }}
       </div>
 
       {% if history %}
@@ -591,7 +592,7 @@
                placeholder="Enter amount"
                min="{{ min_withdrawal }}" step="0.00000001"
                value="{{ min_withdrawal }}">
-        <div class="form-hint">Disponible: {{ format_ton(user.doge_balance) }} TON</div>
+        <div class="form-hint">{{ t.wl_available }}: {{ format_ton(user.doge_balance) }} TON</div>
       </div>
 
       <div class="form-group">
@@ -617,7 +618,7 @@
     </div>
 
     <div class="modal-footer">
-      <button class="wl-btn-cancel" onclick="DogeQuest.closeModal('withdraw-modal')">CANCEL</button>
+      <button class="wl-btn-cancel" onclick="DogeQuest.closeModal('withdraw-modal')">{{ t.wl_cancel }}</button>
       <button class="wl-btn-confirm" onclick="DogeQuest.requestWithdrawal()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
         WITHDRAW
@@ -655,15 +656,15 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Cantidad a retirar</label>
+        <label class="form-label">{{ t.wl_amount }}</label>
         <input type="number" id="ton-wd-amount-input" class="form-input"
                min="{{ ton_withdrawal_min }}" step="0.0001" value="{{ ton_withdrawal_min }}">
-        <div class="form-hint">Disponible: {{ format_ton(user.doge_balance) }} TON</div>
+        <div class="form-hint">{{ t.wl_available }}: {{ format_ton(user.doge_balance) }} TON</div>
       </div>
 
       <div class="wl-fee-summary" style="margin-bottom:18px">
         <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Retiras</span>
+          <span class="wl-fee-row-label">{{ t.wl_you_receive }}</span>
           <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ format_ton(ton_withdrawal_min) }} TON</span>
         </div>
         <div class="wl-fee-row">
@@ -671,7 +672,7 @@
           <span class="wl-fee-row-val warn" id="ton-wd-preview-fee">{{ format_ton(ton_withdrawal_min * ton_withdrawal_fee_pct / 100) }} TON</span>
         </div>
         <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Recibes en TON</span>
+          <span class="wl-fee-row-label">{{ t.wl_you_receive }} TON</span>
           <span class="wl-fee-row-val good" id="ton-wd-preview-ton">{{ (ton_withdrawal_min * (1 - ton_withdrawal_fee_pct/100))|round(4) }} TON</span>
         </div>
       </div>
@@ -679,7 +680,7 @@
       <div id="ton-wd-addr-warning" style="display:none;background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.4);padding:10px 12px;margin-bottom:14px;font-size:0.76rem;color:#ff4d6a;line-height:1.4"></div>
 
       <div class="modal-footer">
-        <button id="ton-wd-btn-cancel" class="wl-btn-cancel">CANCELAR</button>
+        <button id="ton-wd-btn-cancel" class="wl-btn-cancel">{{ t.wl_cancel }}</button>
         <button id="ton-wd-btn-submit" class="wl-btn-confirm" style="background:#c8a200;border-color:#ffd700;box-shadow:3px 3px 0 0 #7a6000;color:#1a1a2e;font-weight:bold">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="flex-shrink:0"><path d="M12 5v14M19 12l-7 7-7-7" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           RETIRAR
@@ -702,7 +703,7 @@
       </div>
       <div style="font-family:var(--font-px);font-size:0.52rem;color:#00e676;margin-bottom:12px">¡RETIRO ENVIADO!</div>
       <div id="ton-wd-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
-      <button id="ton-wd-btn-success-close" class="wl-btn-confirm">CERRAR</button>
+      <button id="ton-wd-btn-success-close" class="wl-btn-confirm">{{ t.wl_cancel }}</button>
     </div>
 
     <!-- Paso 4: Error -->
@@ -780,7 +781,7 @@
         <div style="font-size:0.74rem;color:var(--text2)">Se acreditará automáticamente en segundos</div>
       </div>
 
-      <button id="ton-btn-cancel" class="wl-btn-cancel" style="width:100%">CERRAR</button>
+      <button id="ton-btn-cancel" class="wl-btn-cancel" style="width:100%">{{ t.wl_cancel }}</button>
     </div>
 
     <!-- PASO 2: Éxito -->
@@ -790,7 +791,7 @@
       </div>
       <div style="font-family:var(--font-px);font-size:0.58rem;color:#00e676;margin-bottom:10px">¡TON ACREDITADO!</div>
       <div id="ton-success-msg" style="font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:22px;white-space:pre-wrap"></div>
-      <button id="ton-btn-success-close" class="wl-btn-confirm">VER MI BALANCE</button>
+      <button id="ton-btn-success-close" class="wl-btn-confirm">{{ t.wl_available }}</button>
     </div>
 
   </div>
@@ -804,6 +805,15 @@
 
 {% block scripts %}
 <script>
+/* Smart withdraw: open the right modal depending on what's enabled */
+function openWithdrawModal() {
+  {% if ton_withdrawal_enabled %}
+    DogeQuest.openModal('ton-withdraw-modal');
+  {% else %}
+    DogeQuest.openModal('withdraw-modal');
+  {% endif %}
+}
+
 /* Withdraw preview */
 document.getElementById('withdraw-amount')?.addEventListener('input', function() {
   const a = parseFloat(this.value) || 0, fee = {{ withdrawal_fee }};
