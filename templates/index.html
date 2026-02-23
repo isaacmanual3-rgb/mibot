@@ -883,6 +883,17 @@ canvas#oscCanvas {
 .px-btn-ghost:hover  { transform: translate(-2px,-2px); color: var(--px-gold); border-color: var(--px-gold-dark); box-shadow: 5px 5px 0 0 #030308; }
 .px-btn-ghost:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 0 #030308; }
 
+.px-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.px-btn-icon svg {
+  width: 15px; height: 15px;
+  flex-shrink: 0;
+}
+
 .px-claimed-msg {
   text-align: center;
   font-size: 0.36rem;
@@ -1247,18 +1258,36 @@ canvas#oscCanvas {
 
     <!-- QUICK ACTIONS -->
     <div class="px-card">
-      <div class="px-label">⚡ &nbsp;{{ t.idx_actions_label }}</div>
+      <div class="px-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:6px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        {{ t.idx_actions_label }}
+      </div>
       <div class="px-actions">
-        <a href="{{ url_for('mining') }}" class="px-btn px-btn-gold">{{ t.idx_btn_mining }}</a>
-        <a href="{{ url_for('tasks') }}" class="px-btn px-btn-blue">{{ t.idx_btn_tasks }}</a>
-        <a href="{{ url_for('referrals') }}" class="px-btn px-btn-ghost">{{ t.idx_btn_invite }}</a>
-        <a href="{{ url_for('wallet') }}" class="px-btn px-btn-ghost">{{ t.idx_btn_wallet }}</a>
+        <a href="{{ url_for('mining') }}" class="px-btn px-btn-gold px-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0z"/><path d="M6 16l-2 6 6-2 9.5-9.5-4-4z"/><path d="M2 22l4-4"/></svg>
+          {{ t.idx_btn_mining }}
+        </a>
+        <a href="{{ url_for('tasks') }}" class="px-btn px-btn-blue px-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          {{ t.idx_btn_tasks }}
+        </a>
+        <a href="{{ url_for('referrals') }}" class="px-btn px-btn-ghost px-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          {{ t.idx_btn_invite }}
+        </a>
+        <a href="{{ url_for('wallet') }}" class="px-btn px-btn-ghost px-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 14a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" stroke="none"/><path d="M22 7V5a2 2 0 00-2-2H4a2 2 0 00-2 2v2"/></svg>
+          {{ t.idx_btn_wallet }}
+        </a>
       </div>
     </div>
 
     <!-- HOW IT WORKS -->
     <div class="px-card">
-      <div class="px-label">💡 &nbsp;{{ t.idx_quest_label }}</div>
+      <div class="px-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-width="2.5"/></svg>
+        {{ t.idx_quest_label }}
+      </div>
       <div class="px-quest-list">
         <div class="px-quest-item">
           <div class="px-quest-num">1</div>
