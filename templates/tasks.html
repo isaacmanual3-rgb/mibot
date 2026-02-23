@@ -855,15 +855,15 @@
       <div class="tq-stats-inner">
         <div class="tq-stat">
           <span class="tq-stat-val">{{ completed_tasks }}</span>
-          <span class="tq-stat-lbl">Completed</span>
+          <span class="tq-stat-lbl">{{ t.tq_completed }}</span>
         </div>
         <div class="tq-stat">
           <span class="tq-stat-val">{{ format_ton(total_earned) }}</span>
-          <span class="tq-stat-lbl">Earned</span>
+          <span class="tq-stat-lbl">{{ t.tq_earned }}</span>
         </div>
         <div class="tq-stat">
           <span class="tq-stat-val">{{ available_tasks }}</span>
-          <span class="tq-stat-lbl">Available</span>
+          <span class="tq-stat-lbl">{{ t.tq_available }}</span>
         </div>
       </div>
     </div>
@@ -871,10 +871,10 @@
     <!-- ── CATEGORIES ── -->
     <div class="tq-cats-card">
       <div class="tq-cats">
-        <button class="tq-cat active" data-category="all">◈ All</button>
-        <button class="tq-cat" data-category="social">◉ Social</button>
-        <button class="tq-cat" data-category="daily">◎ Daily</button>
-        <button class="tq-cat" data-category="special">★ Special</button>
+        <button class="tq-cat active" data-category="all">{{ t.tq_cat_all }}</button>
+        <button class="tq-cat" data-category="social">{{ t.tq_cat_social }}</button>
+        <button class="tq-cat" data-category="daily">{{ t.tq_cat_daily }}</button>
+        <button class="tq-cat" data-category="special">{{ t.tq_cat_special }}</button>
       </div>
     </div>
 
@@ -921,7 +921,7 @@
             {% if task.completed %}
               <span class="tq-badge tq-badge-done">CLAIMED</span>
             {% elif task.locked %}
-              <span class="tq-badge tq-badge-locked">LOCKED</span>
+              <span class="tq-badge tq-badge-locked">{{ t.tq_locked_badge }}</span>
             {% else %}
               <button class="tq-btn-start" onclick="startTask({{ task.id }}, '{{ task.link|default('#') }}', '{{ task.channel_id|default('') }}')">
                 START ▶
@@ -934,8 +934,8 @@
       {% else %}
         <div class="tq-empty">
           <span class="tq-empty-icon">◇</span>
-          <div class="tq-empty-title">NO TASKS AVAILABLE</div>
-          <div class="tq-empty-hint">Check back soon for new quests!</div>
+          <div class="tq-empty-title">{{ t.tq_no_tasks }}</div>
+          <div class="tq-empty-hint">{{ t.tq_check_soon }}</div>
         </div>
       {% endif %}
     </div>
@@ -950,7 +950,7 @@
   <div class="tq-modal">
     <div class="tq-modal-handle"></div>
     <div class="tq-modal-icon">◈</div>
-    <div class="tq-modal-title">VERIFY MEMBERSHIP</div>
+    <div class="tq-modal-title">{{ t.tq_verify_membership }}</div>
     <p class="tq-modal-desc" id="verifyMessage">
       Join the channel and click verify to claim your reward!
     </p>
@@ -959,17 +959,17 @@
     <div class="tq-steps">
       <div class="tq-step">
         <div class="tq-step-num">1</div>
-        <div class="tq-step-lbl">Join channel</div>
+        <div class="tq-step-lbl">{{ t.tq_join_channel }}</div>
       </div>
       <div class="tq-step-arrow">→</div>
       <div class="tq-step">
         <div class="tq-step-num">2</div>
-        <div class="tq-step-lbl">Click verify</div>
+        <div class="tq-step-lbl">{{ t.tq_click_verify }}</div>
       </div>
       <div class="tq-step-arrow">→</div>
       <div class="tq-step">
         <div class="tq-step-num">3</div>
-        <div class="tq-step-lbl">Get reward!</div>
+        <div class="tq-step-lbl">{{ t.tq_get_reward }}</div>
       </div>
     </div>
 
@@ -1015,7 +1015,7 @@ async function verifyTask() {
   if (!currentTaskId) return;
   const btn = document.getElementById('verifyBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="tq-spinner"></span> CHECKING...';
+  btn.innerHTML = '<span class="tq-spinner"></span> {{ t.tq_checking }}';
   try {
     const response = await fetch('/api/task/complete', {
       method: 'POST',
@@ -1044,7 +1044,7 @@ async function verifyTask() {
     showToast('Connection error', 'error');
   }
   btn.disabled = false;
-  btn.innerHTML = '<span>✓</span> VERIFY';
+  btn.innerHTML = '<span>✓</span> {{ t.tq_verify }}';
 }
 
 async function completeTaskDirect(taskId) {

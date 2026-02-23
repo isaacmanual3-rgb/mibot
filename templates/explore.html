@@ -409,20 +409,20 @@
       <div class="ex-hero-icon">
         <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-trophy"/></svg></span>
       </div>
-      <div class="ex-hero-title">LEADERBOARDS</div>
-      <div class="ex-hero-sub">Compete with other questers for the top spots!</div>
+      <div class="ex-hero-title">{{ t.ex_title }}</div>
+      <div class="ex-hero-sub">{{ t.ex_sub }}</div>
     </div>
 
     <!-- ── YOUR RANK ── -->
     <div class="ex-rank-card">
       <div class="ex-rank-left">
-        <span class="ex-rank-sublabel">YOUR RANK</span>
+        <span class="ex-rank-sublabel">{{ t.ex_your_rank }}</span>
         <span class="ex-rank-position">#{{ user_rank or '---' }}</span>
       </div>
       <div style="width:44px"></div><!-- spacer for icon -->
       <div class="ex-rank-right">
         <span class="ex-rank-balance">{{ format_ton(user.doge_balance) }} TON</span>
-        <span class="ex-rank-balance-lbl">Current Balance</span>
+        <span class="ex-rank-balance-lbl">{{ t.ex_current_balance }}</span>
       </div>
       <div class="ex-rank-icon" aria-hidden="true">
         <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-crown"/></svg></span>
@@ -499,7 +499,7 @@
       {% else %}
       <div class="ex-no-data">
         <div class="ex-no-data-icon"><span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-trophy"/></svg></span></div>
-        <div class="ex-no-data-title">NO DATA YET</div>
+        <div class="ex-no-data-title">{{ t.ex_no_data }}</div>
       </div>
       {% endif %}
     </div>
@@ -550,7 +550,7 @@
             <span class="ex-lb-rank">{{ loop.index + 3 }}</span>
             <div class="ex-lb-avatar">{{ user.username[0]|upper if user.username else '?' }}</div>
             <span class="ex-lb-name">{{ user.username or 'Anonymous' }}</span>
-            <span class="ex-lb-value">{{ user.validated_referrals }}<small>REFS</small></span>
+            <span class="ex-lb-value">{{ user.validated_referrals }}<small>{{ t.ex_refs_label }}</small></span>
           </div>
           {% endfor %}
         </div>
@@ -558,7 +558,7 @@
       {% else %}
       <div class="ex-no-data">
         <div class="ex-no-data-icon"><span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-people"/></svg></span></div>
-        <div class="ex-no-data-title">NO DATA YET</div>
+        <div class="ex-no-data-title">{{ t.ex_no_data }}</div>
       </div>
       {% endif %}
     </div>
@@ -609,7 +609,7 @@
             <span class="ex-lb-rank">{{ loop.index + 3 }}</span>
             <div class="ex-lb-avatar">{{ user.username[0]|upper if user.username else '?' }}</div>
             <span class="ex-lb-name">{{ user.username or 'Anonymous' }}</span>
-            <span class="ex-lb-value">{{ user.longest_streak }}<small>DAYS</small></span>
+            <span class="ex-lb-value">{{ user.longest_streak }}<small>{{ t.ex_days_label }}</small></span>
           </div>
           {% endfor %}
         </div>
@@ -617,7 +617,7 @@
       {% else %}
       <div class="ex-no-data">
         <div class="ex-no-data-icon"><span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-fire"/></svg></span></div>
-        <div class="ex-no-data-title">NO DATA YET</div>
+        <div class="ex-no-data-title">{{ t.ex_no_data }}</div>
       </div>
       {% endif %}
     </div>
@@ -634,17 +634,17 @@
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-person"/></svg></span></div>
           <span class="ex-comm-val">{{ total_users }}</span>
-          <span class="ex-comm-lbl">Questers</span>
+          <span class="ex-comm-lbl">{{ t.ex_questers }}</span>
         </div>
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-coin"/></svg></span></div>
           <span class="ex-comm-val">{{ format_ton(total_distributed) }}</span>
-          <span class="ex-comm-lbl">TON Dist.</span>
+          <span class="ex-comm-lbl">{{ t.ex_ton_dist }}</span>
         </div>
         <div class="ex-comm-stat">
           <div class="ex-comm-icon"><span class="ico ico-sm" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-fire"/></svg></span></div>
           <span class="ex-comm-val">{{ total_checkins }}</span>
-          <span class="ex-comm-lbl">Check-ins</span>
+          <span class="ex-comm-lbl">{{ t.ex_checkins }}</span>
         </div>
       </div>
     </div>

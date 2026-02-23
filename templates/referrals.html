@@ -497,7 +497,7 @@
       <div class="rf-hero-icon">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
       </div>
-      <div class="rf-hero-title">INVITE FRIENDS</div>
+      <div class="rf-hero-title">{{ t.rf_title }}</div>
       <div class="rf-hero-desc">
         Earn <strong>{{ format_ton(referral_bonus) }} TON</strong>
         for each friend who completes a task!
@@ -512,28 +512,28 @@
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           </div>
           <span class="rf-stat-val">{{ total_referrals }}</span>
-          <span class="rf-stat-lbl">Total Invites</span>
+          <span class="rf-stat-lbl">{{ t.rf_total_invites }}</span>
         </div>
         <div class="rf-stat">
           <div class="rf-stat-icon-wrap">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
           </div>
           <span class="rf-stat-val">{{ validated_referrals }}</span>
-          <span class="rf-stat-lbl">Validated</span>
+          <span class="rf-stat-lbl">{{ t.rf_validated }}</span>
         </div>
         <div class="rf-stat">
           <div class="rf-stat-icon-wrap">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
           </div>
           <span class="rf-stat-val">{{ pending_referrals }}</span>
-          <span class="rf-stat-lbl">Pending</span>
+          <span class="rf-stat-lbl">{{ t.rf_pending }}</span>
         </div>
         <div class="rf-stat" style="border-top:2px solid rgba(255,215,0,0.15); background:rgba(255,215,0,0.04);">
           <div class="rf-stat-icon-wrap" style="border-color:var(--gold-dark); background:var(--gold-dim);">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/><path d="M12 6v1m0 10v1" stroke-width="1.5"/></svg></span>
           </div>
           <span class="rf-stat-val">{{ format_ton(referral_earnings) }}</span>
-          <span class="rf-stat-lbl">Total Earned</span>
+          <span class="rf-stat-lbl">{{ t.rf_total_earned }}</span>
         </div>
       </div>
     </div>
@@ -546,7 +546,7 @@
       </div>
 
       <!-- Telegram Mini App Link -->
-      <div style="margin-bottom:8px; font-size:0.7rem; color:#aaa; font-family:'Press Start 2P',cursive;">🔗 YOUR INVITE LINK</div>
+      <div style="margin-bottom:8px; font-size:0.7rem; color:#aaa; font-family:'Press Start 2P',cursive;">{{ t.rf_your_link }}</div>
       <div class="rf-link-row" style="margin-bottom:16px;">
         <input type="text" id="inviteLink" value="{{ referral_link }}" readonly class="rf-link-input">
         <button class="rf-btn-copy" id="copyBtn" onclick="copyLink('inviteLink','copyBtn')">
@@ -557,7 +557,7 @@
 
       <button class="rf-btn-share" onclick="shareTelegram()">
         <span class="px-icon" style="display:inline-block; vertical-align:middle; margin-right:10px; transform:scale(0.8)"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-        SHARE ON TELEGRAM
+        {{ t.rf_share_telegram }}
       </button>
     </div>
 
@@ -573,7 +573,7 @@
           <div class="rf-step-icon">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
           </div>
-          <div class="rf-step-lbl">Share your link</div>
+          <div class="rf-step-lbl">{{ t.rf_share_link }}</div>
         </div>
         <div class="rf-step-arrow">→</div>
         <div class="rf-step">
@@ -581,7 +581,7 @@
           <div class="rf-step-icon">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
           </div>
-          <div class="rf-step-lbl">Friend visits link</div>
+          <div class="rf-step-lbl">{{ t.rf_friend_visits }}</div>
         </div>
         <div class="rf-step-arrow">→</div>
         <div class="rf-step">
@@ -589,7 +589,7 @@
           <div class="rf-step-icon">
             <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/><path d="M12 6v1m0 10v1" stroke-width="1.5"/></svg></span>
           </div>
-          <div class="rf-step-lbl">You earn instantly!</div>
+          <div class="rf-step-lbl">{{ t.rf_you_earn }}</div>
         </div>
       </div>
       <p style="margin-top:12px; font-size:0.7rem; color:#888; text-align:center; line-height:1.8;">
@@ -637,7 +637,7 @@
         <div class="rf-empty-icon">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         </div>
-        <div class="rf-empty-title">NO REFERRALS YET</div>
+        <div class="rf-empty-title">{{ t.rf_no_friends }}</div>
         <div class="rf-empty-hint">Share your link to start earning!</div>
       </div>
       {% endif %}

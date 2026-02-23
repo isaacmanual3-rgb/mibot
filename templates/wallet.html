@@ -219,7 +219,7 @@
 }
 .wl-btn-gold:active { transform: translateY(1px); box-shadow: 0 0 0 1px rgba(255,215,0,0.15), 0 2px 10px rgba(255,165,0,0.2); }
 
-/* DEPOSIT TON — blue TON style */
+/* {{ t.wl_deposit_title }} — blue TON style */
 .wl-btn-ton {
   background: linear-gradient(160deg, #001a30, #001020);
   color: #0098EA;
@@ -459,15 +459,15 @@
       <div class="wl-balance-amount">
         {{ format_ton(user.doge_balance) }}
       </div>
-      <div class="wl-balance-label">TON BALANCE</div>
+      <div class="wl-balance-label">{{ t.wl_ton_balance }}</div>
       <div class="wl-mini-stats">
         <div class="wl-mini-stat">
           <span class="val">{{ format_ton(user.total_earned) }} TON</span>
-          <span class="lbl">Total Earned</span>
+          <span class="lbl">{{ t.wl_total_earned }}</span>
         </div>
         <div class="wl-mini-stat">
           <span class="val">{{ format_ton(user.referral_earnings or 0) }} TON</span>
-          <span class="lbl">From Referrals</span>
+          <span class="lbl">{{ t.wl_from_referrals }}</span>
         </div>
       </div>
     </div>
@@ -486,7 +486,7 @@
             </svg>
           </span>
           <span class="btn-label">WITHDRAW</span>
-          <span class="btn-sub">Send TON out</span>
+          <span class="btn-sub">{{ t.wl_withdraw_desc }}</span>
         </button>
 
         {% if ton_enabled %}
@@ -495,7 +495,7 @@
             <svg viewBox="0 0 56 56" fill="none" width="26" height="26"><circle cx="28" cy="28" r="28" fill="#0098EA"/><path d="M17 16 Q17 13.5 19.5 13.5 L36.5 13.5 Q39 13.5 39 16 Q39 18 37.5 19.5 L29.5 40 Q28.8 42 28 42 Q27.2 42 26.5 40 L18.5 19.5 Q17 18 17 16 Z" fill="none" stroke="white" stroke-width="3.2" stroke-linejoin="round"/><line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/></svg>
           </span>
           <span class="btn-label">DEPOSIT</span>
-          <span class="btn-sub">Receive TON</span>
+          <span class="btn-sub">{{ t.wl_deposit_desc }}</span>
         </button>
         {% endif %}
     </div>
@@ -529,7 +529,7 @@
     </div>
     {% endif %}
 
-    <!-- ── TRANSACTION HISTORY ── -->
+    <!-- ── {{ t.wl_transactions }} ── -->
     <div class="wl-card">
       <div class="wl-label">
         <span class="px-icon" style="margin-right:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
@@ -563,8 +563,8 @@
         <div class="wl-empty-icon">
           <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#555570" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></span>
         </div>
-        <div class="wl-empty-title">NO TRANSACTIONS YET</div>
-        <div class="wl-empty-hint">Complete tasks to start earning TON!</div>
+        <div class="wl-empty-title">{{ t.wl_no_transactions }}</div>
+        <div class="wl-empty-hint">{{ t.wl_complete_tasks }}</div>
       </div>
       {% endif %}
     </div>
@@ -579,14 +579,14 @@
     <div class="modal-header">
       <span class="modal-title">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/><path d="M5 5h14" stroke-width="2"/></svg></span>
-        WITHDRAW TON
+        {{ t.wl_withdraw_title }}
       </span>
       <button class="modal-close" onclick="DogeQuest.closeModal('withdraw-modal')">×</button>
     </div>
 
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Amount (TON)</label>
+        <label class="form-label">{{ t.wl_amount }}</label>
         <input type="number" id="withdraw-amount" class="form-input"
                placeholder="Enter amount"
                min="{{ min_withdrawal }}" step="0.00000001"
@@ -595,20 +595,20 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">TON Wallet Address</label>
+        <label class="form-label">{{ t.wl_address }}</label>
         <input type="text" id="withdraw-wallet" class="form-input"
                placeholder="D..."
                value="{{ user.wallet_address or '' }}">
-        <div class="form-hint">Must start with "D"</div>
+        <div class="form-hint">{{ t.wl_address_hint }}</div>
       </div>
 
       <div class="wl-fee-summary">
         <div class="wl-fee-row">
-          <span class="wl-fee-row-label">Network Fee</span>
+          <span class="wl-fee-row-label">{{ t.wl_network_fee }}</span>
           <span class="wl-fee-row-val warn">{{ withdrawal_fee }} TON</span>
         </div>
         <div class="wl-fee-row">
-          <span class="wl-fee-row-label">You Receive</span>
+          <span class="wl-fee-row-label">{{ t.wl_you_receive }}</span>
           <span class="wl-fee-row-val good" id="receive-amount">
             {{ format_ton(min_withdrawal - withdrawal_fee) }} TON
           </span>
@@ -634,7 +634,7 @@
     <div class="modal-header">
       <span class="modal-title">
         <svg viewBox="0 0 24 24" fill="none" width="20" height="20" style="flex-shrink:0"><circle cx="12" cy="12" r="10" fill="#ffd700"/><path d="M12 5v14M19 12l-7 7-7-7" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        WITHDRAW TON
+        {{ t.wl_withdraw_title }}
       </span>
       <button class="modal-close" id="ton-wd-modal-close">×</button>
     </div>
@@ -646,7 +646,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" style="color:#ffd700">Dirección TON destino</label>
+        <label class="form-label" style="color:#ffd700">{{ t.wl_deposit_addr_lbl }}</label>
         <input type="text" id="ton-wd-address-input" class="form-input"
                placeholder="UQ... o EQ... (cualquier wallet o exchange)"
                autocomplete="off" spellcheck="false"
@@ -739,7 +739,7 @@
       </div>
 
       <p style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.5;text-align:center">
-        Envía TON desde <strong style="color:#fff">cualquier wallet o exchange</strong>.<br>
+        {{ t.wl_deposit_from_any }}<br>
         <span style="color:#ffd700;font-size:0.75rem">⚠ Incluye el MEMO/Comentario obligatoriamente</span>
       </p>
 
@@ -875,7 +875,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     if (!addr) { DogeQuest.showToast('Ingresa tu dirección TON', 'error'); return; }
     if (!isValidTonAddr(addr)) { DogeQuest.showToast('Dirección TON inválida', 'error'); return; }
     if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('Mínimo ' + MIN_DOGE + ' TON', 'error'); return; }
-    if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('Saldo insuficiente', 'error'); return; }
+    if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('{{ t.wl_insufficient }}', 'error'); return; }
 
     showWdStep('processing');
 

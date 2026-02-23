@@ -543,12 +543,7 @@
 <div class="mn-shell">
   <div class="mn-ticker" aria-hidden="true">
     <span>
-      ★ MINING STATION ★&nbsp;&nbsp;
-      PURCHASE MACHINES &amp; EARN AUTOMATICALLY &nbsp;★&nbsp;&nbsp;
-      CLAIM PENDING REWARDS ANYTIME &nbsp;★&nbsp;&nbsp;
-      MORE MACHINES = MORE TON PER HOUR &nbsp;★&nbsp;&nbsp;
-      MUCH MINE. VERY PASSIVE. SO TON. &nbsp;★&nbsp;&nbsp;
-    </span>
+      {{ t.mn_ticker }}</span>
   </div>
 
   <div class="mn-page">
@@ -559,8 +554,8 @@
       <div class="mn-hero-icon">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span>
       </div>
-      <div class="mn-hero-title">MINING STATION</div>
-      <div class="mn-hero-sub">Purchase mining machines and earn TON automatically!</div>
+      <div class="mn-hero-title">{{ t.mn_title }}</div>
+      <div class="mn-hero-sub">{{ t.mn_sub }}</div>
     </div>
 
     <!-- ── STATS ── -->
@@ -593,7 +588,7 @@
     <div class="mn-claim">
       <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-        CLAIM {{ format_ton(pending_rewards) }} TON
+        {{ t.mn_claim_btn }} {{ format_ton(pending_rewards) }} TON
       </button>
     </div>
     {% endif %}
@@ -629,7 +624,7 @@
           </div>
           <div class="mn-machine-right">
             <div class="mn-machine-status">
-              <div class="mn-status-dot"></div> MINING
+              <div class="mn-status-dot"></div> {{ t.mn_mining_status }}
             </div>
             <div class="mn-machine-exp">
               Exp: {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
@@ -648,7 +643,7 @@
         Mining Machines
       </div>
       <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
-        Purchase a miner to start earning TON automatically!
+        {{ t.mn_purchase_desc }}
       </p>
 
       {% if plans %}
@@ -670,7 +665,7 @@
           <div class="mn-plan-head">
             <div class="mn-plan-name-block">
               <span class="mn-plan-badge">
-                {% if is_free %}★ GRATIS{% else %}{{ plan.tier|upper }}{% endif %}
+                {% if is_free %}{{ t.mn_free_badge }}{% else %}{{ plan.tier|upper }}{% endif %}
               </span>
               <span class="mn-plan-name">{{ plan.name }}</span>
             </div>
@@ -678,14 +673,14 @@
               <span class="mn-plan-price">
                 {% if is_free %}FREE{% else %}{{ plan.price|int }} TON{% endif %}
               </span>
-              <span class="mn-plan-price-unit">30 DÍAS</span>
+              <span class="mn-plan-price-unit">{{ t.mn_30_days }}</span>
             </div>
           </div>
 
           <!-- ROI bar -->
           <div class="mn-plan-roi">
             <div class="mn-plan-roi-label">
-              <span>Retorno en 30 días</span>
+              <span>{{ t.mn_30d_return }}</span>
               <span class="mn-plan-roi-pct">+{{ roi_pct }}%</span>
             </div>
             <div class="mn-plan-roi-track">
@@ -697,27 +692,27 @@
           <div class="mn-plan-metrics">
             <div class="mn-plan-metric">
               <span class="mn-plan-metric-val">{{ "%.4f"|format(plan.hourly_rate) }}</span>
-              <span class="mn-plan-metric-lbl">TON/hr</span>
+              <span class="mn-plan-metric-lbl">{{ t.mn_ton_hr }}</span>
             </div>
             <div class="mn-plan-metric">
               <span class="mn-plan-metric-val">{{ "%.4f"|format(daily_earn) }}</span>
-              <span class="mn-plan-metric-lbl">TON/día</span>
+              <span class="mn-plan-metric-lbl">{{ t.mn_ton_day }}</span>
             </div>
             <div class="mn-plan-metric">
               <span class="mn-plan-metric-val">{{ "%.2f"|format(monthly_earn) }}</span>
-              <span class="mn-plan-metric-lbl">TON/mes</span>
+              <span class="mn-plan-metric-lbl">{{ t.mn_ton_month }}</span>
             </div>
           </div>
 
           <!-- Botón -->
           <button class="mn-btn-purchase" onclick="purchaseMachine({{ plan.id }}, '{{ plan.name }}', {{ plan.price }})">
             {% if is_free %}
-              ★ ACTIVAR GRATIS
+              {{ t.mn_activate_free }}
             {% else %}
-              ⚡ ACTIVAR POR {{ plan.price|int }} TON
+              {{ t.mn_activate_paid }} {{ plan.price|int }} TON
             {% endif %}
           </button>
-          <div class="mn-plan-cycle">↻ Renovable cada 30 días</div>
+          <div class="mn-plan-cycle">{{ t.mn_renewable }}</div>
 
         </div>
         {% endfor %}
@@ -726,8 +721,8 @@
       {% else %}
       <div class="mn-no-plans">
         <div class="mn-no-plans-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#90909a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span></div>
-        <div class="mn-no-plans-title">NO PLANS AVAILABLE</div>
-        <div class="mn-no-plans-hint">Check back soon!</div>
+        <div class="mn-no-plans-title">{{ t.mn_no_plans }}</div>
+        <div class="mn-no-plans-hint">{{ t.mn_check_back }}</div>
       </div>
       {% endif %}
     </div>
@@ -742,25 +737,25 @@
         <div class="mn-step">
           <div class="mn-step-num">1</div>
           <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
-          <div class="mn-step-lbl">Purchase a miner</div>
+          <div class="mn-step-lbl">{{ t.mn_step1 }}</div>
         </div>
         <div class="mn-step-arrow">→</div>
         <div class="mn-step">
           <div class="mn-step-num">2</div>
           <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span></div>
-          <div class="mn-step-lbl">Mining starts auto</div>
+          <div class="mn-step-lbl">{{ t.mn_step2 }}</div>
         </div>
         <div class="mn-step-arrow">→</div>
         <div class="mn-step">
           <div class="mn-step-num">3</div>
           <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div>
-          <div class="mn-step-lbl">Claim rewards</div>
+          <div class="mn-step-lbl">{{ t.mn_step3 }}</div>
         </div>
         <div class="mn-step-arrow">→</div>
         <div class="mn-step">
           <div class="mn-step-num">4</div>
           <div class="mn-step-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span></div>
-          <div class="mn-step-lbl">Withdraw TON!</div>
+          <div class="mn-step-lbl">{{ t.mn_step4 }}</div>
         </div>
       </div>
     </div>
@@ -773,20 +768,20 @@
   <div class="mn-modal">
     <div class="mn-modal-handle"></div>
     <div class="mn-modal-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span></div>
-    <div class="mn-modal-title">CONFIRMAR PLAN</div>
+    <div class="mn-modal-title">{{ t.mn_modal_title }}</div>
     <p class="mn-modal-msg" id="purchaseMessage">¿Activar este plan?</p>
     <div class="mn-modal-details">
       <div class="mn-detail-row">
-        <span class="mn-detail-lbl">Costo</span>
+        <span class="mn-detail-lbl">{{ t.mn_modal_cost }}</span>
         <span class="mn-detail-val" id="purchaseCost">0 TON</span>
       </div>
       <div class="mn-detail-row">
-        <span class="mn-detail-lbl">Your Balance</span>
+        <span class="mn-detail-lbl">{{ t.mn_modal_balance }}</span>
         <span class="mn-detail-val">{{ format_ton(user.doge_balance) }} TON</span>
       </div>
     </div>
     <div class="mn-modal-btns">
-      <button class="mn-btn-cancel" onclick="closePurchaseModal()">CANCEL</button>
+      <button class="mn-btn-cancel" onclick="closePurchaseModal()">{{ t.mn_modal_cancel }}</button>
       <button class="mn-btn-confirm" id="confirmPurchaseBtn" onclick="confirmPurchase()">
         <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
         CONFIRM
@@ -803,7 +798,7 @@ let currentPlanPrice = 0;
 function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
   document.getElementById('purchaseMessage').textContent = `¿Activar el plan ${planName} por 30 días?`;
-  document.getElementById('purchaseCost').textContent = price === 0 ? '✨ GRATIS' : `${price} TON`;
+  document.getElementById('purchaseCost').textContent = price === 0 ? '{{ t.mn_modal_free }}' : `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
 }
 function closePurchaseModal() {
@@ -826,8 +821,8 @@ async function confirmPurchase() {
       showToast(data.message,'success');
       createPixelExplosion(window.innerWidth/2,window.innerHeight/2,'#00ff66');
       setTimeout(()=>location.reload(),1500);
-    } else { showToast(data.message||'Purchase failed','error'); }
-  } catch(e){ showToast('Connection error','error'); }
+    } else { showToast(data.message||'{{ t.mn_purchase_failed }}','error'); }
+  } catch(e){ showToast('{{ t.mn_conn_error }}','error'); }
   btn.disabled=false;
   btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> CONFIRM';
 }
@@ -840,8 +835,8 @@ async function claimMiningRewards() {
     const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
     const data = await res.json();
     if(data.success){ showToast(data.message,'success'); createCoinRain(10); setTimeout(()=>location.reload(),1500); }
-    else{ showToast(data.message||'Claim failed','error'); }
-  } catch(e){ showToast('Connection error','error'); }
+    else{ showToast(data.message||'{{ t.mn_claim_failed }}','error'); }
+  } catch(e){ showToast('{{ t.mn_conn_error }}','error'); }
   btn.disabled=false;
   btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> CLAIM';
 }

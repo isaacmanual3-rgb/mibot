@@ -28,7 +28,7 @@
         <div class="loading-bar">
             <div class="loading-progress"></div>
         </div>
-        <p class="loading-text">LOADING QUEST DATA...</p>
+        <p class="loading-text">{{ t.loading_text }}</p>
     </div>
 
     <!-- ════ APP ════ -->
@@ -48,8 +48,12 @@
                 </div>
             </div>
 
-            <!-- DERECHA: Balance premium -->
-            <div class="hdr-balance">
+            <!-- DERECHA: Balance premium + lang switch -->
+            <div class="hdr-balance" style="display:flex;align-items:center;gap:8px">
+                <!-- Language switcher -->
+                <a href="/lang/{{ 'es' if current_lang == 'en' else 'en' }}"
+                   style="font-family:var(--font-pixel,monospace);font-size:0.38rem;color:#4a4a6e;text-decoration:none;letter-spacing:0.05em;padding:3px 7px;border:1px solid #1e1e34;line-height:1;white-space:nowrap;flex-shrink:0"
+                   title="Switch language">{{ t.lang_btn_switch }}</a>
                 <div class="hdr-balance-inner">
                     <div class="hdr-balance-top">
                         <span class="hdr-balance-sym">
@@ -61,7 +65,7 @@
                         </span>
                         <span class="hdr-balance-amt">{{ format_ton(user.doge_balance if user else 0) }}</span>
                     </div>
-                    <span class="hdr-balance-lbl">TON BALANCE</span>
+                    <span class="hdr-balance-lbl">{{ t.balance_label }}</span>
                 </div>
             </div>
 
@@ -90,49 +94,49 @@
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
                     </svg></i>
-                    <span>HOME</span>
+                    <span>{{ t.nav_home }}</span>
                 </a>
 
                 <a href="{{ url_for('wallet') }}" class="menu-item {% if request.endpoint == 'wallet' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <rect x="2" y="5" width="20" height="14" rx="1"/><path d="M16 12a1 1 0 100 2 1 1 0 000-2z" fill="currentColor" stroke="none"/><path d="M2 9h20"/>
                     </svg></i>
-                    <span>WALLET</span>
+                    <span>{{ t.nav_wallet }}</span>
                 </a>
 
                 <a href="{{ url_for('mining') }}" class="menu-item {% if request.endpoint == 'mining' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <path d="M14 2l8 8-10 10-2-2 2-2-6-6 2-2-2-2z"/><path d="M3 21l4-4"/><path d="M12 6l6 6"/>
                     </svg></i>
-                    <span>MINING</span>
+                    <span>{{ t.nav_mining }}</span>
                 </a>
 
                 <a href="{{ url_for('tasks') }}" class="menu-item {% if request.endpoint == 'tasks' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 12l2 2 4-4"/><path d="M8 7h8M8 17h5"/>
                     </svg></i>
-                    <span>TASKS</span>
+                    <span>{{ t.nav_tasks }}</span>
                 </a>
 
                 <a href="{{ url_for('referrals') }}" class="menu-item {% if request.endpoint == 'referrals' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <circle cx="8" cy="8" r="3"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M11 8.5l3.5-2M11 9l3.5 7.5"/>
                     </svg></i>
-                    <span>REFERRALS</span>
+                    <span>{{ t.nav_referrals }}</span>
                 </a>
 
                 <a href="{{ url_for('explore') }}" class="menu-item {% if request.endpoint == 'explore' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M15 9l-4.5 1.5L9 15l4.5-1.5z" fill="currentColor" stroke="none"/>
                     </svg></i>
-                    <span>EXPLORE</span>
+                    <span>{{ t.nav_explore }}</span>
                 </a>
 
                 <a href="{{ url_for('promo') }}" class="menu-item {% if request.endpoint == 'promo' %}active{% endif %}">
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <rect x="2" y="7" width="20" height="10" rx="1"/><circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none"/><path d="M11 9.5h7M11 12.5h5M11 15h7" stroke-width="1.5"/><path d="M5 7V5M19 7V5"/>
                     </svg></i>
-                    <span>PROMO CODE</span>
+                    <span>{{ t.nav_promo }}</span>
                 </a>
             </div>
 
@@ -142,7 +146,7 @@
                     <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><path d="M12 8v4M12 16h.01" stroke-width="2.5"/>
                     </svg></i>
-                    <span>SUPPORT</span>
+                    <span>{{ t.nav_support }}</span>
                 </a>
             </div>
         </nav>
@@ -165,7 +169,7 @@
                         <path d="M9 21V12h6v9"/>
                     </svg>
                 </div>
-                <span class="bnav-label">HOME</span>
+                <span class="bnav-label">{{ t.bnav_home }}</span>
             </a>
 
             <a href="{{ url_for('mining') }}" class="bnav-item {% if request.endpoint == 'mining' %}active{% endif %}" title="Mining">
@@ -176,7 +180,7 @@
                         <path d="M12 6l6 6"/>
                     </svg>
                 </div>
-                <span class="bnav-label">MINE</span>
+                <span class="bnav-label">{{ t.bnav_mine }}</span>
             </a>
 
             <a href="{{ url_for('referrals') }}" class="bnav-item {% if request.endpoint == 'referrals' %}active{% endif %}" title="Invite">
@@ -188,7 +192,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                 </div>
-                <span class="bnav-label">INVITE</span>
+                <span class="bnav-label">{{ t.bnav_invite }}</span>
             </a>
 
             <a href="{{ url_for('tasks') }}" class="bnav-item bnav-center {% if request.endpoint == 'tasks' %}active{% endif %}" title="Tasks">
@@ -198,7 +202,7 @@
                         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                     </svg>
                 </div>
-                <span class="bnav-label">TASKS</span>
+                <span class="bnav-label">{{ t.bnav_tasks }}</span>
             </a>
 
             <a href="{{ url_for('explore') }}" class="bnav-item {% if request.endpoint == 'explore' %}active{% endif %}" title="Explore">
@@ -208,7 +212,7 @@
                         <path d="M15 9l-4.5 1.5L9 15l4.5-1.5z" fill="currentColor" stroke="none"/>
                     </svg>
                 </div>
-                <span class="bnav-label">TOP</span>
+                <span class="bnav-label">{{ t.bnav_top }}</span>
             </a>
 
             <a href="{{ url_for('wallet') }}" class="bnav-item {% if request.endpoint == 'wallet' %}active{% endif %}" title="Wallet">
@@ -219,7 +223,7 @@
                         <path d="M2 9h20"/>
                     </svg>
                 </div>
-                <span class="bnav-label">WALLET</span>
+                <span class="bnav-label">{{ t.bnav_wallet }}</span>
             </a>
 
         </nav>

@@ -307,7 +307,7 @@
 .pm-source-desc { font-size: 0.74rem; color: var(--text2); line-height: 1.5; }
 
 /* ═══════════════════════════════
-   TIPS
+   {{ t.pm_tips_title }}
 ═══════════════════════════════ */
 .pm-tips { display: flex; flex-direction: column; gap: 8px; }
 .pm-tip {
@@ -434,8 +434,8 @@
       <div class="pm-hero-icon">
         <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-ticket"/></svg></span>
       </div>
-      <div class="pm-hero-title">PROMO CODES</div>
-      <div class="pm-hero-sub">Enter a code to claim bonus TON rewards!</div>
+      <div class="pm-hero-title">{{ t.pm_title }}</div>
+      <div class="pm-hero-sub">{{ t.pm_sub }}</div>
     </div>
 
     <!-- ── CODE ENTRY ── -->
@@ -455,7 +455,7 @@
           </button>
         </div>
       </form>
-      <div class="pm-code-hint">Codes are not case-sensitive</div>
+      <div class="pm-code-hint">{{ t.pm_code_hint }}</div>
     </div>
 
     <!-- ── REDEMPTIONS ── -->
@@ -489,8 +489,8 @@
         <div class="pm-empty-icon">
           <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-ticket"/></svg></span>
         </div>
-        <div class="pm-empty-title">NO CODES YET</div>
-        <div class="pm-empty-hint">Enter a valid code above to claim rewards!</div>
+        <div class="pm-empty-title">{{ t.pm_no_codes }}</div>
+        <div class="pm-empty-hint">{{ t.pm_enter_valid }}</div>
       </div>
       {% endif %}
     </div>
@@ -507,8 +507,8 @@
             <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-send"/></svg></span>
           </div>
           <div class="pm-source-body">
-            <span class="pm-source-name">Official Channel</span>
-            <span class="pm-source-desc">Follow our Telegram channel for exclusive drops</span>
+            <span class="pm-source-name">{{ t.pm_official_ch }}</span>
+            <span class="pm-source-desc">{{ t.pm_official_desc }}</span>
           </div>
         </div>
         <div class="pm-source">
@@ -516,8 +516,8 @@
             <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-diamond"/></svg></span>
           </div>
           <div class="pm-source-body">
-            <span class="pm-source-name">Special Events</span>
-            <span class="pm-source-desc">Participate in events for limited codes</span>
+            <span class="pm-source-name">{{ t.pm_events }}</span>
+            <span class="pm-source-desc">{{ t.pm_events_desc }}</span>
           </div>
         </div>
         <div class="pm-source">
@@ -525,24 +525,24 @@
             <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-link"/></svg></span>
           </div>
           <div class="pm-source-body">
-            <span class="pm-source-name">Partnerships</span>
-            <span class="pm-source-desc">Check our partners for collaboration codes</span>
+            <span class="pm-source-name">{{ t.pm_partners }}</span>
+            <span class="pm-source-desc">{{ t.pm_partners_desc }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── TIPS ── -->
+    <!-- ── {{ t.pm_tips_title }} ── -->
     <div class="pm-card">
       <div class="pm-label">
         <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-exclaim"/></svg></span>
         Tips
       </div>
       <div class="pm-tips">
-        <div class="pm-tip"><div class="pm-tip-num">1</div>Each code can only be used once per account</div>
-        <div class="pm-tip"><div class="pm-tip-num">2</div>Some codes have limited total uses</div>
-        <div class="pm-tip"><div class="pm-tip-num">3</div>Codes may expire after a certain date</div>
-        <div class="pm-tip"><div class="pm-tip-num">4</div>Keep an eye out for flash codes with big rewards!</div>
+        <div class="pm-tip"><div class="pm-tip-num">1</div>{{ t.pm_tip_1 }}</div>
+        <div class="pm-tip"><div class="pm-tip-num">2</div>{{ t.pm_tip_2 }}</div>
+        <div class="pm-tip"><div class="pm-tip-num">3</div>{{ t.pm_tip_3 }}</div>
+        <div class="pm-tip"><div class="pm-tip-num">4</div>{{ t.pm_tip_4 }}</div>
       </div>
     </div>
 
@@ -556,13 +556,13 @@
     <div class="pm-modal-star">
       <span class="ico ico-md" aria-hidden="true"><svg shape-rendering="crispEdges"><use href="#ico-star"/></svg></span>
     </div>
-    <div class="pm-modal-title">CODE REDEEMED!</div>
+    <div class="pm-modal-title">{{ t.pm_redeemed_title }}</div>
     <div class="pm-reward-box">
-      <span class="pm-reward-label">YOU RECEIVED</span>
+      <span class="pm-reward-label">{{ t.pm_you_received }}</span>
       <span class="pm-reward-amount" id="rewardAmount">+0.00</span>
       <span class="pm-reward-currency">TON</span>
     </div>
-    <button class="pm-btn-awesome" onclick="closeSuccessModal()">AWESOME!</button>
+    <button class="pm-btn-awesome" onclick="closeSuccessModal()">{{ t.pm_awesome }}</button>
   </div>
 </div>
 
@@ -575,7 +575,7 @@ async function redeemCode(event) {
 
   const btn = document.getElementById('redeemBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="pm-spinner"></span> CHECKING...';
+  btn.innerHTML = '<span class="pm-spinner"></span> {{ t.pm_checking }}';
 
   try {
     const res = await fetch('/api/promo/redeem', {

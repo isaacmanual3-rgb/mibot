@@ -1025,12 +1025,8 @@ canvas#oscCanvas {
   <!-- Ticker -->
   <div class="px-ticker" aria-hidden="true">
     <span>
-      ★ TON QUEST DAILY REWARDS ★&nbsp;&nbsp;&nbsp;&nbsp;
-      EARN TON EVERY DAY &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-      COMPLETE QUESTS FOR BONUS TON &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-      INVITE FRIENDS &amp; MULTIPLY YOUR EARNINGS &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-      MUCH WOW. VERY EARN. SO TON. &nbsp;★&nbsp;&nbsp;&nbsp;&nbsp;
-    </span>
+      {{ t.idx_ticker }}&nbsp;&nbsp;&nbsp;&nbsp;
+      </span>
   </div>
 
   <div class="px-page">
@@ -1039,9 +1035,9 @@ canvas#oscCanvas {
     <div class="px-card">
       <div class="px-welcome">
         <div class="px-welcome-left">
-          <div class="px-welcome-eyebrow">▶ PLAYER ONLINE</div>
+          <div class="px-welcome-eyebrow">{{ t.idx_player_online }}</div>
           <div class="px-welcome-name">{{ user.first_name or 'PLAYER' }}!</div>
-          <div class="px-welcome-sub">READY FOR YOUR DAILY QUEST?</div>
+          <div class="px-welcome-sub">{{ t.idx_daily_quest }}</div>
         </div>
         <div class="px-doge-art" aria-hidden="true">🐕</div>
       </div>
@@ -1096,18 +1092,18 @@ canvas#oscCanvas {
           <!-- Live earnings + rate -->
           <div class="mdb-live-panel">
             <div class="mdb-live-counter">
-              <span class="mdb-live-lbl">⛏ TOTAL PENDING</span>
+              <span class="mdb-live-lbl">{{ t.mdb_total_pending }}</span>
               <span class="mdb-live-amount" id="mdbLiveAmount">0.00000000</span>
               <span class="mdb-live-unit">TON/span>
             </div>
             <div class="mdb-rate-row">
               <div class="mdb-rate-cell">
                 <span class="mdb-rate-val" id="mdbRateHr">—</span>
-                <span class="mdb-rate-lbl">PER HOUR</span>
+                <span class="mdb-rate-lbl">{{ t.mdb_per_hour }}</span>
               </div>
               <div class="mdb-rate-cell">
                 <span class="mdb-rate-val blue" id="mdbRateDay">—</span>
-                <span class="mdb-rate-lbl">PER DAY</span>
+                <span class="mdb-rate-lbl">{{ t.mdb_per_day }}</span>
               </div>
             </div>
           </div>
@@ -1116,7 +1112,7 @@ canvas#oscCanvas {
         <!-- ── PROGRESS BAR ── -->
         <div class="mdb-progress-section">
           <div class="mdb-progress-header">
-            <span class="mdb-progress-title">⚡ MINING PROGRESS</span>
+            <span class="mdb-progress-title">{{ t.mdb_mining_progress }}</span>
             <span class="mdb-progress-pct" id="mdbPct">0%</span>
           </div>
           <div class="mdb-progress-track">
@@ -1133,7 +1129,7 @@ canvas#oscCanvas {
         <!-- ── OSCILLOSCOPE ── -->
         <div class="mdb-osc-wrap">
           <div class="mdb-osc-header">
-            <span class="mdb-osc-lbl">HASHRATE MONITOR</span>
+            <span class="mdb-osc-lbl">{{ t.mdb_hashrate_monitor }}</span>
             <span class="mdb-osc-val" id="mdbHashVal">0 MH/s</span>
           </div>
           <div class="mdb-osc">
@@ -1170,7 +1166,7 @@ canvas#oscCanvas {
             <div class="mdb-terminal-dot"></div>
             <div class="mdb-terminal-dot"></div>
             <div class="mdb-terminal-dot"></div>
-            <span class="mdb-terminal-title">MINING CONSOLE</span>
+            <span class="mdb-terminal-title">{{ t.mdb_mining_console }}</span>
           </div>
           <div class="mdb-terminal-body">
             <div class="mdb-log-stream" id="mdbLogStream"></div>
@@ -1180,9 +1176,9 @@ canvas#oscCanvas {
         <!-- ── FOOTER ACTIONS ── -->
         <div class="mdb-footer">
           <button class="mdb-claim-btn" id="mdbClaimBtn" onclick="MDB.claim()" disabled>
-            ⏳ LOADING REWARDS...
+            {{ t.mdb_loading_rewards }}
           </button>
-          <a class="mdb-sub-link" href="/mining">⛏ MANAGE MINING PLANS →</a>
+          <a class="mdb-sub-link" href="/mining">{{ t.mdb_manage_plans }}</a>
         </div>
 
       </div>
@@ -1191,35 +1187,35 @@ canvas#oscCanvas {
       <div id="mdbNoplanZone">
         <div class="mdb-noplan">
           <div class="mdb-noplan-rig">⛏</div>
-          <div class="mdb-noplan-title">RIG OFFLINE</div>
-          <div class="mdb-noplan-sub">PURCHASE A PLAN TO START<br>EARNING TON AUTOMATICALLY</div>
+          <div class="mdb-noplan-title">{{ t.mdb_rig_offline }}</div>
+          <div class="mdb-noplan-sub">{{ t.mdb_buy_plan_to_start }}</div>
 
           <!-- Plan preview -->
           <div class="mdb-plan-preview">
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#ff8a65">🔥 BRONZE</span>
-              <span class="mdb-plan-preview-rate">STARTER TIER</span>
-              <span class="mdb-plan-preview-earn">EARN TON/HR</span>
+              <span class="mdb-plan-preview-rate">{{ t.mdb_starter_tier }}</span>
+              <span class="mdb-plan-preview-earn">{{ t.mdb_earn_ton_hr }}</span>
             </div>
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#b0bec5">🛡 SILVER</span>
-              <span class="mdb-plan-preview-rate">INTERMEDIATE</span>
-              <span class="mdb-plan-preview-earn">2× FASTER</span>
+              <span class="mdb-plan-preview-rate">{{ t.mdb_intermediate }}</span>
+              <span class="mdb-plan-preview-earn">{{ t.mdb_2x }}</span>
             </div>
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:var(--px-gold)">★ GOLD</span>
-              <span class="mdb-plan-preview-rate">ADVANCED</span>
-              <span class="mdb-plan-preview-earn">5× FASTER</span>
+              <span class="mdb-plan-preview-rate">{{ t.mdb_advanced }}</span>
+              <span class="mdb-plan-preview-earn">{{ t.mdb_5x }}</span>
             </div>
             <div class="mdb-plan-preview-row">
               <span class="mdb-plan-preview-tier" style="color:#ce93d8">♛ LEGENDARY</span>
-              <span class="mdb-plan-preview-rate">MAXIMUM POWER</span>
-              <span class="mdb-plan-preview-earn">🔥 MAX TON</span>
+              <span class="mdb-plan-preview-rate">{{ t.mdb_max_power }}</span>
+              <span class="mdb-plan-preview-earn">{{ t.mdb_max_ton }}</span>
             </div>
           </div>
 
           <a class="mdb-cta-btn" href="/mining">
-            ⛏ GET STARTED NOW
+            {{ t.mdb_get_started }}
           </a>
         </div>
       </div>
@@ -1228,57 +1224,57 @@ canvas#oscCanvas {
 
     <!-- STATS -->
     <div class="px-card">
-      <div class="px-label">📊 &nbsp;YOUR STATS</div>
+      <div class="px-label">📊 &nbsp;{{ t.idx_stats_label }}</div>
       <div class="px-stats">
         <div class="px-stat-box">
           <span class="px-stat-val">{{ format_ton(user.doge_balance) }}</span>
-          <span class="px-stat-lbl">BALANCE</span>
+          <span class="px-stat-lbl">{{ t.idx_stat_balance }}</span>
         </div>
         <div class="px-stat-box">
           <span class="px-stat-val">{{ format_ton(user.total_earned) }}</span>
-          <span class="px-stat-lbl">TOTAL EARNED</span>
+          <span class="px-stat-lbl">{{ t.idx_stat_earned }}</span>
         </div>
         <div class="px-stat-box">
           <span class="px-stat-val" id="statMachines">—</span>
-          <span class="px-stat-lbl">MACHINES</span>
+          <span class="px-stat-lbl">{{ t.idx_stat_machines }}</span>
         </div>
         <div class="px-stat-box">
           <span class="px-stat-val">{{ user.referral_count or 0 }}</span>
-          <span class="px-stat-lbl">REFERRALS</span>
+          <span class="px-stat-lbl">{{ t.idx_stat_refs }}</span>
         </div>
       </div>
     </div>
 
     <!-- QUICK ACTIONS -->
     <div class="px-card">
-      <div class="px-label">⚡ &nbsp;QUICK ACTIONS</div>
+      <div class="px-label">⚡ &nbsp;{{ t.idx_actions_label }}</div>
       <div class="px-actions">
-        <a href="{{ url_for('mining') }}" class="px-btn px-btn-gold">⛏ MINING</a>
-        <a href="{{ url_for('tasks') }}" class="px-btn px-btn-blue">📋 TASKS</a>
-        <a href="{{ url_for('referrals') }}" class="px-btn px-btn-ghost">👥 INVITE</a>
-        <a href="{{ url_for('wallet') }}" class="px-btn px-btn-ghost">💰 WALLET</a>
+        <a href="{{ url_for('mining') }}" class="px-btn px-btn-gold">{{ t.idx_btn_mining }}</a>
+        <a href="{{ url_for('tasks') }}" class="px-btn px-btn-blue">{{ t.idx_btn_tasks }}</a>
+        <a href="{{ url_for('referrals') }}" class="px-btn px-btn-ghost">{{ t.idx_btn_invite }}</a>
+        <a href="{{ url_for('wallet') }}" class="px-btn px-btn-ghost">{{ t.idx_btn_wallet }}</a>
       </div>
     </div>
 
     <!-- HOW IT WORKS -->
     <div class="px-card">
-      <div class="px-label">💡 &nbsp;QUEST LOG</div>
+      <div class="px-label">💡 &nbsp;{{ t.idx_quest_label }}</div>
       <div class="px-quest-list">
         <div class="px-quest-item">
           <div class="px-quest-num">1</div>
-          <div class="px-quest-text"><strong>BUY A MINING PLAN</strong> to start auto-earning TON</div>
+          <div class="px-quest-text">{{ t.idx_quest_1 }}</div>
         </div>
         <div class="px-quest-item">
           <div class="px-quest-num">2</div>
-          <div class="px-quest-text"><strong>COMPLETE TASKS</strong> for bonus earnings</div>
+          <div class="px-quest-text">{{ t.idx_quest_2 }}</div>
         </div>
         <div class="px-quest-item">
           <div class="px-quest-num">3</div>
-          <div class="px-quest-text"><strong>INVITE FRIENDS</strong> to earn referral bonuses</div>
+          <div class="px-quest-text">{{ t.idx_quest_3 }}</div>
         </div>
         <div class="px-quest-item">
           <div class="px-quest-num">4</div>
-          <div class="px-quest-text"><strong>WITHDRAW</strong> your TON to your wallet</div>
+          <div class="px-quest-text">{{ t.idx_quest_4 }}</div>
         </div>
       </div>
     </div>
@@ -1538,7 +1534,7 @@ const MDB = (() => {
       btn.disabled = state.pending <= 0;
       btn.innerHTML = state.pending > 0
         ? `💰 CLAIM ${fmtShort(state.pending)} TON`
-        : `⛏ MINING... REWARDS ACCUMULATING`;
+        : `{{ t.idx_btn_mining }}... REWARDS ACCUMULATING`;
     }
 
     /* start subsystems */
