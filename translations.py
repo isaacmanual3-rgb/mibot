@@ -130,6 +130,25 @@ TRANSLATIONS = {
     'mn_claim_failed':   {'en': 'Claim failed',             'es': 'Error al reclamar'},
     'mn_conn_error':     {'en': 'Connection error',         'es': 'Error de conexión'},
     'mn_free_label':     {'en': 'FREE',                     'es': 'GRATIS'},
+    # Wallet deposit section
+    'wl_dep_memo_warning': {
+        'en': '⚠ Include the MEMO/Comment mandatorily',
+        'es': '⚠ Incluye el MEMO/Comentario obligatoriamente'
+    },
+    'wl_dep_address_lbl':  {'en': 'TON ADDRESS (send here)',    'es': 'DIRECCIÓN TON (envía aquí)'},
+    'wl_dep_memo_lbl':     {'en': 'MEMO / COMMENT (required ⚠)', 'es': 'MEMO / COMENTARIO (obligatorio ⚠)'},
+    'wl_dep_memo_warn2': {
+        'en': '⚠ If you do not include the MEMO your deposit will not be credited automatically.',
+        'es': '⚠ Si no incluyes el MEMO tu depósito no se acreditará automáticamente.'
+    },
+    'wl_dep_waiting':      {'en': 'WAITING FOR DEPOSIT...',     'es': 'ESPERANDO DEPÓSITO...'},
+    'wl_dep_auto_credit':  {'en': 'Will be credited automatically in seconds', 'es': 'Se acreditará automáticamente en segundos'},
+    'wl_dep_credited':     {'en': 'TON CREDITED!',              'es': '¡TON ACREDITADO!'},
+    # Mining JS dynamic strings (via window.I18N)
+    'mn_activate_plan_msg': {
+        'en': 'Activate the {name} plan for 30 days?',
+        'es': '¿Activar el plan {name} por 30 días?'
+    },
 
     # ── WALLET PAGE ────────────────────────────────────────────
     'wl_ticker': {
