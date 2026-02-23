@@ -558,9 +558,9 @@ def create_ton_withdrawal(user_id, doge_amount, ton_wallet):
     rate     = float(get_config('doge_to_ton_rate', '100'))  # DOGE per 1 TON → 1 DOGE = 1/rate TON
 
     if doge_amount < min_doge:
-        return {'error': f'Minimo retiro: {min_doge} DOGE'}
+        return {'error': 'api_min_withdrawal', 'amount': str(min_doge)}
     if doge_amount > balance:
-        return {'error': 'Saldo insuficiente'}
+        return {'error': 'api_insuf_balance'}
 
     fee_doge   = round(doge_amount * fee_pct / 100, 8)
     net_doge   = round(doge_amount - fee_doge, 8)
@@ -929,13 +929,13 @@ def purchase_mining_machine(user_id, plan_id):
 
     plan = get_mining_plan(plan_id)
     if not plan:
-        return {'success': False, 'message': 'Plan not found'}
+        return {'success': False, 'err_code': 'api_plan_not_found'}
     if not plan.get('active'):
-        return {'success': False, 'message': 'This plan is not available'}
+        return {'success': False, 'err_code': 'api_plan_unavailable'}
 
     user = get_user(user_id)
     if not user:
-        return {'success': False, 'message': 'User not found'}
+        return {'success': False, 'err_code': 'api_user_not_found'}
 
     price = float(plan['price'])
     is_free = price == 0.0
@@ -948,7 +948,7 @@ def purchase_mining_machine(user_id, plan_id):
             (str(user_id), plan_id), fetch_one=True
         )
         if ever_used:
-            return {'success': False, 'message': f'El plan {plan["name"]} es gratuito y solo puede activarse una vez por cuenta.'}
+            return {'success': False, 'err_code': 'api_free_plan_once', 'plan_name': plan['name']}
 
     # ── 30-day cooldown: one active machine per plan at a time ──
     existing = execute_query(
@@ -957,14 +957,14 @@ def purchase_mining_machine(user_id, plan_id):
     )
     if existing:
         exp = existing['expires_at']
-        return {'success': False, 'message': f'Ya tienes este plan activo. Podrás renovarlo el {exp.strftime("%d/%m/%Y")}.'}
+        return {'success': False, 'err_code': 'api_plan_active_until', 'date': exp.strftime("%d/%m/%Y")}
 
     # ── Balance check (skip for free plans) ──
     if not is_free:
         balance = float(user.get('doge_balance', 0))
         if balance < price:
-            return {'success': False, 'message': f'Saldo insuficiente. Necesitas {price:.2f} TON'}
-        update_balance(user_id, -price, 'mining_purchase', f'Plan {plan["name"]} activado')
+            return {'success': False, 'err_code': 'api_insufficient_funds', 'amount': f'{price:.2f}'}
+        update_balance(user_id, -price, 'mining_purchase', f'Plan {plan["name"]} activated')
 
     # ── Create machine ──
     machine_id = f"machine_{uuid.uuid4().hex[:12]}"
@@ -977,10 +977,12 @@ def purchase_mining_machine(user_id, plan_id):
         VALUES (%s, %s, %s, %s, %s, NOW(), %s)
     """, (machine_id, str(user_id), plan_id, plan['name'], plan['hourly_rate'], expires_at))
 
-    action = 'activado gratis' if is_free else f'activado por {price:.2f} TON'
+    action = 'free' if is_free else f'paid_{price:.2f}'
     return {
         'success': True,
-        'message': f'Plan {plan["name"]} {action}! Gana TON por 30 días.',
+        'err_code': 'api_plan_activated_free' if is_free else 'api_plan_activated_paid',
+        'plan_name': plan['name'],
+        'price': f'{price:.2f}',
         'machine_id': machine_id
     }
 
@@ -1029,7 +1031,7 @@ def claim_mining_rewards(user_id):
     machines = get_user_machines(user_id)
 
     if not machines:
-        return {'success': False, 'message': 'No active mining machines'}
+        return {'success': False, 'err_code': 'api_no_machines'}
 
     total_claimed = 0
     now = datetime.now()
@@ -1059,11 +1061,12 @@ def claim_mining_rewards(user_id):
 
         return {
             'success': True,
-            'message': f'Claimed {total_claimed:.8f} DOGE!',
+            'err_code': 'api_claimed_rewards',
+            'claimed': f'{total_claimed:.8f}',
             'amount': total_claimed
         }
 
-    return {'success': False, 'message': 'No rewards to claim'}
+    return {'success': False, 'err_code': 'api_no_rewards'}
 
 def process_mining_rewards(user_id):
     """Process mining rewards (background task)"""

@@ -61,6 +61,35 @@ def inject_lang():
     lang = session.get('lang', 'en')
     return dict(t=get_t(lang), current_lang=lang)
 
+
+def _t(key, **kwargs):
+    """Translate an API message key using the current session language."""
+    lang = session.get('lang', 'en')
+    t = get_t(lang)
+    msg = getattr(t, key, key)
+    for k, v in kwargs.items():
+        msg = msg.replace('{' + k + '}', str(v))
+    return msg
+
+
+def translate_result(result):
+    """Translate err_code in a database result dict into a localized message."""
+    if not isinstance(result, dict):
+        return result
+    if 'err_code' in result:
+        code      = result.pop('err_code')
+        plan_name = result.pop('plan_name', '')
+        date      = result.pop('date', '')
+        amount    = result.pop('amount', '') if isinstance(result.get('amount'), str) else ''
+        price     = result.pop('price', '')
+        claimed   = result.pop('claimed', '')
+        result['message'] = _t(code, name=plan_name, date=date, amount=amount, price=price, claimed=claimed)
+    if 'error' in result and isinstance(result['error'], str) and result['error'].startswith('api_'):
+        code = result.pop('error')
+        amount = result.pop('amount', '')
+        result['error'] = _t(code, amount=amount)
+    return result
+
 @app.route('/lang/<code>')
 def set_lang(code):
     """Switch UI language and redirect back."""
@@ -531,15 +560,17 @@ def api_ton_withdraw_init(user):
     ton_wallet  = data.get('ton_wallet', '').strip()
 
     if not ton_wallet:
-        return jsonify({'success': False, 'message': 'Conecta tu wallet TON primero'})
+        return jsonify({'success': False, 'message': _t('api_no_wallet')})
 
     if get_config('ton_withdrawal_enabled', '1') != '1':
-        return jsonify({'success': False, 'message': 'Retiros TON temporalmente deshabilitados'})
+        return jsonify({'success': False, 'message': _t('api_wd_disabled')})
 
     # Create the withdrawal record (deducts DOGE balance)
     result = create_ton_withdrawal(user['user_id'], doge_amount, ton_wallet)
     if 'error' in result:
-        return jsonify({'success': False, 'message': result['error']})
+        err = result['error']
+        amount = result.get('amount', '')
+        return jsonify({'success': False, 'message': _t(err, amount=amount) if err.startswith('api_') else err})
 
     withdrawal_id = result['withdrawal_id']
     ton_amount    = result['ton_amount']
@@ -618,11 +649,15 @@ def api_ton_deposit_address(user):
     Also creates a pending deposit record for polling.
     """
     if get_config('ton_deposits_enabled', '1') != '1':
-        return jsonify({'success': False, 'message': 'Depósitos TON deshabilitados'})
+        return jsonify({'success': False, 'message': _t('api_dep_disabled')})
+    
+    bot_addr = get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', '')
+    if not bot_addr:
+        return jsonify({'success': False, 'message': _t('api_bot_addr_missing')})
 
     ton_wallet_addr = get_config('ton_wallet_address', '')
     if not ton_wallet_addr or 'AQUI' in ton_wallet_addr:
-        return jsonify({'success': False, 'message': 'Dirección del bot no configurada. Contacta al admin.'})
+        return jsonify({'success': False, 'message': _t('api_bot_addr_missing')})
 
     memo = get_or_create_user_deposit_address(user['user_id'])
     ton_min = float(get_config('ton_min_deposit', '0.1'))
@@ -1084,14 +1119,14 @@ def api_mining_purchase(user):
         return jsonify({'success': False, 'message': 'Plan ID required'})
     
     result = purchase_mining_machine(user['user_id'], plan_id)
-    return jsonify(result)
+    return jsonify(translate_result(result))
 
 @app.route('/api/mining/claim', methods=['POST'])
 @require_user
 def api_mining_claim(user):
     """Claim mining rewards"""
     result = claim_mining_rewards(user['user_id'])
-    return jsonify(result)
+    return jsonify(translate_result(result))
 
 @app.route('/api/mining/stats')
 @require_user

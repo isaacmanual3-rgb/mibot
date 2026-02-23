@@ -352,6 +352,43 @@ TRANSLATIONS = {
     'adm_config':        {'en': 'CONFIG',                  'es': 'CONFIG'},
     'adm_icons':         {'en': 'ICONS',                   'es': 'ÍCONOS'},
     'adm_logout':        {'en': 'LOGOUT',                  'es': 'CERRAR SESIÓN'},
+
+    # ── BACKEND API MESSAGES (returned from server, translated by lang) ──
+    'api_plan_not_found':    {'en': 'Plan not found',           'es': 'Plan no encontrado'},
+    'api_plan_unavailable':  {'en': 'This plan is not available', 'es': 'Este plan no está disponible'},
+    'api_user_not_found':    {'en': 'User not found',           'es': 'Usuario no encontrado'},
+    'api_free_plan_once':    {
+        'en': 'The {name} plan is free and can only be activated once per account.',
+        'es': 'El plan {name} es gratuito y solo puede activarse una vez por cuenta.'
+    },
+    'api_plan_active_until': {
+        'en': 'You already have this plan active. You can renew it on {date}.',
+        'es': 'Ya tienes este plan activo. Podrás renovarlo el {date}.'
+    },
+    'api_insufficient_funds':{
+        'en': 'Insufficient balance. You need {amount} TON',
+        'es': 'Saldo insuficiente. Necesitas {amount} TON'
+    },
+    'api_plan_activated_free':{
+        'en': 'Plan {name} activated for free! Earn TON for 30 days.',
+        'es': '¡Plan {name} activado gratis! Gana TON por 30 días.'
+    },
+    'api_plan_activated_paid':{
+        'en': 'Plan {name} activated for {price} TON! Earn TON for 30 days.',
+        'es': '¡Plan {name} activado por {price} TON! Gana TON por 30 días.'
+    },
+    'api_no_wallet':         {'en': 'Connect your TON wallet first', 'es': 'Conecta tu wallet TON primero'},
+    'api_wd_disabled':       {'en': 'TON withdrawals temporarily disabled', 'es': 'Retiros TON temporalmente deshabilitados'},
+    'api_dep_disabled':      {'en': 'TON deposits disabled',        'es': 'Depósitos TON deshabilitados'},
+    'api_bot_addr_missing':  {'en': 'Bot address not configured. Contact admin.', 'es': 'Dirección del bot no configurada. Contacta al admin.'},
+    'api_min_withdrawal':    {
+        'en': 'Minimum withdrawal: {amount} TON',
+        'es': 'Mínimo de retiro: {amount} TON'
+    },
+    'api_insuf_balance':     {'en': 'Insufficient balance',        'es': 'Saldo insuficiente'},
+    'api_no_machines':       {'en': 'No active mining machines',   'es': 'No tienes máquinas activas'},
+    'api_claimed_rewards':   {'en': 'Claimed {claimed} TON!',      'es': '¡{claimed} TON reclamados!'},
+    'api_no_rewards':        {'en': 'No rewards to claim',         'es': 'No hay recompensas para reclamar'},
 }
 
 
