@@ -1,0 +1,448 @@
+/* ══════════════════════════════════════════════
+   APPLE FARM GAME — apple_game.css
+   ══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+    --apple-red:    #e8433a;
+    --apple-green:  #4caf50;
+    --apple-gold:   #f5c842;
+    --bark-brown:   #8b5c2a;
+    --sky-top:      #1a2a1a;
+    --sky-mid:      #0d1a0d;
+    --card-bg:      rgba(30, 48, 20, 0.85);
+    --card-border:  rgba(76, 175, 80, 0.3);
+    --text-main:    #e8f5e9;
+    --text-muted:   #a5d6a7;
+    --locked-bg:    rgba(20, 20, 20, 0.7);
+    --locked-border:rgba(80, 80, 80, 0.4);
+}
+
+/* ── Base ─────────────────────────────────────── */
+.farm-container {
+    font-family: 'Nunito', sans-serif;
+    background: radial-gradient(ellipse at top, #1b3a1b 0%, #0a1a0a 60%, #050d05 100%);
+    min-height: 100%;
+    padding: 12px 12px 80px;
+    position: relative;
+}
+
+/* ── Stats Bar ────────────────────────────────── */
+.farm-stats-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.stat-chip {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+.stat-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.stat-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-main);
+    font-family: 'Fredoka One', cursive;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Timer ───────────────────────────────────── */
+.timer-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.timer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #a5d6a7;
+    letter-spacing: 0.3px;
+}
+
+.timer-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 8px #4caf50;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Island Map ─────────────────────────────── */
+.island-map-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto 20px;
+}
+
+.island-map-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+}
+
+.tree-nodes {
+    position: absolute;
+    inset: 0;
+}
+
+/* ── Node Badges on map ─────────────────────── */
+.tree-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.tree-node:hover { transform: translate(-50%, -50%) scale(1.15); }
+.tree-node:active { transform: translate(-50%, -50%) scale(0.95); }
+
+.tree-node-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    transition: all 0.2s;
+}
+
+.tree-node-badge.unlocked {
+    background: radial-gradient(circle, #2e7d32, #1b5e20);
+    border-color: rgba(76,175,80,0.6);
+    animation: float-badge 3s ease-in-out infinite;
+}
+
+.tree-node-badge.locked {
+    background: rgba(30,30,30,0.8);
+    border-color: rgba(100,100,100,0.4);
+    filter: grayscale(0.5);
+}
+
+@keyframes float-badge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* ── Tree Cards Section ───────────────────────── */
+.section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: var(--text-main);
+    margin: 0 0 12px 4px;
+    letter-spacing: 0.5px;
+}
+
+.tree-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tree-card {
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+    position: relative;
+    overflow: hidden;
+}
+
+.tree-card:active { transform: scale(0.97); }
+
+.tree-card.unlocked {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.tree-card.locked {
+    background: var(--locked-bg);
+    border: 1px solid var(--locked-border);
+    opacity: 0.7;
+}
+
+.tree-card.unlocked:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+}
+
+.tree-card-icon {
+    font-size: 34px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.tree-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tree-card-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 3px;
+    font-family: 'Fredoka One', cursive;
+}
+
+.tree-card-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tree-card-sub span { display: inline-flex; align-items: center; gap: 3px; }
+
+.tree-card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.tree-card-owned {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.btn-unlock {
+    background: linear-gradient(135deg, #2e7d32, #43a047);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Fredoka One', cursive;
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(46,125,50,0.4);
+}
+
+.btn-unlock:hover { opacity: 0.9; transform: scale(1.05); }
+.btn-unlock:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.lock-badge {
+    font-size: 20px;
+}
+
+.level-req {
+    font-size: 10px;
+    color: #888;
+    font-weight: 700;
+}
+
+/* ── Production shimmer on active cards ──────── */
+.tree-card.unlocked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(76,175,80,0.05) 50%, transparent 100%);
+    animation: shimmer-card 3s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes shimmer-card {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ── Floating apple particles ─────────────────── */
+.apple-float {
+    position: fixed;
+    font-size: 22px;
+    pointer-events: none;
+    animation: apple-rise 1.2s ease-out forwards;
+    z-index: 9999;
+}
+
+@keyframes apple-rise {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(1.4); }
+}
+
+/* ── Modal ─────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; } to { opacity: 1; }
+}
+
+.modal-box {
+    background: linear-gradient(180deg, #1b3a1b 0%, #0d1a0d 100%);
+    border: 1px solid rgba(76,175,80,0.35);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 22px 40px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    animation: slide-up 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes slide-up {
+    from { transform: translateY(100%); } to { transform: translateY(0); }
+}
+
+.modal-close {
+    position: absolute;
+    top: 14px; right: 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    font-size: 14px;
+    color: #aaa;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.2); }
+
+.modal-icon {
+    font-size: 52px;
+    text-align: center;
+    margin-bottom: 8px;
+    animation: bounce-icon 2s ease-in-out infinite;
+}
+
+@keyframes bounce-icon {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.modal-title {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: var(--text-main);
+    margin: 0 0 16px;
+}
+
+.modal-stats {
+    background: rgba(0,0,0,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.modal-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.modal-stat-label {
+    font-size: 10px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+.modal-stat-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-main);
+    font-family: 'Fredoka One', cursive;
+}
+
+.btn-buy {
+    width: 100%;
+    background: linear-gradient(135deg, #e8433a, #c62828);
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 18px rgba(232,67,58,0.45);
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.btn-buy:hover { opacity: 0.9; transform: scale(1.02); }
+.btn-buy:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.modal-note {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+}
+
+/* ── Toast override ─────────────────────────── */
+.toast-success {
+    background: linear-gradient(135deg, #2e7d32, #43a047) !important;
+    border: 1px solid rgba(76,175,80,0.5) !important;
+}
