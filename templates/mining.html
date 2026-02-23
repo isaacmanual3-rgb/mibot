@@ -1,804 +1,780 @@
 {% extends "base.html" %}
+
 {% block title %}Apple Farm - DogeQuest{% endblock %}
+
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
-/* ══════════ RESET & BASE ══════════ */
-#farm-root,#farm-root *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-#farm-root{
-  font-family:'Fredoka One',cursive;
-  position:relative; width:100%; min-height:100vh;
-  overflow:hidden; touch-action:manipulation;
-  background:linear-gradient(180deg,#C8564A 0%,#D96A4A 8%,#E88060 18%,#F09A72 35%,#F5B888 55%,#F8CFA0 72%,#EDD898 85%,#C8DC88 100%);
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg:        #08080f;
+  --surface:   #0d0d1a;
+  --surface2:  #111122;
+  --surface3:  #070710;
+  --gold:      #ffd700;
+  --gold2:     #ffb300;
+  --gold-dark: #5a3a00;
+  --gold-dim:  rgba(255,215,0,0.07);
+  --green:     #00e676;
+  --blue:      #40c4ff;
+  --border:    #1e1e34;
+  --text:      #e0e2f0;
+  --text2:     #9090b8;
+  --muted:     #4a4a6e;
+  --font-px:   'Press Start 2P', monospace;
+  --font-body: 'Inter', sans-serif;
 }
 
-/* ══════════ SCREENS ══════════ */
-.fsc{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
-.fsc.active{display:flex;}
-
-/* ══════════ CLOUDS ══════════ */
-.clouds{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1;}
-.cl{position:absolute;}
-.cl1{top:6%;left:-5%;animation:drift1 34s linear infinite;}
-.cl2{top:18%;right:-8%;animation:drift2 46s linear infinite;}
-.cl3{top:2%;left:25%;animation:drift1 58s linear infinite 14s;opacity:.7;}
-@keyframes drift1{0%{transform:translateX(-220px)}100%{transform:translateX(115vw)}}
-@keyframes drift2{0%{transform:translateX(120px)}100%{transform:translateX(-115vw)}}
-
-/* ══════════ HILLS ══════════ */
-.hills{position:absolute;bottom:0;left:0;right:0;height:38%;z-index:2;pointer-events:none;}
-.hills svg{width:100%;height:100%;}
-
-/* Barn & deco */
-.barn{position:absolute;right:6%;bottom:18%;z-index:3;pointer-events:none;width:80px;}
-.gdeco-l{position:absolute;left:3%;bottom:20%;z-index:3;pointer-events:none;}
-.gdeco-r{position:absolute;right:14%;bottom:19%;z-index:3;pointer-events:none;}
-
-/* ══════════ TOP BAR ══════════ */
-.topbar{
-  position:relative;z-index:50;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 12px 4px;gap:8px;
+.mn-shell *, .mn-shell *::before, .mn-shell *::after { box-sizing: border-box; }
+.mn-shell {
+  font-family: var(--font-body);
+  background: var(--bg); min-height: 100vh;
+  color: var(--text); position: relative; overflow-x: hidden;
 }
-.wsign{
-  position:relative;
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:2.5px solid #2A1208;border-radius:7px;
-  box-shadow:0 3px 0 #1A0A04,0 5px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(180,110,40,.3);
-  overflow:hidden;
+.mn-shell::before {
+  content:''; position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.011) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.011) 1px, transparent 1px);
+  background-size:24px 24px; pointer-events:none; z-index:0;
 }
-.wsign::before{content:'';position:absolute;top:0;left:0;right:0;height:38%;background:linear-gradient(180deg,rgba(200,130,50,.22),transparent);pointer-events:none;}
-.wsign::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 30px,rgba(0,0,0,.08) 30px,rgba(0,0,0,.08) 31px);pointer-events:none;}
-.tbtn{display:flex;align-items:center;gap:6px;padding:7px 12px;color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;text-shadow:0 1px 3px rgba(0,0,0,.6);cursor:pointer;border:none;background:transparent;}
-.lvldot{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#50CCFF,#1060C8);border:2px solid #0840A0;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:#fff;flex-shrink:0;}
-
-/* Currency row */
-.currrow{position:relative;z-index:50;display:flex;gap:6px;padding:0 12px 4px;}
-.currbox{display:flex;align-items:center;gap:7px;padding:5px 14px;color:#FFE566;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.5);}
-.coin{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:900;flex-shrink:0;}
-.cgold{background:radial-gradient(circle at 35% 32%,#FFE88A,#C89010);border:2px solid #A07008;color:#7A4800;}
-.csil{background:radial-gradient(circle at 35% 32%,#F0F0F0,#909090);border:2px solid #686868;color:#484848;}
-
-/* ══════════ FARM SCREEN — ISLAND PATH ══════════ */
-#sc-farm{background:transparent;}
-.ipath{
-  position:absolute;inset:0;
-  overflow-y:auto;overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  z-index:10;padding-top:80px;padding-bottom:220px;
+.mn-shell::after {
+  content:''; position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.055) 2px,rgba(0,0,0,0.055) 4px);
+  pointer-events:none; z-index:1;
 }
-.ipath::-webkit-scrollbar{display:none;}
-
-/* Island */
-.island-wrap{position:absolute;display:flex;flex-direction:column;align-items:center;}
-.buy-sign{
-  position:relative;
-  background:linear-gradient(180deg,#7A4820 0%,#5C3010 50%,#4A2208 100%);
-  border:2.5px solid #2A1008;border-radius:7px;
-  box-shadow:0 3px 0 #1A0800,inset 0 1px 0 rgba(180,110,40,.25);
-  padding:4px 16px;color:#FFE566;font-size:.88rem;
-  text-shadow:1px 1px 2px rgba(0,0,0,.6);
-  margin-bottom:6px;cursor:pointer;z-index:3;
+.mn-ticker {
+  position:relative; z-index:20;
+  background:var(--gold); height:28px;
+  display:flex; align-items:center; overflow:hidden;
+  border-bottom:3px solid var(--gold-dark);
 }
-.buy-sign::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #2A1008;}
-.buy-sign.locked{background:linear-gradient(180deg,#6A6A6A,#484848);border-color:#303030;box-shadow:0 3px 0 #202020;}
-.buy-sign.locked::after{border-top-color:#303030;}
-
-.island-body{position:relative;cursor:pointer;transition:transform .12s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.38));}
-.island-body:active{transform:scale(.94);}
-
-/* ══════════ BOTTOM FARM BAR ══════════ */
-.farmbot{position:absolute;bottom:64px;left:0;right:0;z-index:40;display:flex;flex-direction:column;align-items:center;gap:0;}
-.farm-timer{color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;text-shadow:0 2px 5px rgba(0,0,0,.55);margin-bottom:3px;}
-.farm-basket{
-  position:relative;width:220px;
-  background:linear-gradient(180deg,#7A3A10 0%,#5C2A08 100%);
-  border:3px solid #3D1A04;border-radius:10px;
-  box-shadow:0 4px 0 #1A0800,0 6px 12px rgba(0,0,0,.4);
-  padding:6px 14px;
-  display:flex;align-items:center;gap:10px;
+.mn-ticker span {
+  display:inline-block; white-space:nowrap;
+  font-family:var(--font-px); font-size:0.42rem;
+  color:#0a0800; letter-spacing:0.08em;
+  animation:mn-tick 32s linear infinite;
 }
-.farm-basket::before{content:'';position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:140px;height:22px;border:4px solid #5C2A08;border-bottom:none;border-radius:40px 40px 0 0;}
-.egg-icon{font-size:1.3rem;}
-.egg-count{color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;text-shadow:0 1px 3px rgba(0,0,0,.6);flex:1;}
-.depo-btn{
-  background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);
-  border:2.5px solid #A06000;border-radius:8px;
-  box-shadow:0 3px 0 #7A4000;
-  color:#5A3000;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;
-  padding:5px 14px;cursor:pointer;border:none;
-  background:#F0A800;color:#6A3800;
-  text-shadow:0 1px 1px rgba(255,220,100,.5);
+@keyframes mn-tick{ from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+.mn-page {
+  position:relative; z-index:5;
+  max-width:560px; margin:0 auto;
+  padding:20px 14px 80px;
+  display:flex; flex-direction:column; gap:14px;
 }
-.depo-btn:active{transform:translateY(2px);}
-
-/* ══════════ NAV BAR ══════════ */
-.navbar{
-  position:fixed;bottom:0;left:0;right:0;z-index:200;
-  background:linear-gradient(180deg,#7A4820 0%,#5C3010 60%,#4A2208 100%);
-  border-top:3px solid #2A1008;
-  display:flex;align-items:flex-end;justify-content:space-around;
-  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+.mn-card {
+  background:var(--surface);
+  border:2px solid var(--border);
+  box-shadow:4px 4px 0 0 #030308;
+  position:relative; padding:20px;
+  animation:mn-up .3s ease both;
 }
-.ni{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:2px 8px;border:none;background:transparent;}
-.ni-icon{font-size:1.6rem;transition:transform .15s;}
-.ni-lbl{font-family:'Nunito',sans-serif;font-weight:900;font-size:.65rem;color:#FFE566;text-shadow:0 1px 3px rgba(0,0,0,.6);}
-.ni.act .ni-icon{transform:scale(1.2);}
-.ni.act .ni-lbl{color:#FFF;}
-.ni-center{
-  position:relative;
-  background:radial-gradient(circle at 40% 38%,#FF8A50,#CC4400);
-  border:3px solid #8A2A00;border-radius:50%;
-  width:52px;height:52px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 -3px 12px rgba(255,140,0,.5),0 4px 0 #5A1800;
-  margin-bottom:4px;
+.mn-card::before,.mn-card::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
 }
-
-/* ══════════ COMMERCE SCREEN ══════════ */
-#sc-commerce{
-  background:linear-gradient(180deg,#C8564A 0%,#D96A4A 8%,#E88060 18%,#F09A72 35%,#F5B888 55%,#F8CFA0 72%,#EDD898 85%,#C8DC88 100%);
-  overflow-y:auto;padding:80px 14px 100px;-webkit-overflow-scrolling:touch;
+.mn-card::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-card::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+@keyframes mn-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mn-label {
+  font-family:var(--font-px); font-size:0.42rem;
+  color:var(--muted); letter-spacing:0.18em; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px; margin-bottom:16px;
 }
-#sc-commerce::-webkit-scrollbar{display:none;}
+.mn-label::after{ content:''; flex:1; height:1px; background:var(--border); }
 
-.comm-title{
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:1.35rem;
-  color:#fff;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,.4);margin-bottom:12px;
+/* HERO */
+.mn-hero {
+  background: linear-gradient(160deg, #08080e 0%, #0c0c1e 100%);
+  border: 2px solid var(--gold-dark);
+  box-shadow: 4px 4px 0 0 #020201, 0 0 50px rgba(255,215,0,0.06);
+  padding: 28px 20px 24px; text-align: center;
+  position: relative; overflow: hidden;
+  animation: mn-up .3s .04s ease both;
 }
-
-/* Wood panel */
-.wpanel{
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:2.5px solid #2A1208;border-radius:10px;
-  box-shadow:0 4px 0 #1A0A04,0 6px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(180,110,40,.3);
-  padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;
+.mn-hero::before,.mn-hero::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
 }
-.wpanel::before{content:'';position:absolute;top:0;left:0;right:0;height:35%;background:linear-gradient(180deg,rgba(200,130,50,.2),transparent);pointer-events:none;}
-
-/* Balance row */
-.bal-row{display:flex;align-items:center;gap:10px;}
-.bal-coin{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#F0F0F0,#909090);border:2px solid #686868;display:flex;align-items:center;justify-content:center;font-size:.8rem;}
-.bal-val{color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;text-shadow:0 1px 3px rgba(0,0,0,.5);}
-
-/* Blue button */
-.btn-blue{
-  width:100%;padding:12px;border-radius:8px;border:none;
-  background:linear-gradient(180deg,#50A8E8 0%,#2070C8 100%);
-  border-bottom:3px solid #1050A0;
-  color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;
-  text-shadow:0 1px 3px rgba(0,0,50,.4);cursor:pointer;margin-top:10px;
-}
-.btn-blue:active{transform:translateY(2px);}
-
-/* Promo row */
-.promo-row{display:flex;align-items:center;gap:12px;}
-.promo-icon{font-size:1.8rem;}
-.promo-txt .pt1{font-family:'Nunito',sans-serif;font-weight:900;color:#FFD700;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.4);}
-.promo-txt .pt2{font-family:'Nunito',sans-serif;font-weight:700;color:#F5C070;font-size:.8rem;}
-
-/* Sell row */
-.sell-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.sell-row span{font-family:'Nunito',sans-serif;font-weight:800;color:#F0E0B0;font-size:.9rem;flex:1;}
-.btn-sell{background:linear-gradient(180deg,#FF7060 0%,#CC3020 100%);border:none;border-bottom:3px solid #8A1010;border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;padding:8px 18px;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.4);}
-.btn-sell:active{transform:translateY(2px);}
-
-/* Section title */
-.sec-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem;color:#fff;text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.4);margin:10px 0 6px;}
-
-/* Chicken card */
-.chk-card{
-  background:linear-gradient(180deg,#5C3010 0%,#432008 100%);
-  border:2.5px solid #2A1008;border-radius:10px;
-  box-shadow:0 4px 0 #1A0800,0 6px 12px rgba(0,0,0,.4),inset 0 1px 0 rgba(180,110,40,.2);
-  margin-bottom:12px;overflow:hidden;position:relative;
-}
-.chk-top{display:flex;align-items:flex-start;gap:0;padding:12px;}
-.chk-img{
-  width:72px;height:72px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:3rem;
-  background:rgba(0,0,0,.15);border-radius:8px;margin-right:10px;
-}
-.chk-info{flex:1;}
-.chk-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;margin-bottom:4px;}
-.chk-name.baby  {color:#FFD700;}
-.chk-name.green {color:#80E840;}
-.chk-name.granny{color:#A8E8A8;}
-.chk-name.dorado{color:#FFB800;}
-.chk-name.mistico{color:#E090FF;}
-.chk-name.common{color:#FFD700;}
-.chk-stat{font-family:'Nunito',sans-serif;font-weight:800;color:#F0E0C0;font-size:.88rem;margin-bottom:2px;}
-.chk-stat .sv{color:#80FF80;font-weight:900;}
-.chk-stat .sc{color:#FF9060;font-weight:900;}
-.chk-stat .st{color:#A0D0FF;font-weight:900;}
-
-/* Qty + Buy row */
-.chk-bot{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 12px 12px;
-}
-.qbtn{
-  width:34px;height:34px;border-radius:7px;
-  background:linear-gradient(180deg,#8A5030 0%,#6A3018 100%);
-  border:2px solid #3A1808;box-shadow:0 2px 0 #1A0800;
-  color:#FFE566;font-size:1.2rem;font-weight:900;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.qbtn:active{transform:translateY(1px);}
-.qnum{
-  min-width:36px;text-align:center;
-  color:#FFE566;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;
-  text-shadow:0 1px 3px rgba(0,0,0,.5);
-}
-.ybtn{
-  flex:1;padding:10px 0;border-radius:8px;border:none;
-  background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);
-  border-bottom:3px solid #A06000;
-  color:#6A3800;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;
-  text-shadow:0 1px 1px rgba(255,220,100,.5);cursor:pointer;
-}
-.ybtn:active{transform:translateY(2px);}
-.ybtn.locked-btn{background:linear-gradient(180deg,#888,#555);border-bottom:3px solid #333;color:#CCC;text-shadow:none;}
-
-/* ══════════ TOAST ══════════ */
-#toast{
-  position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);
-  background:rgba(30,15,5,.92);color:#FFE566;
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;
-  padding:10px 22px;border-radius:10px;border:2px solid #8A5020;
-  box-shadow:0 4px 12px rgba(0,0,0,.5);
-  z-index:9999;transition:transform .3s;pointer-events:none;
-  white-space:nowrap;
-}
-#toast.show{transform:translateX(-50%) translateY(0);}
-
-/* Floating egg */
-.fegg{position:fixed;font-size:1.3rem;pointer-events:none;z-index:9998;animation:fup 1.1s ease-out forwards;}
-@keyframes fup{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(1.3)}}
-
-/* ══════════ HARVEST MODAL ══════════ */
-.hmodal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:flex-end;justify-content:center;}
-.hmodal-bg.show{display:flex;animation:mfade .2s ease;}
-@keyframes mfade{from{opacity:0}to{opacity:1}}
-.hmodal{
-  background:linear-gradient(180deg,#6B3D1E 0%,#4E2A0E 40%,#3D2010 100%);
-  border:3px solid #2A1208;border-radius:16px 16px 0 0;
-  box-shadow:0 -6px 24px rgba(0,0,0,.5);
-  width:100%;max-width:480px;padding:20px 20px 32px;
-  animation:mup .25s cubic-bezier(.22,.77,.42,1) both;
-}
-@keyframes mup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.hmodal-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem;color:#FFE566;text-align:center;margin-bottom:14px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
-.hmodal-egg{text-align:center;font-size:3rem;margin-bottom:8px;}
-.hmodal-count{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;text-align:center;font-size:1.6rem;margin-bottom:18px;text-shadow:0 2px 6px rgba(0,0,0,.4);}
-.hmodal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.btn-cancel{padding:12px;border-radius:8px;border:none;background:rgba(0,0,0,.3);border:2px solid #4A2810;color:#C0A090;font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;cursor:pointer;}
-.btn-harvest{padding:12px;border-radius:8px;border:none;background:linear-gradient(180deg,#FFB800 0%,#E09000 100%);border-bottom:3px solid #A06000;color:#6A3800;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;}
-.btn-harvest:active{transform:translateY(2px);}
-.mn-spinner2{display:inline-block;width:14px;height:14px;border:2.5px solid rgba(100,60,0,.3);border-top-color:#6A3800;animation:spin .4s linear infinite;vertical-align:middle;margin-right:6px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ══════════ ISLAND SVG HELPER CLASSES ══════════ */
-.lock-overlay{
-  position:absolute;left:50%;bottom:28px;transform:translateX(-50%);
-  display:flex;flex-direction:column;align-items:center;z-index:4;
+.mn-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.mn-hero-glow {
+  position:absolute; top:-40px; left:50%; transform:translateX(-50%);
+  width:200px; height:200px;
+  background:radial-gradient(circle,rgba(255,215,0,0.1) 0%,transparent 68%);
   pointer-events:none;
 }
+.mn-hero-icon {
+  width:64px; height:64px;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 18px; font-size:2.5rem;
+  animation: mn-bounce .8s steps(1) infinite;
+}
+@keyframes mn-bounce{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+.mn-hero-title {
+  font-family:var(--font-px); font-size:0.75rem;
+  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark), 0 0 16px rgba(255,215,0,0.3);
+  letter-spacing:.07em; margin-bottom:10px;
+}
+.mn-hero-sub { font-size:0.8rem; color:var(--text2); line-height:1.5; }
 
-/* ══════════ BRIDGE SVG ══════════ */
-.bsvg{position:absolute;pointer-events:none;z-index:4;overflow:visible;}
+/* STATS */
+.mn-stats {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:0;
+  border:2px solid var(--border);
+}
+.mn-stat {
+  padding:16px 10px; text-align:center;
+  background:var(--surface3); position:relative;
+}
+.mn-stat + .mn-stat::before {
+  content:''; position:absolute; left:0; top:15%; bottom:15%;
+  width:1px; background:var(--border);
+}
+.mn-stat-icon {
+  width:34px; height:34px;
+  background:var(--surface); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 10px; font-size:1rem;
+}
+.mn-stat-val {
+  display:block; font-family:var(--font-px); font-size:0.62rem;
+  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark);
+  margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mn-stat-lbl { font-size:0.6rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+
+/* HARVEST */
+.mn-claim {
+  background:#060612; border:2px solid rgba(0,230,118,0.3);
+  box-shadow:4px 4px 0 0 #020205, 0 0 20px rgba(0,230,118,0.06);
+  padding:16px 20px; position:relative;
+}
+.mn-claim::before,.mn-claim::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--green); border-style:solid;
+}
+.mn-claim::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-claim::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.mn-claim-btn {
+  width:100%; padding:16px; display:flex; align-items:center; justify-content:center; gap:12px;
+  font-family:var(--font-px); font-size:0.52rem; letter-spacing:.07em;
+  background:var(--green); color:#050f08;
+  border:2px solid #00c853;
+  box-shadow:4px 4px 0 0 #003318;
+  cursor:pointer; transition:transform .07s, box-shadow .07s;
+  animation: mn-pulse 2s ease-in-out infinite;
+}
+@keyframes mn-pulse{
+  0%,100%{box-shadow:4px 4px 0 0 #003318, 0 0 0 0 rgba(0,230,118,0)}
+  50%{box-shadow:4px 4px 0 0 #003318, 0 0 0 6px rgba(0,230,118,0)}
+}
+.mn-claim-btn:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #003318; animation:none; }
+.mn-claim-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #003318; }
+.mn-claim-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; animation:none; }
+
+/* MY TREES */
+.apple-status { display:flex; flex-direction:column; gap:8px; }
+.apple-machine {
+  background:var(--surface3); border:2px solid var(--border);
+  box-shadow:2px 2px 0 0 #020205;
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  position:relative;
+}
+.apple-machine::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--green);
+}
+.apple-machine-icon {
+  flex-shrink:0; width:42px; height:42px;
+  background:var(--surface); border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center; font-size:1.3rem;
+}
+.apple-machine-body { flex:1; min-width:0; }
+.apple-machine-name {
+  display:block; font-family:var(--font-px); font-size:0.46rem;
+  color:var(--text); letter-spacing:.04em; margin-bottom:5px;
+}
+.apple-machine-rate { font-size:0.7rem; color:var(--text2); }
+.apple-machine-right { flex-shrink:0; text-align:right; }
+.apple-machine-status {
+  display:flex; align-items:center; gap:5px;
+  font-family:var(--font-px); font-size:0.36rem;
+  color:var(--green); letter-spacing:.06em;
+  text-shadow:0 0 8px rgba(0,230,118,0.4); margin-bottom:5px;
+}
+.apple-status-dot {
+  width:6px; height:6px; background:var(--green);
+  box-shadow:0 0 6px rgba(0,230,118,0.6);
+  animation:mn-dot 1s steps(1) infinite;
+}
+@keyframes mn-dot{ 0%,100%{opacity:1} 50%{opacity:0.2} }
+.apple-machine-exp { font-size:0.6rem; color:var(--muted); }
+
+/* TREE SHOP */
+.tree-plans { display:flex; flex-direction:column; gap:14px; }
+.tree-plan {
+  position:relative; overflow:hidden;
+  background:linear-gradient(160deg,#09091a,#06060f);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:2px; padding:20px 18px 18px;
+  transition:transform .15s, box-shadow .15s;
+}
+.tree-plan:hover { transform:translateY(-2px); }
+.tree-plan::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+.tree-plan::after  { content:''; position:absolute; top:0; left:0; right:0; height:1px; }
+
+.tree-plan.silvestre { border-color:rgba(129,199,132,0.2); box-shadow:0 4px 24px rgba(129,199,132,0.06); }
+.tree-plan.silvestre::before { background:#81C784; box-shadow:0 0 12px rgba(129,199,132,0.6); }
+.tree-plan.silvestre::after  { background:linear-gradient(90deg,rgba(129,199,132,0.3),transparent); }
+.tree-plan.fuji      { border-color:rgba(165,214,167,0.2); box-shadow:0 4px 24px rgba(165,214,167,0.06); }
+.tree-plan.fuji::before { background:#A5D6A7; box-shadow:0 0 12px rgba(165,214,167,0.5); }
+.tree-plan.fuji::after  { background:linear-gradient(90deg,rgba(165,214,167,0.25),transparent); }
+.tree-plan.gala      { border-color:rgba(255,241,118,0.25); box-shadow:0 4px 24px rgba(255,241,118,0.07); }
+.tree-plan.gala::before { background:#FFF176; box-shadow:0 0 14px rgba(255,241,118,0.7); }
+.tree-plan.gala::after  { background:linear-gradient(90deg,rgba(255,241,118,0.25),transparent); }
+.tree-plan.granny    { border-color:rgba(200,230,201,0.25); box-shadow:0 4px 24px rgba(200,230,201,0.06); }
+.tree-plan.granny::before { background:#C8E6C9; box-shadow:0 0 14px rgba(200,230,201,0.6); }
+.tree-plan.granny::after  { background:linear-gradient(90deg,rgba(200,230,201,0.25),transparent); }
+.tree-plan.dorado    { border-color:rgba(255,249,196,0.3); box-shadow:0 4px 24px rgba(255,215,0,0.08); }
+.tree-plan.dorado::before { background:#FFD700; box-shadow:0 0 16px rgba(255,215,0,0.7); }
+.tree-plan.dorado::after  { background:linear-gradient(90deg,rgba(255,215,0,0.3),transparent); }
+.tree-plan.mistico   { border-color:rgba(206,147,216,0.35); box-shadow:0 4px 32px rgba(206,147,216,0.1); }
+.tree-plan.mistico::before { background:linear-gradient(180deg,#ce93d8,#7B1FA2); box-shadow:0 0 18px rgba(206,147,216,0.8); }
+.tree-plan.mistico::after  { background:linear-gradient(90deg,rgba(206,147,216,0.35),transparent); }
+
+/* Fallback for any other tier */
+.tree-plan.starter::before,.tree-plan.basic::before,.tree-plan.pro::before,.tree-plan.elite::before,.tree-plan.master::before,.tree-plan.legendary::before { background:var(--gold); box-shadow:0 0 14px rgba(255,215,0,0.6); }
+.tree-plan.starter::after,.tree-plan.basic::after,.tree-plan.pro::after,.tree-plan.elite::after,.tree-plan.master::after,.tree-plan.legendary::after  { background:linear-gradient(90deg,rgba(255,215,0,0.25),transparent); }
+
+.tree-plan-head {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:16px; padding-left:8px;
+}
+.tree-plan-badge {
+  display:inline-block; font-family:var(--font-px); font-size:0.3rem;
+  letter-spacing:.16em; padding:3px 8px; margin-bottom:6px;
+  border:1px solid rgba(255,215,0,0.4); border-radius:2px;
+  color:var(--gold); background:rgba(255,215,0,0.06);
+}
+.tree-plan-name { display:block; font-family:var(--font-px); font-size:0.68rem; color:#fff; letter-spacing:.04em; }
+.tree-plan-price-block { text-align:right; }
+.tree-plan-price { display:block; font-family:var(--font-px); font-size:0.9rem; line-height:1; color:var(--gold); text-shadow:0 0 16px rgba(255,215,0,0.5); }
+.tree-plan-price-unit { font-size:0.34rem; opacity:0.7; display:block; margin-top:3px; font-family:var(--font-px); letter-spacing:.1em; }
+
+/* Qty selector */
+.tree-qty-row {
+  display:flex; align-items:center; gap:12px;
+  padding:10px; margin-bottom:14px;
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+  border-radius:2px;
+}
+.tree-qty-lbl { font-size:0.7rem; color:var(--text2); flex:1; }
+.tree-qty-controls { display:flex; align-items:center; gap:8px; }
+.tree-qty-btn {
+  width:28px; height:28px; font-family:var(--font-px); font-size:0.7rem;
+  background:var(--surface3); border:2px solid var(--border);
+  color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:border-color .1s, color .1s;
+}
+.tree-qty-btn:hover { border-color:var(--gold); color:var(--gold); }
+.tree-qty-num { font-family:var(--font-px); font-size:0.6rem; color:var(--gold); min-width:24px; text-align:center; }
+
+/* Metrics */
+.tree-plan-metrics {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+  padding:0 8px; margin-bottom:16px;
+}
+.tree-plan-metric {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+  padding:10px 6px; text-align:center; border-radius:2px;
+}
+.tree-plan-metric-val {
+  display:block; font-family:var(--font-px); font-size:0.46rem;
+  color:#fff; margin-bottom:4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.tree-plan-metric-lbl { display:block; font-size:0.6rem; color:var(--muted); letter-spacing:.06em; }
+
+/* Buy btn */
+.tree-btn-buy {
+  width:100%; padding:14px; display:flex; align-items:center; justify-content:center; gap:8px;
+  font-family:var(--font-px); font-size:0.44rem; letter-spacing:.1em;
+  cursor:pointer; border:2px solid var(--gold); border-radius:2px;
+  background:rgba(255,215,0,0.1); color:var(--gold);
+  box-shadow:0 4px 20px rgba(255,215,0,0.15);
+  transition:transform .1s, box-shadow .1s, opacity .1s;
+}
+.tree-btn-buy:hover  { transform:translateY(-1px); background:rgba(255,215,0,0.18); }
+.tree-btn-buy:active { transform:translateY(1px); opacity:0.85; }
+.tree-btn-buy:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+
+/* MODAL */
+.mn-modal-bg {
+  display:none; position:fixed; inset:0;
+  background:rgba(4,4,10,0.9); z-index:100;
+  align-items:center; justify-content:center;
+}
+.mn-modal-bg.show { display:flex; animation:mn-modal-bg .2s ease; }
+@keyframes mn-modal-bg{ from{opacity:0} to{opacity:1} }
+.mn-modal {
+  background:var(--surface2); border:2px solid var(--border);
+  box-shadow:0 0 40px rgba(0,0,0,0.7);
+  width:90%; max-width:400px; padding:28px 20px 32px;
+  position:relative; animation:mn-sheet .25s cubic-bezier(.22,.77,.42,1) both;
+}
+@keyframes mn-sheet{ from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+.mn-modal::before,.mn-modal::after { content:''; position:absolute; width:9px; height:9px; border-color:var(--gold); border-style:solid; }
+.mn-modal::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-modal::after{top:-2px;right:-2px;border-width:2px 2px 0 0}
+.mn-modal-handle { width:36px; height:4px; background:var(--border); margin:0 auto 22px; }
+.mn-modal-icon { width:50px; height:50px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:2rem; }
+.mn-modal-title { font-family:var(--font-px); font-size:0.62rem; color:var(--text); text-align:center; letter-spacing:.06em; margin-bottom:10px; }
+.mn-modal-msg { font-size:0.82rem; color:var(--text2); text-align:center; margin-bottom:20px; line-height:1.5; }
+.mn-modal-details { display:flex; flex-direction:column; gap:8px; margin-bottom:22px; }
+.mn-detail-row { display:flex; justify-content:space-between; align-items:center; background:var(--surface3); border:1px solid var(--border); padding:10px 14px; }
+.mn-detail-lbl { font-size:0.72rem; color:var(--text2); }
+.mn-detail-val { font-family:var(--font-px); font-size:0.44rem; color:var(--gold); text-shadow:1px 1px 0 var(--gold-dark); }
+.mn-modal-btns { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
+.mn-btn-cancel { font-family:var(--font-px); font-size:0.44rem; letter-spacing:.06em; padding:14px; background:transparent; color:var(--text2); border:2px solid var(--border); box-shadow:2px 2px 0 0 #030308; cursor:pointer; }
+.mn-btn-confirm { font-family:var(--font-px); font-size:0.5rem; letter-spacing:.06em; padding:14px; background:var(--gold); color:#0a0800; border:2px solid var(--gold2); box-shadow:3px 3px 0 0 var(--gold-dark); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform .07s, box-shadow .07s; }
+.mn-btn-confirm:hover  { transform:translate(-1px,-1px); box-shadow:4px 4px 0 0 var(--gold-dark); }
+.mn-btn-confirm:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--gold-dark); }
+.mn-btn-confirm:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.mn-spinner { display:inline-block; width:10px; height:10px; border:2px solid rgba(0,0,0,0.3); border-top-color:#0a0800; animation:mn-spin .4s steps(4) infinite; }
+@keyframes mn-spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+/* Float apple */
+.float-apple { position:fixed; font-size:1.4rem; pointer-events:none; z-index:9999; animation: float-up 1.2s ease-out forwards; }
+@keyframes float-up { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.4)} }
+
+/* How it works */
+.mn-steps { display:flex; align-items:flex-start; justify-content:space-between; gap:4px; }
+.mn-step { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; }
+.mn-step-num { width:24px; height:24px; background:var(--gold); color:#0a0800; font-family:var(--font-px); font-size:0.48rem; display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 0 0 var(--gold-dark); }
+.mn-step-icon { width:36px; height:36px; background:var(--surface3); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.mn-step-lbl { font-size:0.6rem; color:var(--text2); text-align:center; line-height:1.5; max-width:58px; }
+.mn-step-arrow { font-family:var(--font-px); font-size:0.5rem; color:var(--muted); margin-top:20px; flex-shrink:0; }
 </style>
 
-<!-- ══════ CLOUD SVGs ══════ -->
-<div id="farm-root">
-<div class="clouds">
-  <div class="cl cl1"><svg width="130" height="55" viewBox="0 0 130 55" fill="none"><ellipse cx="65" cy="38" rx="62" ry="22" fill="rgba(255,255,255,0.82)"/><ellipse cx="40" cy="30" rx="32" ry="20" fill="rgba(255,255,255,0.85)"/><ellipse cx="80" cy="26" rx="28" ry="18" fill="rgba(255,255,255,0.80)"/><ellipse cx="60" cy="20" rx="22" ry="16" fill="rgba(255,255,255,0.88)"/></svg></div>
-  <div class="cl cl2"><svg width="100" height="42" viewBox="0 0 100 42" fill="none"><ellipse cx="50" cy="30" rx="48" ry="16" fill="rgba(255,255,255,0.75)"/><ellipse cx="30" cy="22" rx="24" ry="15" fill="rgba(255,255,255,0.78)"/><ellipse cx="65" cy="18" rx="22" ry="14" fill="rgba(255,255,255,0.72)"/><ellipse cx="48" cy="14" rx="18" ry="12" fill="rgba(255,255,255,0.82)"/></svg></div>
-  <div class="cl cl3"><svg width="90" height="38" viewBox="0 0 90 38" fill="none"><ellipse cx="45" cy="26" rx="42" ry="14" fill="rgba(255,255,255,0.65)"/><ellipse cx="28" cy="18" rx="20" ry="13" fill="rgba(255,255,255,0.68)"/><ellipse cx="58" cy="14" rx="18" ry="12" fill="rgba(255,255,255,0.62)"/></svg></div>
-</div>
-
-<!-- ══════ HILLS ══════ -->
-<div class="hills">
-  <svg viewBox="0 0 400 200" preserveAspectRatio="none" fill="none">
-    <path d="M0,140 Q60,80 130,110 Q200,140 270,90 Q340,40 400,80 L400,200 L0,200Z" fill="#7CC040"/>
-    <path d="M0,165 Q80,120 160,145 Q240,170 320,130 Q360,110 400,125 L400,200 L0,200Z" fill="#6AB030"/>
-    <path d="M0,185 Q100,160 200,175 Q300,190 400,170 L400,200 L0,200Z" fill="#5A9820"/>
-  </svg>
-</div>
-
-<!-- Deco trees & barn -->
-<div class="gdeco-l"><svg width="40" height="68" viewBox="0 0 40 68"><rect x="17" y="48" width="7" height="22" fill="#6B4020" rx="2"/><ellipse cx="20" cy="42" rx="18" ry="24" fill="#4A8820"/><ellipse cx="14" cy="34" rx="10" ry="14" fill="#3A7010"/><ellipse cx="26" cy="30" rx="10" ry="14" fill="#3A7010"/><ellipse cx="20" cy="22" rx="8" ry="12" fill="#5AAA30"/></svg></div>
-<div class="gdeco-r"><svg width="36" height="58" viewBox="0 0 36 58"><rect x="15" y="40" width="6" height="20" fill="#6B4020" rx="2"/><ellipse cx="18" cy="35" rx="16" ry="20" fill="#4A8820"/><ellipse cx="12" cy="28" rx="9" ry="13" fill="#3A7010"/><ellipse cx="24" cy="25" rx="9" ry="13" fill="#3A7010"/><ellipse cx="18" cy="18" rx="7" ry="10" fill="#5AAA30"/></svg></div>
-<div class="barn"><svg viewBox="0 0 80 70" fill="none"><rect x="8" y="30" width="64" height="40" fill="#CC3A2A"/><polygon points="0,34 40,4 80,34" fill="#A02820"/><rect x="28" y="50" width="24" height="20" fill="#8A5020"/><rect x="8" y="30" width="8" height="40" fill="#B03020"/><rect x="64" y="30" width="8" height="40" fill="#B03020"/><rect x="10" y="36" width="14" height="10" rx="1" fill="#F0E8D0" fill-opacity=".6"/><rect x="56" y="36" width="14" height="10" rx="1" fill="#F0E8D0" fill-opacity=".6"/></svg></div>
-
-<!-- ══════════════════════════════════
-     FARM SCREEN
-══════════════════════════════════ -->
-<div class="fsc active" id="sc-farm">
-
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="wsign"><div class="tbtn"><div class="coin cgold">★</div><span id="fg">0</span></div></div>
-    <div class="wsign"><button class="tbtn" onclick="goComm()">🛒 Comercio</button></div>
-    <div class="wsign"><div class="tbtn"><div class="coin csil">☆</div><span id="fs">0</span></div></div>
-  </div>
-  <div class="currrow">
-    <div class="wsign"><div class="currbox"><div class="coin csil">☆</div><span id="fc">{{ mining_stats.total_machines if mining_stats else 0 }}</span><span style="font-size:.7rem;color:#C8A870;margin-left:2px;">árboles</span></div></div>
+<div class="mn-shell">
+  <div class="mn-ticker" aria-hidden="true">
+    <span>
+      🍎 APPLE FARM ★&nbsp;&nbsp;
+      COMPRA ÁRBOLES Y GANA MANZANAS AUTOMÁTICAMENTE &nbsp;★&nbsp;&nbsp;
+      COSECHAR MANZANAS = GANAR TON &nbsp;★&nbsp;&nbsp;
+      MÁS ÁRBOLES = MÁS 🍎 POR HORA &nbsp;★&nbsp;&nbsp;
+      CULTIVA TU GRANJA PIXEL &nbsp;★&nbsp;&nbsp;
+    </span>
   </div>
 
-  <!-- Island path (generated by JS) -->
-  <div class="ipath" id="ipath"></div>
+  <div class="mn-page">
 
-  <!-- Bridge SVG layer -->
-  <svg class="bsvg" id="bridges" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;"></svg>
+    <!-- HERO -->
+    <div class="mn-hero">
+      <div class="mn-hero-glow" aria-hidden="true"></div>
+      <div class="mn-hero-icon">🍎</div>
+      <div class="mn-hero-title">APPLE FARM</div>
+      <div class="mn-hero-sub">Planta árboles y cosecha manzanas automáticamente. ¡Conviértelas en TON!</div>
+    </div>
 
-  <!-- Bottom bar -->
-  <div class="farmbot">
-    <div class="farm-timer">Siguiente 🍎: <strong id="ntimer">--</strong></div>
-    <div class="farm-basket">
-      <span class="egg-icon">🍎</span>
-      <span class="egg-count" id="acount">{{ pending_rewards|int }}</span>
-      <button class="depo-btn" onclick="openHarvest()">Depo</button>
+    <!-- STATS -->
+    <div class="mn-card" style="padding:0; overflow:hidden;">
+      <div class="mn-stats">
+        <div class="mn-stat">
+          <div class="mn-stat-icon">🌳</div>
+          <span class="mn-stat-val" id="stat-trees">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
+          <span class="mn-stat-lbl">Árboles</span>
+        </div>
+        <div class="mn-stat" style="background:rgba(255,215,0,0.03); border-top:2px solid rgba(255,215,0,0.12);">
+          <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">🍎</div>
+          <span class="mn-stat-val" id="stat-rate">{{ (mining_stats.total_hourly_rate if mining_stats else 0)|int }}</span>
+          <span class="mn-stat-lbl">Manz./Hora</span>
+        </div>
+        <div class="mn-stat">
+          <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">📦</div>
+          <span class="mn-stat-val" id="stat-pending">{{ pending_rewards|int }}</span>
+          <span class="mn-stat-lbl">Pendiente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HARVEST -->
+    {% if pending_rewards >= 1 %}
+    <div class="mn-claim" id="harvest-section">
+      <button class="mn-claim-btn" id="harvest-btn" onclick="harvestApples()">
+        <span style="font-size:1.1rem;">🍎</span>
+        COSECHAR <span id="harvest-amount">{{ pending_rewards|int }}</span> MANZANAS
+      </button>
+    </div>
+    {% else %}
+    <div class="mn-claim" id="harvest-section" style="display:none;">
+      <button class="mn-claim-btn" id="harvest-btn" onclick="harvestApples()">
+        <span style="font-size:1.1rem;">🍎</span>
+        COSECHAR <span id="harvest-amount">0</span> MANZANAS
+      </button>
+    </div>
+    {% endif %}
+
+    <!-- MY TREES -->
+    {% if user_machines %}
+    <div class="mn-card">
+      <div class="mn-label">🌳 Mis Árboles</div>
+      <div class="apple-status">
+        {% for machine in user_machines %}
+        <div class="apple-machine">
+          <div class="apple-machine-icon">
+            {% if 'Mísico' in machine.plan_name or 'mistico' in machine.plan_name|lower %}🌸
+            {% elif 'Dorado' in machine.plan_name or 'dorado' in machine.plan_name|lower %}✨
+            {% elif 'Granny' in machine.plan_name or 'granny' in machine.plan_name|lower %}🌿
+            {% elif 'Gala' in machine.plan_name or 'gala' in machine.plan_name|lower %}🌼
+            {% elif 'Fuji' in machine.plan_name or 'fuji' in machine.plan_name|lower %}🍃
+            {% else %}🌱
+            {% endif %}
+          </div>
+          <div class="apple-machine-body">
+            <span class="apple-machine-name">{{ machine.plan_name }}</span>
+            <span class="apple-machine-rate">{{ machine.hourly_rate|int }} 🍎/hr</span>
+          </div>
+          <div class="apple-machine-right">
+            <div class="apple-machine-status">
+              <div class="apple-status-dot"></div> ACTIVO
+            </div>
+            <div class="apple-machine-exp">
+              Exp: {{ machine.expires_at.strftime('%Y-%m-%d') if machine.expires_at else 'N/A' }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- TREE SHOP -->
+    <div class="mn-card">
+      <div class="mn-label">🛒 Tienda de Árboles</div>
+      <p style="font-size:.78rem; color:var(--text2); margin-bottom:16px; line-height:1.5;">
+        Cada árbol produce manzanas automáticamente. Más árboles = más manzanas por hora.
+        Las manzanas cosechadas se suman a tu balance de TON.
+      </p>
+
+      {% if plans %}
+      <div class="tree-plans">
+        {% for plan in plans %}
+        {% set tier_name = plan.tier|lower %}
+        <div class="tree-plan {{ tier_name }}" id="plan-card-{{ plan.id }}">
+          <div class="tree-plan-head">
+            <div>
+              <span class="tree-plan-badge">
+                {% if tier_name == 'silvestre' %}🌱 SILVESTRE
+                {% elif tier_name == 'fuji' %}🍃 FUJI
+                {% elif tier_name == 'gala' %}🌼 GALA
+                {% elif tier_name == 'granny' %}🌿 GRANNY
+                {% elif tier_name == 'dorado' %}✨ DORADO
+                {% elif tier_name == 'mistico' %}🌸 MÍSTICO
+                {% else %}{{ tier_name|upper }}
+                {% endif %}
+              </span>
+              <span class="tree-plan-name">{{ plan.name }}</span>
+            </div>
+            <div class="tree-plan-price-block">
+              <span class="tree-plan-price">
+                {% if plan.price == 0 %}GRATIS{% else %}{{ plan.price|int }} TON{% endif %}
+              </span>
+              <span class="tree-plan-price-unit">POR ÁRBOL</span>
+            </div>
+          </div>
+
+          <!-- Qty selector -->
+          <div class="tree-qty-row">
+            <span class="tree-qty-lbl">Cantidad a plantar</span>
+            <div class="tree-qty-controls">
+              <button class="tree-qty-btn" onclick="changeQty({{ plan.id }}, -1)">−</button>
+              <span class="tree-qty-num" id="qty-{{ plan.id }}">1</span>
+              <button class="tree-qty-btn" onclick="changeQty({{ plan.id }}, 1)">+</button>
+            </div>
+          </div>
+
+          <!-- Metrics -->
+          <div class="tree-plan-metrics">
+            <div class="tree-plan-metric">
+              <span class="tree-plan-metric-val" id="metric-ph-{{ plan.id }}">{{ plan.hourly_rate|int }}</span>
+              <span class="tree-plan-metric-lbl">🍎/hora</span>
+            </div>
+            <div class="tree-plan-metric">
+              <span class="tree-plan-metric-val" id="metric-pd-{{ plan.id }}">{{ (plan.hourly_rate * 24)|int }}</span>
+              <span class="tree-plan-metric-lbl">🍎/día</span>
+            </div>
+            <div class="tree-plan-metric">
+              <span class="tree-plan-metric-val" id="metric-cost-{{ plan.id }}">
+                {% if plan.price == 0 %}GRATIS{% else %}{{ plan.price|int }} TON{% endif %}
+              </span>
+              <span class="tree-plan-metric-lbl">Costo Total</span>
+            </div>
+          </div>
+
+          <button class="tree-btn-buy" id="buy-btn-{{ plan.id }}"
+            onclick="openBuyModal({{ plan.id }}, '{{ plan.name }}', {{ plan.price }}, {{ plan.hourly_rate }})">
+            {% if plan.price == 0 %}🌱 PLANTAR GRATIS{% else %}🍎 PLANTAR ({{ plan.price|int }} TON){% endif %}
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div style="padding:40px 20px; text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:12px;">🌱</div>
+        <div style="font-family:var(--font-px); font-size:0.5rem; color:var(--text2); margin-bottom:10px;">NO HAY ÁRBOLES DISPONIBLES</div>
+        <div style="font-size:0.78rem; color:var(--muted);">¡Vuelve pronto para ver nuevos árboles!</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="mn-card">
+      <div class="mn-label">💡 Cómo Funciona</div>
+      <div class="mn-steps">
+        <div class="mn-step">
+          <div class="mn-step-num">1</div>
+          <div class="mn-step-icon">🛒</div>
+          <div class="mn-step-lbl">Compra un árbol</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">2</div>
+          <div class="mn-step-icon">🍎</div>
+          <div class="mn-step-lbl">Produce manzanas solo</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">3</div>
+          <div class="mn-step-icon">📦</div>
+          <div class="mn-step-lbl">Cosecha cuando quieras</div>
+        </div>
+        <div class="mn-step-arrow">→</div>
+        <div class="mn-step">
+          <div class="mn-step-num">4</div>
+          <div class="mn-step-icon">💰</div>
+          <div class="mn-step-lbl">¡Gana TON!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BUY MODAL -->
+<div id="buyModal" class="mn-modal-bg">
+  <div class="mn-modal">
+    <div class="mn-modal-handle"></div>
+    <div class="mn-modal-icon">🌳</div>
+    <div class="mn-modal-title">PLANTAR ÁRBOL</div>
+    <p class="mn-modal-msg" id="modal-msg">¿Plantar este árbol?</p>
+    <div class="mn-modal-details">
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Árboles a plantar</span>
+        <span class="mn-detail-val" id="modal-qty">1</span>
+      </div>
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Costo total</span>
+        <span class="mn-detail-val" id="modal-cost">0 TON</span>
+      </div>
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Producción</span>
+        <span class="mn-detail-val" id="modal-rate">0 🍎/hr</span>
+      </div>
+      <div class="mn-detail-row">
+        <span class="mn-detail-lbl">Tu balance</span>
+        <span class="mn-detail-val">{{ format_ton(user.doge_balance) }} TON</span>
+      </div>
+    </div>
+    <div class="mn-modal-btns">
+      <button class="mn-btn-cancel" onclick="closeBuyModal()">CANCELAR</button>
+      <button class="mn-btn-confirm" id="modal-confirm-btn" onclick="confirmBuy()">
+        🌱 PLANTAR
+      </button>
     </div>
   </div>
 </div>
-
-<!-- ══════════════════════════════════
-     COMMERCE SCREEN
-══════════════════════════════════ -->
-<div class="fsc" id="sc-commerce">
-
-  <div class="topbar" style="position:sticky;top:0;z-index:50;">
-    <div class="wsign"><div class="tbtn"><div class="coin cgold">★</div><span id="cg">0</span></div></div>
-    <div class="wsign"><button class="tbtn" onclick="goFarm()">🌿 Granja</button></div>
-    <div class="wsign"><div class="tbtn"><div class="coin csil">☆</div><span id="cs">0</span></div></div>
-  </div>
-
-  <!-- Balance -->
-  <div class="comm-title">Su saldo para compras</div>
-  <div class="wpanel" style="margin:0 0 10px;">
-    <div class="bal-row">
-      <div class="bal-coin">☆</div>
-      <div class="bal-val" id="c-bval">{{ user.doge_balance|int }}</div>
-    </div>
-    <button class="btn-blue" onclick="showT('💎 Próximamente depósito de TON!')">Depositar TON</button>
-  </div>
-
-  <!-- Promo -->
-  <div class="wpanel">
-    <div class="promo-row">
-      <div class="promo-icon">🎁</div>
-      <div class="promo-txt"><div class="pt1">Paquete de árbol</div><div class="pt2">Más manzanas, más ganancias</div></div>
-    </div>
-  </div>
-
-  <!-- Sell row -->
-  <div class="wpanel">
-    <div class="sell-row">
-      <span>Cosechar y depositar tus manzanas</span>
-      <button class="btn-sell" onclick="openHarvest()">Cosechar</button>
-    </div>
-  </div>
-
-  <!-- Tree list -->
-  <div class="sec-title">Árboles:</div>
-  <div id="treelist"></div>
-
-</div>
-
-<!-- ══════════ NAVBAR ══════════ -->
-<nav class="navbar">
-  <button class="ni act" id="nb-comm" onclick="goComm(this)">
-    <span class="ni-icon">🛒</span><span class="ni-lbl">Comercio</span>
-  </button>
-  <button class="ni" id="nb-tasks" onclick="showT('📋 Tareas próximamente')">
-    <span class="ni-icon">📋</span><span class="ni-lbl">Tareas</span>
-  </button>
-  <button class="ni" id="nb-farm" onclick="goFarm(this)" style="margin-bottom:6px;">
-    <div class="ni-center"><span style="font-size:1.8rem;">🍎</span></div>
-    <span class="ni-lbl">Granja</span>
-  </button>
-  <button class="ni" id="nb-store" onclick="showT('🏪 Almacenamiento próximamente')">
-    <span class="ni-icon">🏪</span><span class="ni-lbl">Almacén</span>
-  </button>
-  <button class="ni" id="nb-menu" onclick="showT('⚙️ Menú próximamente')">
-    <span class="ni-icon">⚙️</span><span class="ni-lbl">Menú</span>
-  </button>
-</nav>
-
-<!-- ══════════ HARVEST MODAL ══════════ -->
-<div id="hmodal" class="hmodal-bg">
-  <div class="hmodal">
-    <div class="hmodal-egg">🍎</div>
-    <div class="hmodal-title">Cosechar Manzanas</div>
-    <div class="hmodal-count" id="hmodal-count">0 manzanas listas</div>
-    <div class="hmodal-btns">
-      <button class="btn-cancel" onclick="closeHarvest()">Cancelar</button>
-      <button class="btn-harvest" id="harvest-confirm-btn" onclick="doHarvest()">🍎 Cosechar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════ TOAST ══════════ -->
-<div id="toast"></div>
-
-</div><!-- /farm-root -->
 
 <script>
-// ════════════════════════════════
-//  TREE DEFINITIONS
-// ════════════════════════════════
-const TREES = [
+// ═══════ PLAN DATA ═══════
+const PLANS = {
   {% for plan in plans %}
-  {id:{{plan.id}}, name:'{{plan.name}}', cost:{{plan.price}}, ph:{{plan.hourly_rate|float}}, tier:'{{plan.tier}}',
-   emoji: '{% if plan.tier=="mistico" or plan.tier=="legendary" %}🌸{% elif plan.tier=="dorado" or plan.tier=="elite" %}✨{% elif plan.tier=="granny" or plan.tier=="master" %}🌿{% elif plan.tier=="gala" or plan.tier=="pro" %}🌼{% elif plan.tier=="fuji" or plan.tier=="basic" %}🍃{% else %}🌱{% endif %}',
-   color:'{% if plan.tier=="mistico" or plan.tier=="legendary" %}#E090FF{% elif plan.tier=="dorado" or plan.tier=="elite" %}#FFD700{% elif plan.tier=="granny" or plan.tier=="master" %}#A8E8A8{% elif plan.tier=="gala" or plan.tier=="pro" %}#FFF176{% elif plan.tier=="fuji" or plan.tier=="basic" %}#A5D6A7{% else %}#FFD700{% endif %}'
-  },
+  {{ plan.id }}: { id: {{ plan.id }}, name: '{{ plan.name }}', price: {{ plan.price }}, ph: {{ plan.hourly_rate }} },
   {% endfor %}
-];
-
-// ════════════════════════════════
-//  SERVER STATE
-// ════════════════════════════════
-const SERVER = {
-  balance: {{user.doge_balance|float}},
-  pending: {{pending_rewards|float}},
-  pph: {{(mining_stats.total_hourly_rate if mining_stats else 0)|float}},
-  machines: {{(mining_stats.total_machines if mining_stats else 0)|int}},
-  userMachines: [{% for m in user_machines %}{name:'{{m.plan_name}}',ph:{{m.hourly_rate|float}},planId:{% for p in plans %}{% if p.name == m.plan_name %}{{p.id}}{% endif %}{% endfor %}0},{% endfor %}]
 };
+const QTY = {};
+{% for plan in plans %}QTY[{{ plan.id }}] = 1;{% endfor %}
 
-// ════════════════════════════════
-//  GAME STATE
-// ════════════════════════════════
-const G = {
-  bal: SERVER.balance,
-  pend: SERVER.pending,
-  pph: SERVER.pph,
-  trees: {},   // planId -> qty owned
-  qty: {},     // planId -> qty to buy
-  lt: Date.now()
-};
-TREES.forEach(t => { G.trees[t.id] = 0; G.qty[t.id] = 1; });
+// ═══════ REAL-TIME APPLE COUNTER ═══════
+let pendingApples = {{ pending_rewards|float }};
+let applesPerHour = {{ (mining_stats.total_hourly_rate if mining_stats else 0)|float }};
+let lastTick = Date.now();
 
-// populate owned from server
-SERVER.userMachines.forEach(m => {
-  const tree = TREES.find(t => t.id === m.planId || t.name === m.name);
-  if (tree) G.trees[tree.id] = (G.trees[tree.id] || 0) + 1;
-});
-
-function pph() { return SERVER.pph; }
 function fmt(n) {
-  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1)+'k';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
   return Math.floor(n).toString();
 }
 
-// ════════════════════════════════
-//  GAME LOOP
-// ════════════════════════════════
-let _lt = Date.now();
 function tick() {
-  const now = Date.now(); const dt = (now - _lt)/1000; _lt = now;
-  const rate = pph()/3600;
-  G.pend += rate * dt;
-  const ni = rate > 0 ? 1/rate : Infinity;
-  const el = document.getElementById('ntimer');
-  if (el) el.textContent = rate > 0 ? (ni < 2 ? '¡Ya!' : Math.ceil(ni)+'s') : '— planta un árbol —';
-  const ac = document.getElementById('acount'); if (ac) ac.textContent = fmt(Math.floor(G.pend));
-  updateNavBal();
+  const now = Date.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+
+  if (applesPerHour > 0) {
+    pendingApples += (applesPerHour / 3600) * dt;
+  }
+
+  const pending = Math.floor(pendingApples);
+
+  // Update pending display
+  const sp = document.getElementById('stat-pending');
+  if (sp) sp.textContent = fmt(pending);
+
+  const ha = document.getElementById('harvest-amount');
+  if (ha) ha.textContent = fmt(pending);
+
+  // Show harvest section when apples available
+  const hs = document.getElementById('harvest-section');
+  if (hs) hs.style.display = pending >= 1 ? 'block' : 'none';
 }
-function updateNavBal() {
-  const b = Math.floor(G.bal);
-  ['fg','fs','cg','cs'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent = fmt(b); });
-  const cv = document.getElementById('c-bval'); if(cv) cv.textContent = fmt(b);
-}
+
 setInterval(tick, 500);
 tick();
 
-// ════════════════════════════════
-//  SCREENS
-// ════════════════════════════════
-function goFarm(btn) {
-  document.querySelectorAll('.fsc').forEach(s => s.classList.remove('active'));
-  document.getElementById('sc-farm').classList.add('active');
-  document.querySelectorAll('.ni').forEach(b => b.classList.remove('act'));
-  if (btn) btn.classList.add('act');
-  else { document.getElementById('nb-farm').classList.add('act'); }
-  buildPath();
-}
-function goComm(btn) {
-  document.querySelectorAll('.fsc').forEach(s => s.classList.remove('active'));
-  document.getElementById('sc-commerce').classList.add('active');
-  document.querySelectorAll('.ni').forEach(b => b.classList.remove('act'));
-  if (btn) btn.classList.add('act');
-  else { document.getElementById('nb-comm').classList.add('act'); }
-  buildComm();
-}
+// ═══════ QTY SELECTOR ═══════
+function changeQty(planId, delta) {
+  QTY[planId] = Math.max(1, (QTY[planId] || 1) + delta);
+  const plan = PLANS[planId];
+  if (!plan) return;
+  const qty = QTY[planId];
 
-// ════════════════════════════════
-//  ISLAND PATH (FARM SCREEN)
-// ════════════════════════════════
-function buildPath() {
-  const container = document.getElementById('ipath');
-  const bridges   = document.getElementById('bridges');
-  if (!container) return;
-  container.innerHTML = '';
-  bridges.innerHTML = '';
+  const qtyEl = document.getElementById('qty-' + planId);
+  if (qtyEl) qtyEl.textContent = qty;
 
-  const W = window.innerWidth;
-  const islandW = Math.min(130, W * 0.36);
-  const islandH = islandW * 0.6;
-  const pad = 16;
+  const costEl = document.getElementById('metric-cost-' + planId);
+  if (costEl) costEl.textContent = plan.price === 0 ? 'GRATIS' : (plan.price * qty) + ' TON';
 
-  // Zigzag positions for up to 6 trees
-  const zigzag = [
-    { x: pad,                         y: 60 },
-    { x: W - islandW - pad,           y: 180 },
-    { x: pad,                          y: 310 },
-    { x: W - islandW - pad,           y: 440 },
-    { x: pad,                          y: 570 },
-    { x: W - islandW - pad,           y: 700 },
-  ];
+  const phEl = document.getElementById('metric-ph-' + planId);
+  if (phEl) phEl.textContent = Math.floor(plan.ph * qty);
 
-  const totalH = 700 + islandH + 60;
-  container.style.height = totalH + 'px';
-  bridges.setAttribute('viewBox', '0 0 '+W+' '+totalH);
-  bridges.style.height = totalH + 'px';
-
-  TREES.forEach((tree, i) => {
-    const pos = zigzag[i] || { x: pad, y: 60 + i*140 };
-    const owned = G.trees[tree.id] || 0;
-    const unlocked = tree.cost === 0 || G.bal >= 0; // always show, lock by price
-
-    // Draw bridge to next
-    if (i < TREES.length - 1) {
-      const next = zigzag[i+1] || { x: pos.x, y: pos.y + 140 };
-      const x1 = pos.x + islandW/2, y1 = pos.y + islandH;
-      const x2 = next.x + islandW/2, y2 = next.y;
-      drawBridge(bridges, x1, y1, x2, y2);
-    }
-
-    // Island wrapper
-    const wrap = document.createElement('div');
-    wrap.className = 'island-wrap';
-    wrap.id = 'isl' + tree.id;
-    wrap.style.cssText = 'left:'+pos.x+'px;top:'+pos.y+'px;width:'+islandW+'px;';
-
-    const isLocked = tree.cost > 0 && G.bal < tree.cost && owned === 0;
-
-    // BUY sign
-    const sign = document.createElement('div');
-    sign.className = 'buy-sign' + (isLocked ? ' locked' : '');
-    sign.textContent = isLocked ? '🔒 BUY' : (owned > 0 ? '✅ ' + owned + 'x' : 'BUY');
-    sign.onclick = () => { goComm(); scrollToTree(tree.id); };
-    wrap.appendChild(sign);
-
-    // Island body
-    const body = document.createElement('div');
-    body.className = 'island-body';
-    body.style.width = islandW + 'px';
-    body.onclick = () => { goComm(); scrollToTree(tree.id); };
-    body.innerHTML = islandSVG(tree, owned, isLocked, islandW, islandH);
-    wrap.appendChild(body);
-
-    container.appendChild(wrap);
-  });
+  const pdEl = document.getElementById('metric-pd-' + planId);
+  if (pdEl) pdEl.textContent = Math.floor(plan.ph * qty * 24);
 }
 
-function islandSVG(tree, owned, locked, W, H) {
-  const cx = W/2, cy = H*0.62;
-  const rx = W*0.46, ry = H*0.38;
+// ═══════ BUY MODAL ═══════
+let buyPlanId = null;
 
-  // Island shape
-  const grassColor = locked ? '#8A9A70' : '#7CC040';
-  const darkGrass  = locked ? '#708060' : '#5A9820';
-  const dirtColor  = locked ? '#8A7060' : '#A06830';
-  const darkDirt   = locked ? '#706050' : '#8A5A20';
-
-  // Chicken/tree emoji on island
-  const emoji = locked ? '🔒' : (owned > 0 ? tree.emoji : '🪹');
-  const emojiSize = W * 0.28;
-
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
-    <!-- dirt body -->
-    <ellipse cx="${cx}" cy="${cy+ry*0.4}" rx="${rx}" ry="${ry*0.7}" fill="${darkDirt}"/>
-    <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${dirtColor}"/>
-    <!-- grass top -->
-    <ellipse cx="${cx}" cy="${cy-ry*0.55}" rx="${rx*0.95}" ry="${ry*0.45}" fill="${grassColor}"/>
-    <ellipse cx="${cx}" cy="${cy-ry*0.7}" rx="${rx*0.78}" ry="${ry*0.28}" fill="${darkGrass}"/>
-    <!-- hay nest (when owned) -->
-    ${owned > 0 ? `
-    <ellipse cx="${cx}" cy="${cy-ry*0.25}" rx="${rx*0.48}" ry="${ry*0.18}" fill="#C8901A" opacity="0.9"/>
-    <ellipse cx="${cx}" cy="${cy-ry*0.32}" rx="${rx*0.42}" ry="${ry*0.14}" fill="#DDA82A"/>
-    ` : ''}
-    <!-- emoji -->
-    <text x="${cx}" y="${cy-ry*0.1}" font-size="${emojiSize}" text-anchor="middle" dominant-baseline="middle">${emoji}</text>
-    ${locked ? `<text x="${cx}" y="${cy+ry*0.55}" font-size="${W*0.13}" text-anchor="middle" fill="#FFE566" font-family="Nunito,sans-serif" font-weight="900">${tree.cost > 0 ? tree.cost+'T' : 'FREE'}</text>` : ''}
-  </svg>`;
+function openBuyModal(planId, planName, price, ph) {
+  const qty = QTY[planId] || 1;
+  buyPlanId = planId;
+  document.getElementById('modal-msg').textContent = '¿Plantar ' + qty + ' árbol' + (qty > 1 ? 'es' : '') + ' ' + planName + '?';
+  document.getElementById('modal-qty').textContent = qty;
+  document.getElementById('modal-cost').textContent = price === 0 ? '✨ GRATIS' : (price * qty) + ' TON';
+  document.getElementById('modal-rate').textContent = Math.floor(ph * qty) + ' 🍎/hr';
+  document.getElementById('buyModal').classList.add('show');
 }
 
-function drawBridge(svg, x1, y1, x2, y2) {
-  const steps = 8;
-  const dx = (x2-x1)/steps, dy = (y2-y1)/steps;
-  for (let i = 0; i < steps; i++) {
-    const bx = x1 + dx*i + dx*.15;
-    const by = y1 + dy*i + dy*.15;
-    const bw = Math.sqrt(dx*dx+dy*dy)*0.72;
-    const angle = Math.atan2(dy, dx) * 180/Math.PI;
-    const plank = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    plank.setAttribute('x', bx - bw/2);
-    plank.setAttribute('y', by - 5);
-    plank.setAttribute('width', bw);
-    plank.setAttribute('height', 10);
-    plank.setAttribute('rx', 2);
-    plank.setAttribute('fill', i%2===0 ? '#8A5020' : '#6A3810');
-    plank.setAttribute('transform', `rotate(${angle},${bx},${by})`);
-    plank.setAttribute('opacity','0.92');
-    svg.appendChild(plank);
-  }
+function closeBuyModal() {
+  document.getElementById('buyModal').classList.remove('show');
+  buyPlanId = null;
 }
 
-function scrollToTree(id) {
-  setTimeout(() => {
-    const el = document.getElementById('cc'+id);
-    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
-  }, 200);
-}
-
-// ════════════════════════════════
-//  COMMERCE — TREE CARDS
-// ════════════════════════════════
-function buildComm() {
-  const list = document.getElementById('treelist');
-  if (!list) return;
-  list.innerHTML = '';
-
-  TREES.forEach(tree => {
-    const owned = G.trees[tree.id] || 0;
-    const qty = G.qty[tree.id] || 1;
-    const cost = tree.cost * qty;
-    const canAfford = G.bal >= cost;
-    const isFree = tree.cost === 0;
-
-    const card = document.createElement('div');
-    card.className = 'chk-card';
-    card.id = 'cc'+tree.id;
-
-    // Name class by tier
-    let nc = 'common';
-    if (tree.tier==='mistico'||tree.tier==='legendary') nc='mistico';
-    else if (tree.tier==='dorado'||tree.tier==='elite')   nc='dorado';
-    else if (tree.tier==='granny'||tree.tier==='master')  nc='granny';
-    else if (tree.tier==='gala'||tree.tier==='pro')       nc='gala';
-    else if (tree.tier==='fuji'||tree.tier==='basic')     nc='green';
-    else                                                   nc='baby';
-
-    card.innerHTML = `
-      <div class="chk-top">
-        <div class="chk-img">${tree.emoji}</div>
-        <div class="chk-info">
-          <div class="chk-name ${nc}" id="cname${tree.id}">${tree.name}</div>
-          <div class="chk-stat">🍎 por hora <span class="sv" id="cph${tree.id}">+${Math.floor(tree.ph*qty)}</span></div>
-          <div class="chk-stat">Costo: <span class="sc" id="ccost${tree.id}">${isFree?'GRATIS':fmt(cost)}</span> ${isFree?'':' <span style="font-size:.75rem">TON</span>'}</div>
-          <div class="chk-stat">Árboles plantados: <span class="st">${owned}</span></div>
-        </div>
-      </div>
-      <div class="chk-bot">
-        <button class="qbtn" onclick="chQ(${tree.id},-1)">−</button>
-        <span class="qnum" id="qn${tree.id}">${qty}</span>
-        <button class="qbtn" onclick="chQ(${tree.id},1)">+</button>
-        ${isFree||canAfford
-          ? `<button class="ybtn" id="yb${tree.id}" style="${!canAfford&&!isFree?'opacity:.5':''}" onclick="buyTree(${tree.id},event)">Comprar</button>`
-          : `<button class="ybtn" id="yb${tree.id}" style="opacity:.5" onclick="buyTree(${tree.id},event)">Comprar</button>`}
-      </div>`;
-    list.appendChild(card);
-  });
-}
-
-function chQ(id, d) {
-  G.qty[id] = Math.max(1, (G.qty[id]||1) + d);
-  const tree = TREES.find(t=>t.id===id);
-  const qty = G.qty[id];
-  const cost = tree.cost * qty;
-  const isFree = tree.cost === 0;
-
-  const qn = document.getElementById('qn'+id); if(qn) qn.textContent = qty;
-  const cc = document.getElementById('ccost'+id); if(cc) cc.textContent = isFree?'GRATIS':fmt(cost);
-  const cp = document.getElementById('cph'+id); if(cp) cp.textContent = '+'+Math.floor(tree.ph*qty);
-  const yb = document.getElementById('yb'+id); if(yb) yb.style.opacity = (isFree||G.bal>=cost)?'1':'0.5';
-}
-
-async function buyTree(id, ev) {
-  const tree = TREES.find(t=>t.id===id);
-  const qty = G.qty[id]||1;
-  const cost = tree.cost * qty;
-  if (tree.cost > 0 && G.bal < cost) { showT('❌ Saldo insuficiente'); return; }
-
-  const btn = document.getElementById('yb'+id);
-  if (btn) { btn.disabled=true; btn.textContent='Plantando...'; }
-
-  let ok = 0;
-  for (let i=0; i<qty; i++) {
-    try {
-      const res = await fetch('/api/mining/purchase',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan_id:id})});
-      const data = await res.json();
-      if (data.success) { ok++; if (tree.cost>0) G.bal -= tree.cost; }
-      else { showT(data.message||'Error'); break; }
-    } catch(e) { showT('Error de conexión'); break; }
-  }
-
-  if (ok>0) {
-    G.trees[id] = (G.trees[id]||0) + ok;
-    spawnEggs(ev ? ev.clientX : window.innerWidth/2, ev ? ev.clientY : window.innerHeight/2, ok);
-    showT('🌳 +'+ok+' árbol'+(ok>1?'es':'')+' plantado'+(ok>1?'s':'')+'!');
-    setTimeout(()=>location.reload(), 1500);
-  }
-
-  if (btn) { btn.disabled=false; btn.textContent='Comprar'; }
-  buildComm(); updateNavBal();
-}
-
-// ════════════════════════════════
-//  HARVEST
-// ════════════════════════════════
-function openHarvest() {
-  const cnt = Math.floor(G.pend);
-  document.getElementById('hmodal-count').textContent = fmt(cnt) + ' manzanas listas';
-  document.getElementById('hmodal').classList.add('show');
-}
-function closeHarvest() { document.getElementById('hmodal').classList.remove('show'); }
-
-async function doHarvest() {
-  const btn = document.getElementById('harvest-confirm-btn');
+async function confirmBuy() {
+  if (!buyPlanId) return;
+  const btn = document.getElementById('modal-confirm-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="mn-spinner2"></span> Cosechando...';
+  btn.innerHTML = '<span class="mn-spinner"></span> PLANTANDO...';
+
+  const qty = QTY[buyPlanId] || 1;
+  let successCount = 0;
+
+  for (let i = 0; i < qty; i++) {
+    try {
+      const res = await fetch('/api/mining/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: buyPlanId })
+      });
+      const data = await res.json();
+      if (data.success) successCount++;
+      else {
+        showToast(data.message || 'Error al plantar árbol', 'error');
+        break;
+      }
+    } catch (e) {
+      showToast('Error de conexión', 'error');
+      break;
+    }
+  }
+
+  if (successCount > 0) {
+    closeBuyModal();
+    spawnApples(Math.min(successCount * 3, 15));
+    showToast('🌳 +' + successCount + ' árbol' + (successCount > 1 ? 'es' : '') + ' plantado' + (successCount > 1 ? 's' : '') + '!', 'success');
+    setTimeout(() => location.reload(), 1600);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🌱 PLANTAR';
+}
+
+// ═══════ HARVEST ═══════
+async function harvestApples() {
+  const btn = document.getElementById('harvest-btn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mn-spinner"></span> COSECHANDO...';
+
   try {
-    const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
+    const res = await fetch('/api/mining/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
     const data = await res.json();
     if (data.success) {
-      const earned = Math.floor(G.pend);
-      G.bal += earned; G.pend = 0;
-      closeHarvest();
-      spawnEggs(window.innerWidth/2, window.innerHeight/2, Math.min(earned,15));
-      showT('🍎 ¡+'+fmt(earned)+' manzanas cosechadas!');
-      setTimeout(()=>location.reload(),1600);
-    } else { showT(data.message||'Error al cosechar'); }
-  } catch(e) { showT('Error de conexión'); }
-  btn.disabled=false;
-  btn.innerHTML='🍎 Cosechar';
-}
-
-// ════════════════════════════════
-//  HELPERS
-// ════════════════════════════════
-function spawnEggs(x, y, n) {
-  for (let i=0; i<Math.min(n,18); i++) {
-    setTimeout(()=>{
-      const el = document.createElement('div'); el.className='fegg'; el.textContent='🍎';
-      el.style.left=(x-10+Math.random()*40-20)+'px'; el.style.top=(y-10)+'px';
-      document.body.appendChild(el); setTimeout(()=>el.remove(),1200);
-    }, i*60);
+      const harvested = Math.floor(pendingApples);
+      spawnApples(Math.min(harvested, 20));
+      showToast(data.message || '🍎 ¡Cosecha exitosa!', 'success');
+      pendingApples = 0;
+      tick();
+      setTimeout(() => location.reload(), 1600);
+    } else {
+      showToast(data.message || 'Error al cosechar', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<span style="font-size:1.1rem;">🍎</span> COSECHAR ' + fmt(Math.floor(pendingApples)) + ' MANZANAS';
+    }
+  } catch (e) {
+    showToast('Error de conexión', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<span style="font-size:1.1rem;">🍎</span> COSECHAR ' + fmt(Math.floor(pendingApples)) + ' MANZANAS';
   }
 }
-function showT(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'),2500);
+
+// ═══════ ANIMATIONS ═══════
+function spawnApples(count) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'float-apple';
+      el.textContent = '🍎';
+      el.style.left = (15 + Math.random() * 70) + 'vw';
+      el.style.top  = (20 + Math.random() * 50) + 'vh';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1300);
+    }, i * 60);
+  }
+  if (window.DogeQuest && window.DogeQuest.createCoinRain) {
+    window.DogeQuest.createCoinRain(8);
+  }
 }
 
-// ════════════════════════════════
-//  INIT — start on commerce if no trees
-// ════════════════════════════════
-const hasTrees = TREES.some(t => G.trees[t.id] > 0);
-if (!hasTrees) {
-  goComm();
-} else {
-  goFarm();
-  buildPath();
+function showToast(m, t) {
+  if (window.DogeQuest && window.DogeQuest.showToast) window.DogeQuest.showToast(m, t);
+  else alert(m);
 }
-buildComm();
-window.addEventListener('resize', ()=>{ if(document.getElementById('sc-farm').classList.contains('active')) buildPath(); });
+
+// Close modal on backdrop
+document.getElementById('buyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeBuyModal();
+});
 </script>
 {% endblock %}
