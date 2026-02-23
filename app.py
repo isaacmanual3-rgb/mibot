@@ -433,34 +433,244 @@ def referral_landing(ref_id):
         session['pending_ref'] = str(ref_id)
     return redirect(url_for('index'))
 
+
+# ============================================
+# APPLE FARM — CONFIG & HELPERS
+# ============================================
+
+def _apple_trees_config():
+    """Definición de los 5 árboles disponibles."""
+    return [
+        {"id": 1, "name": "Manzano Silvestre",  "emoji": "🌱", "level_required": 1,  "cost": 0,     "apples_per_hour": 10},
+        {"id": 2, "name": "Manzano Dorado",     "emoji": "🌳", "level_required": 1,  "cost": 100,   "apples_per_hour": 30},
+        {"id": 3, "name": "Manzano Rojo Fuji",  "emoji": "🍎", "level_required": 3,  "cost": 500,   "apples_per_hour": 80},
+        {"id": 4, "name": "Manzano Gigante",    "emoji": "🌲", "level_required": 5,  "cost": 2000,  "apples_per_hour": 250},
+        {"id": 5, "name": "Manzano Legendario", "emoji": "✨", "level_required": 10, "cost": 10000, "apples_per_hour": 1500},
+    ]
+
+
+def _apple_calc_level(apples_total):
+    """Nivel basado en manzanas acumuladas."""
+    thresholds = [0, 50, 200, 500, 1500, 5000, 15000, 50000, 150000, 500000]
+    for i, t in enumerate(reversed(thresholds)):
+        if int(apples_total) >= t:
+            return len(thresholds) - i
+    return 1
+
+
+def _apple_get_db():
+    from database import get_connection
+    return get_connection()
+
+
+def _apple_ensure_user(user_id):
+    """Crea fila en apple_users y da árbol 1 gratis si es nuevo."""
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute("SELECT user_id FROM apple_users WHERE user_id = %s", (user_id,))
+    existing = cur.fetchone()
+    if not existing:
+        cur.execute(
+            "INSERT INTO apple_users (user_id, apples, level, last_claim, total_earned) VALUES (%s, 0, 1, %s, 0)",
+            (user_id, datetime.utcnow())
+        )
+        cur.execute(
+            "INSERT INTO apple_user_trees (user_id, tree_id, quantity) VALUES (%s, 1, 1)",
+            (user_id,)
+        )
+        conn.commit()
+    cur.close()
+    conn.close()
+
+
+def _apple_offline_production(user_id):
+    """Manzanas producidas offline desde last_claim (máx 8h)."""
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute("SELECT last_claim FROM apple_users WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if not row or not row['last_claim']:
+        cur.close(); conn.close()
+        return 0.0
+    last_claim = row['last_claim']
+    if isinstance(last_claim, str):
+        last_claim = datetime.fromisoformat(last_claim)
+    elapsed = min((datetime.utcnow() - last_claim).total_seconds(), 8 * 3600)
+    cur.execute(
+        "SELECT COALESCE(SUM(t.apples_per_hour * ut.quantity), 0) AS ph "
+        "FROM apple_user_trees ut JOIN apple_trees t ON t.id = ut.tree_id "
+        "WHERE ut.user_id = %s",
+        (user_id,)
+    )
+    row2 = cur.fetchone()
+    cur.close(); conn.close()
+    return float(row2['ph'] or 0) * (elapsed / 3600)
+
+
+def _apple_per_hour(user_id):
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute(
+        "SELECT COALESCE(SUM(t.apples_per_hour * ut.quantity), 0) AS ph "
+        "FROM apple_user_trees ut JOIN apple_trees t ON t.id = ut.tree_id "
+        "WHERE ut.user_id = %s",
+        (user_id,)
+    )
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    return float(row['ph'] if row else 0)
+
+
+def _apple_user_trees_map(user_id):
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute("SELECT tree_id, quantity FROM apple_user_trees WHERE user_id = %s", (user_id,))
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+    return {r['tree_id']: r['quantity'] for r in rows}
+
+
+# ============================================
+# HOME — APPLE FARM
+# ============================================
+
 @app.route('/')
 def index():
-    """Main dashboard - Home with Daily Check-In"""
+    """Apple Farm — página principal"""
     user_id = get_user_id()
 
-    # Save ref param to session if present
     ref = request.args.get('ref') or request.args.get('start') or request.args.get('referral')
     if ref:
         session['pending_ref'] = str(ref)
-    
+
     if not user_id:
         return render_template('telegram_required.html')
-    
+
     user = ensure_user(user_id)
     if user.get('banned'):
         return render_template('banned.html', reason=user.get('ban_reason'))
-    
+
     record_user_ip(user_id, get_client_ip())
-    
-    # Get check-in status
-    checkin = get_checkin_status(user_id)
-    
+    _apple_ensure_user(user_id)
+
+    # Añadir datos de manzanas al dict de usuario para el template
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute("SELECT apples, level FROM apple_users WHERE user_id = %s", (user_id,))
+    apple_row = cur.fetchone()
+    cur.close(); conn.close()
+
+    if apple_row:
+        user['apples'] = int(float(apple_row['apples']))
+        user['level']  = int(apple_row['level'])
+    else:
+        user['apples'] = 0
+        user['level']  = 1
+
     return render_template('index.html',
         user=user,
-        checkin=checkin,
-        bot_username=BOT_USERNAME,
         format_doge=format_doge
     )
+
+
+# ============================================
+# APPLE FARM API
+# ============================================
+
+@app.route('/api/update_apples', methods=['POST'])
+@require_user
+def api_update_apples(user):
+    """Calcula producción offline y devuelve estado actual."""
+    user_id = user['user_id']
+    _apple_ensure_user(user_id)
+
+    produced = _apple_offline_production(user_id)
+
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+
+    if produced > 0:
+        cur.execute(
+            "UPDATE apple_users SET apples = apples + %s, total_earned = total_earned + %s, last_claim = %s WHERE user_id = %s",
+            (produced, produced, datetime.utcnow(), user_id)
+        )
+        conn.commit()
+
+    cur.execute("SELECT apples, level FROM apple_users WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+
+    current_apples = float(row['apples'])
+    new_level = _apple_calc_level(current_apples)
+
+    if new_level != int(row['level']):
+        conn2 = _apple_get_db()
+        c2 = conn2.cursor()
+        c2.execute("UPDATE apple_users SET level = %s WHERE user_id = %s", (new_level, user_id))
+        conn2.commit()
+        c2.close(); conn2.close()
+
+    return jsonify({
+        "success": True,
+        "apples": int(current_apples),
+        "level": new_level,
+        "apples_per_hour": _apple_per_hour(user_id),
+        "trees": _apple_trees_config(),
+        "user_trees": _apple_user_trees_map(user_id),
+    })
+
+
+@app.route('/api/buy_tree', methods=['POST'])
+@require_user
+def api_buy_tree(user):
+    """Compra un árbol descontando manzanas."""
+    user_id  = user['user_id']
+    data     = request.get_json(silent=True) or {}
+    tree_id  = int(data.get('tree_id', 0))
+
+    tree_cfg = next((t for t in _apple_trees_config() if t['id'] == tree_id), None)
+    if not tree_cfg:
+        return jsonify({"success": False, "error": "Árbol no encontrado"}), 400
+
+    _apple_ensure_user(user_id)
+
+    conn = _apple_get_db()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute("SELECT apples, level FROM apple_users WHERE user_id = %s FOR UPDATE", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        cur.close(); conn.close()
+        return jsonify({"success": False, "error": "Usuario no encontrado"}), 404
+
+    current_apples = float(row['apples'])
+    current_level  = int(row['level'])
+
+    if current_level < tree_cfg['level_required']:
+        cur.close(); conn.close()
+        return jsonify({"success": False, "error": f"Necesitas nivel {tree_cfg['level_required']}"}), 403
+
+    cost = tree_cfg['cost']
+    if cost > 0 and current_apples < cost:
+        cur.close(); conn.close()
+        return jsonify({"success": False, "error": "Manzanas insuficientes"}), 400
+
+    new_apples = current_apples - cost
+    cur.execute("UPDATE apple_users SET apples = %s WHERE user_id = %s", (new_apples, user_id))
+    cur.execute(
+        "INSERT INTO apple_user_trees (user_id, tree_id, quantity) VALUES (%s, %s, 1) "
+        "ON DUPLICATE KEY UPDATE quantity = quantity + 1",
+        (user_id, tree_id)
+    )
+    conn.commit()
+    cur.close(); conn.close()
+
+    new_level = _apple_calc_level(new_apples)
+    return jsonify({
+        "success": True,
+        "apples": int(new_apples),
+        "level": new_level,
+        "apples_per_hour": _apple_per_hour(user_id),
+    })
 
 @app.route('/wallet')
 @require_user
@@ -1094,16 +1304,6 @@ def api_mining_stats(user):
         exp = first.get('expires_at')
         expires_at = exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else str(exp) if exp else None
 
-    # Serialize machines list for JS
-    machines_list = []
-    for m in (machines or []):
-        exp = m.get('expires_at')
-        machines_list.append({
-            'plan_name': m.get('plan_name') or m.get('name', ''),
-            'hourly_rate': float(m.get('hourly_rate', 0)),
-            'expires_at': exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else str(exp) if exp else None,
-        })
-
     return jsonify({
         'success': True,
         'stats': mining_stats,
@@ -1111,8 +1311,7 @@ def api_mining_stats(user):
         'total_machines': mining_stats.get('total_machines', 0),
         'total_hourly_rate': mining_stats.get('total_hourly_rate', 0),
         'plan_name': plan_name,
-        'expires_at': expires_at,
-        'machines': machines_list,
+        'expires_at': expires_at
     })
 
 # ============================================
