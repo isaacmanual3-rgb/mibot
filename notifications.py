@@ -252,6 +252,48 @@ _TEXTS = {
     "Votre ami vient d'activer son premier plan. Continuez à développer votre réseau et vos revenus! 🚀"
   ),
 },
+'referral_fraud_skip':{
+  'es':(
+    "⚠️ <b>Tu referido se ha unido — pero no recibiste recompensa</b>\n\n"
+    "👤 <b>Referido:</b> {referred_name}\n\n"
+    "Tu referido se registró correctamente bajo tu enlace, "
+    "sin embargo <b>la recompensa no fue acreditada</b> porque se detectó "
+    "actividad anormal entre las cuentas.\n\n"
+    "✅ <b>Tu cuenta no tiene ninguna restricción por ahora.</b>\n\n"
+    "⛔ Por favor, deja de intentar ganar recompensas con cuentas propias o vinculadas. "
+    "Si este comportamiento continúa, tu cuenta podría ser restringida permanentemente."
+  ),
+  'en':(
+    "⚠️ <b>Your referral joined — but no reward was credited</b>\n\n"
+    "👤 <b>Referral:</b> {referred_name}\n\n"
+    "Your referral successfully registered under your link, "
+    "however <b>the reward was not credited</b> because abnormal activity "
+    "was detected between the accounts.\n\n"
+    "✅ <b>Your account has no restrictions at this time.</b>\n\n"
+    "⛔ Please stop attempting to earn rewards using your own or linked accounts. "
+    "If this behavior continues, your account may be permanently restricted."
+  ),
+  'pt':(
+    "⚠️ <b>Seu indicado entrou — mas nenhuma recompensa foi creditada</b>\n\n"
+    "👤 <b>Indicado:</b> {referred_name}\n\n"
+    "Seu indicado se registrou com sucesso pelo seu link, "
+    "porém <b>a recompensa não foi creditada</b> pois foi detectada "
+    "atividade anormal entre as contas.\n\n"
+    "✅ <b>Sua conta não tem nenhuma restrição no momento.</b>\n\n"
+    "⛔ Por favor, pare de tentar ganhar recompensas com suas próprias contas ou contas vinculadas. "
+    "Se esse comportamento continuar, sua conta poderá ser permanentemente restrita."
+  ),
+  'fr':(
+    "⚠️ <b>Votre filleul a rejoint — mais aucune récompense n'a été créditée</b>\n\n"
+    "👤 <b>Filleul:</b> {referred_name}\n\n"
+    "Votre filleul s'est inscrit avec succès via votre lien, "
+    "cependant <b>la récompense n'a pas été créditée</b> car une activité "
+    "anormale a été détectée entre les comptes.\n\n"
+    "✅ <b>Votre compte n'a aucune restriction pour le moment.</b>\n\n"
+    "⛔ Veuillez cesser de tenter de gagner des récompenses avec vos propres comptes ou des comptes liés. "
+    "Si ce comportement continue, votre compte pourra être définitivement restreint."
+  ),
+},
 'generic_reply':{
   'es':(
     "👋 <b>¡Hola, {name}!</b>\n\n"
@@ -358,6 +400,11 @@ def notify_plan_activated(user_id, plan_name, ton_per_hour, expires, language_co
 def notify_referral_validated(referrer_id, referred_name, reward, total_refs=0, total_earnings=0, language_code=None):
     _send(referrer_id,'referral_validated',detect_lang(language_code),user_id=referrer_id,
           referred_name=referred_name,reward=reward,total_refs=total_refs,total_earnings=total_earnings)
+
+def notify_referral_fraud_skip(referrer_id, referred_name, language_code=None):
+    """Notify referrer that the referral joined but no reward was given due to multi-account detection."""
+    _send(referrer_id, 'referral_fraud_skip', detect_lang(language_code), user_id=referrer_id,
+          referred_name=referred_name)
 
 def notify_generic(user_id, first_name, language_code=None):
     _send(user_id,'generic_reply',detect_lang(language_code),user_id=user_id,name=first_name)

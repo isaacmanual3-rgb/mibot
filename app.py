@@ -57,7 +57,7 @@ try:
     from notifications import (
         detect_lang,
         notify_deposit, notify_withdrawal_approved, notify_withdrawal_rejected,
-        notify_plan_activated, notify_referral_validated, notify_welcome
+        notify_plan_activated, notify_referral_validated, notify_referral_fraud_skip, notify_welcome
     )
     _NOTIF_OK = True
 except ImportError:
@@ -375,6 +375,18 @@ def _validate_referral_on_purchase(user_id):
             ON DUPLICATE KEY UPDATE validated=1, validated_at=NOW()
         """, (str(referrer_id), str(user_id),
               user.get('username', ''), referred_name))
+
+        # Notify the referrer via bot
+        if _NOTIF_OK:
+            try:
+                referrer_obj = get_user(referrer_id)
+                notify_referral_fraud_skip(
+                    referrer_id=int(referrer_id),
+                    referred_name=referred_name,
+                    language_code=referrer_obj.get('language_code') if referrer_obj else None
+                )
+            except Exception as _ne:
+                logger.warning(f"notify_referral_fraud_skip error: {_ne}")
         return
 
     # Check there is an unvalidated referral record
