@@ -1,5 +1,5 @@
 """
-ton_wallet.py — tonutils (ToncenterClient via tonutils.client)
+ton_wallet.py — tonutils (ToncenterClient desde tonutils.clients)
 """
 import asyncio
 import logging
@@ -44,23 +44,20 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 
 
 async def _send(words, to_addr, ton_amount, memo, api_key):
-    # ToncenterClient vive en tonutils.client (sin 's')
-    from tonutils.client import ToncenterClient
-    from tonutils.wallet import WalletV5R1
+    # Importar directo del paquete raíz clients (no submodulo .http ni .base)
+    from tonutils.clients import ToncenterClient
+    from tonutils.contracts.wallet import WalletV5R1
 
     try:
         client = ToncenterClient(api_key=api_key, is_testnet=False)
     except TypeError:
         client = ToncenterClient(api_key=api_key)
 
-    # from_mnemonic en versiones recientes NO es awaitable, devuelve tupla directa
-    try:
-        result = WalletV5R1.from_mnemonic(client, words)
-        if asyncio.iscoroutine(result):
-            result = await result
-        wallet = result[0] if isinstance(result, (tuple, list)) else result
-    except Exception as e:
-        raise RuntimeError(f'from_mnemonic falló: {e}')
+    # from_mnemonic en versiones recientes NO es awaitable
+    result = WalletV5R1.from_mnemonic(client, words)
+    if asyncio.iscoroutine(result):
+        result = await result
+    wallet = result[0] if isinstance(result, (tuple, list)) else result
 
     logger.info(f'Enviando {ton_amount} TON -> {to_addr}')
     tx = await wallet.transfer(
