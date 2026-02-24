@@ -49,7 +49,7 @@ from database import (
     get_or_create_user_deposit_address, create_ton_deposit_pending,
     # Anti-fraud
     is_withdrawal_blocked, check_and_flag_multi_account, unflag_user_fraud,
-    get_shared_ip_accounts
+    get_shared_ip_accounts, are_accounts_related
 )
 
 # ── NOTIFICATION HELPERS ──────────────────────────────────────────
@@ -358,6 +358,24 @@ def _validate_referral_on_purchase(user_id):
         return
 
     referred_name = user.get('first_name') or user.get('username') or 'Usuario'
+
+    # ── Anti-fraud: skip bonus if referrer and referred share an IP ──
+    accounts_linked = are_accounts_related(str(referrer_id), str(user_id))
+    if accounts_linked:
+        logger.warning(
+            f"[ANTI-FRAUD] Referral bonus SKIPPED — accounts share IP: "
+            f"referrer={referrer_id} referred={user_id}"
+        )
+        # Still mark the referral as validated (so it shows in the list)
+        # but do NOT give the bonus (validate_referral handles the balance credit,
+        # so we skip calling it and only register the record without bonus)
+        execute_query("""
+            INSERT INTO referrals (referrer_id, referred_id, referred_username, referred_name, validated, validated_at)
+            VALUES (%s, %s, %s, %s, 1, NOW())
+            ON DUPLICATE KEY UPDATE validated=1, validated_at=NOW()
+        """, (str(referrer_id), str(user_id),
+              user.get('username', ''), referred_name))
+        return
 
     # Check there is an unvalidated referral record
     ref_row = execute_query(

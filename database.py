@@ -1835,6 +1835,16 @@ def get_shared_ip_accounts(user_id, min_times_seen=2):
     return [r['user_id'] for r in rows] if rows else []
 
 
+def count_accounts_on_same_ip(user_id, min_times_seen=2):
+    """
+    Count how many DISTINCT accounts (including this user) share any IP.
+    Returns (count, list_of_all_user_ids_on_shared_ip).
+    """
+    shared = get_shared_ip_accounts(user_id, min_times_seen=min_times_seen)
+    all_accounts = [str(user_id)] + [str(u) for u in shared]
+    return len(all_accounts), all_accounts
+
+
 def flag_user_fraud(user_id, reason):
     """Mark user withdrawal as blocked and record reason."""
     execute_query("""
@@ -1868,27 +1878,63 @@ def is_withdrawal_blocked(user_id):
     return bool(row.get('withdrawal_blocked')), row.get('fraud_reason')
 
 
+# Maximum accounts allowed per shared IP before blocking withdrawals
+MAX_ACCOUNTS_PER_IP = 3
+
+
 def check_and_flag_multi_account(user_id, min_times_seen=2):
     """
-    Check if user shares IPs with other accounts.
-    If yes, flag ALL involved accounts and return list of flagged user_ids.
-    Returns [] if no fraud detected.
+    Check if IP group exceeds MAX_ACCOUNTS_PER_IP.
+    - Up to MAX_ACCOUNTS_PER_IP accounts on same IP → allowed (no flag).
+    - More than MAX_ACCOUNTS_PER_IP → block withdrawals for ALL involved.
+    - Normal app usage (browsing, mining, tasks) is NEVER blocked.
+    Returns list of flagged user_ids, or [] if within the allowed limit.
     """
-    shared = get_shared_ip_accounts(user_id, min_times_seen=min_times_seen)
-    if not shared:
+    count, all_accounts = count_accounts_on_same_ip(user_id, min_times_seen=min_times_seen)
+
+    if count <= MAX_ACCOUNTS_PER_IP:
+        # Within allowed limit — lift any previous flag if situation improved
+        # (e.g. admin removed a sibling account)
+        blocked, _ = is_withdrawal_blocked(user_id)
+        if blocked:
+            # Re-check: if this specific user's group is now within limit, unblock
+            unflag_user_fraud(user_id)
         return []
 
-    ids_str = ', '.join(str(u) for u in shared[:5])
-    reason = f"Multi-account: shared IP with user(s) {ids_str}"
+    # Exceeds limit — flag everyone in the group
+    ids_str = ', '.join(all_accounts[:6])
+    reason = f"Multi-account ({count} accounts on same IP): {ids_str}"
 
-    all_involved = [str(user_id)] + [str(u) for u in shared]
-    for uid in all_involved:
+    flagged = []
+    for uid in all_accounts:
         already_blocked, _ = is_withdrawal_blocked(uid)
         if not already_blocked:
             flag_user_fraud(uid, reason)
+            flagged.append(uid)
 
     import logging
-    logging.getLogger(__name__).warning(
-        f"[ANTI-FRAUD] Multi-account flag: {all_involved} — {reason}"
-    )
-    return all_involved
+    if flagged:
+        logging.getLogger(__name__).warning(
+            f"[ANTI-FRAUD] Blocked {len(flagged)} accounts (>{MAX_ACCOUNTS_PER_IP} on same IP): {ids_str}"
+        )
+    return flagged
+
+
+def are_accounts_related(user_id_a, user_id_b, min_times_seen=2):
+    """
+    Return True if user_id_a and user_id_b share at least one IP.
+    Used to skip referral bonuses between linked accounts.
+    """
+    row = execute_query("""
+        SELECT 1
+        FROM user_ips ui1
+        JOIN user_ips ui2
+          ON ui1.ip_address = ui2.ip_address
+        WHERE ui1.user_id = %s
+          AND ui2.user_id = %s
+          AND ui1.times_seen >= %s
+          AND ui2.times_seen >= %s
+        LIMIT 1
+    """, (str(user_id_a), str(user_id_b), min_times_seen, min_times_seen), fetch_one=True)
+    return row is not None
+
