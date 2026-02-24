@@ -1164,7 +1164,7 @@ body::after {
 .loading-screen {
     position: fixed; inset: 0;
     background: var(--bg-primary);
-    display: flex; flex-direction: column;
+    display: flex;
     align-items: center; justify-content: center;
     z-index: 9999;
 }
@@ -1178,55 +1178,16 @@ body::after {
     pointer-events: none;
 }
 
-.loading-logo {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    animation: loading-bounce 0.6s steps(5) infinite;
-    filter: drop-shadow(0 0 20px rgba(0,170,255,0.4));
+.loading-spinner {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 3px solid rgba(0,170,255,0.15);
+    border-top-color: var(--blue-primary);
+    box-shadow: 0 0 18px rgba(0,170,255,0.3);
+    animation: spinner-rotate 0.75s linear infinite;
+    position: relative; z-index: 1;
 }
-@keyframes loading-bounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-16px) scale(1.08); } }
-
-.loading-title {
-    font-family: var(--font-pixel);
-    font-size: 1.1rem;
-    color: var(--blue-primary);
-    margin-bottom: 28px;
-    text-shadow: 2px 2px 0 var(--blue-dark), 0 0 24px rgba(0,170,255,0.5);
-    letter-spacing: 0.08em;
-}
-
-.loading-bar {
-    width: 220px; height: 18px;
-    background: var(--bg-secondary);
-    border: 2px solid var(--blue-dark);
-    position: relative; overflow: hidden;
-    box-shadow: var(--shadow-blue);
-}
-.loading-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--blue-dark), var(--blue-primary));
-    width: 0%;
-    animation: loading-fill 1.8s steps(20) forwards;
-}
-.loading-progress::after {
-    content: '';
-    position: absolute;
-    right: 0; top: 0; bottom: 0;
-    width: 4px;
-    background: var(--blue-bright);
-    box-shadow: 0 0 8px rgba(0,170,255,0.8);
-}
-@keyframes loading-fill { to { width: 100%; } }
-
-.loading-text {
-    font-family: var(--font-pixel);
-    font-size: 0.5rem;
-    color: var(--text-muted);
-    margin-top: 16px;
-    letter-spacing: 0.12em;
-    animation: loading-blink 0.5s steps(2) infinite;
-}
-@keyframes loading-blink { 50% { opacity: 0; } }
+@keyframes spinner-rotate { to { transform: rotate(360deg); } }
 
 /* ══════════════════════════════
    MINING PAGE
