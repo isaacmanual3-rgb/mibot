@@ -37,46 +37,242 @@ def detect_lang(language_code):
 # ──────────────────────────────────────────────────────────
 _TEXTS = {
 'welcome':{
-  'es':"👋 <b>¡Bienvenido/a a {bot_title}, {name}!</b>\n\n🎉 Ya formas parte de nuestra comunidad.\n\n💰 Gana tokens minando automáticamente\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\n👇 <b>Presiona el botón para abrir la app:</b>",
-  'en':"👋 <b>Welcome to {bot_title}, {name}!</b>\n\n🎉 You are now part of our community.\n\n💰 Earn tokens by auto-mining\n✅ Complete tasks and get rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\n👇 <b>Press the button to open the app:</b>",
-  'pt':"👋 <b>Bem-vindo(a) ao {bot_title}, {name}!</b>\n\n🎉 Você agora faz parte da nossa comunidade.\n\n💰 Ganhe tokens com mineração automática\n✅ Complete tarefas e receba recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\n👇 <b>Pressione o botão para abrir o app:</b>",
-  'fr':"👋 <b>Bienvenue sur {bot_title}, {name}!</b>\n\n🎉 Vous faites maintenant partie de notre communauté.\n\n💰 Gagnez des tokens par le minage automatique\n✅ Complétez des tâches et obtenez des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\n👇 <b>Appuyez sur le bouton pour ouvrir l'app:</b>",
+  'es':(
+    "🎉 <b>¡{name}, bienvenido/a a {bot_title}!</b>\n\n"
+    "Tu cuenta está lista. Empieza a ganar TON desde ahora mismo:\n\n"
+    "⛏️ <b>Minería automática</b> — gana mientras duermes\n"
+    "✅ <b>Tareas diarias</b> — recompensas extra cada día\n"
+    "👥 <b>Programa de referidos</b> — comisiones por cada amigo\n"
+    "💸 <b>Retiros reales</b> — en USDT, DOGE o TON\n\n"
+    "👇 <b>Abre la app y activa tu primer plan:</b>"
+  ),
+  'en':(
+    "🎉 <b>Welcome to {bot_title}, {name}!</b>\n\n"
+    "Your account is ready. Start earning TON right now:\n\n"
+    "⛏️ <b>Auto-mining</b> — earn while you sleep\n"
+    "✅ <b>Daily tasks</b> — extra rewards every day\n"
+    "👥 <b>Referral program</b> — commissions for every friend\n"
+    "💸 <b>Real withdrawals</b> — in USDT, DOGE or TON\n\n"
+    "👇 <b>Open the app and activate your first plan:</b>"
+  ),
+  'pt':(
+    "🎉 <b>Bem-vindo(a) ao {bot_title}, {name}!</b>\n\n"
+    "Sua conta está pronta. Comece a ganhar TON agora mesmo:\n\n"
+    "⛏️ <b>Mineração automática</b> — ganhe enquanto dorme\n"
+    "✅ <b>Tarefas diárias</b> — recompensas extras todo dia\n"
+    "👥 <b>Programa de indicações</b> — comissões por cada amigo\n"
+    "💸 <b>Saques reais</b> — em USDT, DOGE ou TON\n\n"
+    "👇 <b>Abra o app e ative seu primeiro plano:</b>"
+  ),
+  'fr':(
+    "🎉 <b>Bienvenue sur {bot_title}, {name}!</b>\n\n"
+    "Votre compte est prêt. Commencez à gagner du TON dès maintenant:\n\n"
+    "⛏️ <b>Minage automatique</b> — gagnez pendant que vous dormez\n"
+    "✅ <b>Tâches quotidiennes</b> — récompenses supplémentaires chaque jour\n"
+    "👥 <b>Programme de parrainage</b> — commissions pour chaque ami\n"
+    "💸 <b>Retraits réels</b> — en USDT, DOGE ou TON\n\n"
+    "👇 <b>Ouvrez l'app et activez votre premier plan:</b>"
+  ),
 },
 'deposit_confirmed':{
-  'es':"✅ <b>¡Depósito Confirmado!</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🪙 <b>Crédito recibido:</b> {credited} TON\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nTu saldo fue actualizado. ¡Sigue minando! ⛏️",
-  'en':"✅ <b>Deposit Confirmed!</b>\n\n💵 <b>Amount:</b> {amount} {currency}\n🪙 <b>Credited:</b> {credited} TON\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nYour balance has been updated. Keep mining! ⛏️",
-  'pt':"✅ <b>Depósito Confirmado!</b>\n\n💵 <b>Valor:</b> {amount} {currency}\n🪙 <b>Creditado:</b> {credited} TON\n🕐 <b>Data:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nSeu saldo foi atualizado. Continue minerando! ⛏️",
-  'fr':"✅ <b>Dépôt Confirmé!</b>\n\n💵 <b>Montant:</b> {amount} {currency}\n🪙 <b>Crédité:</b> {credited} TON\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nVotre solde a été mis à jour. Continuez à miner! ⛏️",
+  'es':(
+    "✅ <b>¡Depósito confirmado!</b>\n\n"
+    "💵 <b>Monto:</b> {amount} {currency}\n"
+    "🪙 <b>TON acreditados:</b> {credited} TON\n"
+    "🕐 <b>Fecha:</b> {date}\n"
+    "🆔 <b>ID:</b> <code>{deposit_id}</code>\n\n"
+    "Tu saldo ya está disponible. ¡Activa un plan y ponlo a trabajar! ⛏️"
+  ),
+  'en':(
+    "✅ <b>Deposit Confirmed!</b>\n\n"
+    "💵 <b>Amount:</b> {amount} {currency}\n"
+    "🪙 <b>TON credited:</b> {credited} TON\n"
+    "🕐 <b>Date:</b> {date}\n"
+    "🆔 <b>ID:</b> <code>{deposit_id}</code>\n\n"
+    "Your balance is ready to use. Activate a plan and put it to work! ⛏️"
+  ),
+  'pt':(
+    "✅ <b>Depósito Confirmado!</b>\n\n"
+    "💵 <b>Valor:</b> {amount} {currency}\n"
+    "🪙 <b>TON creditados:</b> {credited} TON\n"
+    "🕐 <b>Data:</b> {date}\n"
+    "🆔 <b>ID:</b> <code>{deposit_id}</code>\n\n"
+    "Seu saldo está disponível. Ative um plano e coloque-o para trabalhar! ⛏️"
+  ),
+  'fr':(
+    "✅ <b>Dépôt Confirmé!</b>\n\n"
+    "💵 <b>Montant:</b> {amount} {currency}\n"
+    "🪙 <b>TON crédités:</b> {credited} TON\n"
+    "🕐 <b>Date:</b> {date}\n"
+    "🆔 <b>ID:</b> <code>{deposit_id}</code>\n\n"
+    "Votre solde est prêt. Activez un plan et mettez-le au travail! ⛏️"
+  ),
 },
 'withdrawal_approved':{
-  'es':"💸 <b>¡Retiro TON Enviado!</b>\n\n✅ Tu retiro fue procesado y enviado automáticamente.\n\n💵 <b>Monto:</b> {amount} {currency}\n📬 <b>Wallet:</b> <code>{wallet}</code>\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID Retiro:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Ver en Tonscan</a>\n\n¡Tu TON ha sido enviado! 🚀",
-  'en':"💸 <b>TON Withdrawal Sent!</b>\n\n✅ Your withdrawal was processed and sent automatically.\n\n💵 <b>Amount:</b> {amount} {currency}\n📬 <b>Wallet:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>Withdrawal ID:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">View on Tonscan</a>\n\nYour TON has been sent! 🚀",
-  'pt':"💸 <b>Saque TON Enviado!</b>\n\n✅ Seu saque foi processado e enviado automaticamente.\n\n💵 <b>Valor:</b> {amount} {currency}\n📬 <b>Carteira:</b> <code>{wallet}</code>\n🕐 <b>Data:</b> {date}\n🆔 <b>ID Saque:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Ver no Tonscan</a>\n\nSeu TON foi enviado! 🚀",
-  'fr':"💸 <b>Retrait TON Envoyé!</b>\n\n✅ Votre retrait a été traité et envoyé automatiquement.\n\n💵 <b>Montant:</b> {amount} {currency}\n📬 <b>Portefeuille:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>ID Retrait:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Voir sur Tonscan</a>\n\nVotre TON a été envoyé! 🚀",
+  'es':(
+    "💸 <b>¡Retiro enviado con éxito!</b>\n\n"
+    "💵 <b>Monto:</b> {amount} {currency}\n"
+    "📬 <b>Wallet:</b> <code>{wallet}</code>\n"
+    "🕐 <b>Fecha:</b> {date}\n"
+    "🆔 <b>ID Retiro:</b> <code>{withdrawal_id}</code>\n"
+    "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
+    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verificar en Tonscan</a>\n\n"
+    "Tus TON están en camino. ¡Gracias por confiar en nosotros! 🚀"
+  ),
+  'en':(
+    "💸 <b>Withdrawal Sent Successfully!</b>\n\n"
+    "💵 <b>Amount:</b> {amount} {currency}\n"
+    "📬 <b>Wallet:</b> <code>{wallet}</code>\n"
+    "🕐 <b>Date:</b> {date}\n"
+    "🆔 <b>Withdrawal ID:</b> <code>{withdrawal_id}</code>\n"
+    "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
+    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verify on Tonscan</a>\n\n"
+    "Your TON is on its way. Thank you for trusting us! 🚀"
+  ),
+  'pt':(
+    "💸 <b>Saque Enviado com Sucesso!</b>\n\n"
+    "💵 <b>Valor:</b> {amount} {currency}\n"
+    "📬 <b>Carteira:</b> <code>{wallet}</code>\n"
+    "🕐 <b>Data:</b> {date}\n"
+    "🆔 <b>ID Saque:</b> <code>{withdrawal_id}</code>\n"
+    "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
+    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verificar no Tonscan</a>\n\n"
+    "Seu TON está a caminho. Obrigado por confiar em nós! 🚀"
+  ),
+  'fr':(
+    "💸 <b>Retrait Envoyé avec Succès!</b>\n\n"
+    "💵 <b>Montant:</b> {amount} {currency}\n"
+    "📬 <b>Portefeuille:</b> <code>{wallet}</code>\n"
+    "🕐 <b>Date:</b> {date}\n"
+    "🆔 <b>ID Retrait:</b> <code>{withdrawal_id}</code>\n"
+    "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
+    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Vérifier sur Tonscan</a>\n\n"
+    "Votre TON est en route. Merci de votre confiance! 🚀"
+  ),
 },
 'withdrawal_rejected':{
-  'es':"❌ <b>Retiro Rechazado</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n📋 <b>Motivo:</b> {reason}\n\nEl monto fue devuelto a tu saldo. Contacta soporte si tienes dudas. 🤝",
-  'en':"❌ <b>Withdrawal Rejected</b>\n\n💵 <b>Amount:</b> {amount} {currency}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n📋 <b>Reason:</b> {reason}\n\nThe amount was returned to your balance. Contact support if needed. 🤝",
-  'pt':"❌ <b>Saque Rejeitado</b>\n\n💵 <b>Valor:</b> {amount} {currency}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n📋 <b>Motivo:</b> {reason}\n\nO valor foi devolvido ao seu saldo. Entre em contato com o suporte. 🤝",
-  'fr':"❌ <b>Retrait Rejeté</b>\n\n💵 <b>Montant:</b> {amount} {currency}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n📋 <b>Motif:</b> {reason}\n\nLe montant a été restitué. Contactez le support si nécessaire. 🤝",
+  'es':(
+    "⚠️ <b>Retiro no procesado</b>\n\n"
+    "💵 <b>Monto:</b> {amount} {currency}\n"
+    "🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n"
+    "📋 <b>Motivo:</b> {reason}\n\n"
+    "No te preocupes — el importe fue devuelto a tu saldo de inmediato.\n"
+    "Si tienes dudas, contacta a soporte desde la app. 🤝"
+  ),
+  'en':(
+    "⚠️ <b>Withdrawal Not Processed</b>\n\n"
+    "💵 <b>Amount:</b> {amount} {currency}\n"
+    "🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n"
+    "📋 <b>Reason:</b> {reason}\n\n"
+    "Don't worry — the amount was instantly returned to your balance.\n"
+    "If you have questions, reach out to support from the app. 🤝"
+  ),
+  'pt':(
+    "⚠️ <b>Saque Não Processado</b>\n\n"
+    "💵 <b>Valor:</b> {amount} {currency}\n"
+    "🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n"
+    "📋 <b>Motivo:</b> {reason}\n\n"
+    "Não se preocupe — o valor foi devolvido ao seu saldo imediatamente.\n"
+    "Se tiver dúvidas, entre em contato com o suporte pelo app. 🤝"
+  ),
+  'fr':(
+    "⚠️ <b>Retrait Non Traité</b>\n\n"
+    "💵 <b>Montant:</b> {amount} {currency}\n"
+    "🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n"
+    "📋 <b>Motif:</b> {reason}\n\n"
+    "Pas d'inquiétude — le montant a été restitué immédiatement sur votre solde.\n"
+    "Pour toute question, contactez le support depuis l'app. 🤝"
+  ),
 },
 'plan_activated':{
-  'es':"⛏️ <b>¡Plan Activado!</b>\n\n🚀 Tu plan de minería fue activado exitosamente.\n\n📦 <b>Plan:</b> {plan_name}\n💰 <b>Ganancia/hora:</b> {ton_per_hour} TON\n📅 <b>Vence:</b> {expires}\n\nTu equipo está minando automáticamente. ¡A ganar! 💎",
-  'en':"⛏️ <b>Plan Activated!</b>\n\n🚀 Your mining plan was successfully activated.\n\n📦 <b>Plan:</b> {plan_name}\n💰 <b>Earnings/hour:</b> {ton_per_hour} TON\n📅 <b>Expires:</b> {expires}\n\nYour rig is mining automatically. Let's earn! 💎",
-  'pt':"⛏️ <b>Plano Ativado!</b>\n\n🚀 Seu plano de mineração foi ativado com sucesso.\n\n📦 <b>Plano:</b> {plan_name}\n💰 <b>Ganhos/hora:</b> {ton_per_hour} TON\n📅 <b>Expira:</b> {expires}\n\nSeu equipamento está minerando automaticamente. Vamos ganhar! 💎",
-  'fr':"⛏️ <b>Plan Activé!</b>\n\n🚀 Votre plan de minage a été activé avec succès.\n\n📦 <b>Plan:</b> {plan_name}\n💰 <b>Gains/heure:</b> {ton_per_hour} TON\n📅 <b>Expire:</b> {expires}\n\nVotre rig mine automatiquement. En avant! 💎",
+  'es':(
+    "⛏️ <b>¡Plan activado! Tu minería ya está corriendo.</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Ganancia/hora:</b> {ton_per_hour} TON\n"
+    "📅 <b>Activo hasta:</b> {expires}\n\n"
+    "Cada hora que pasa, tu saldo crece automáticamente.\n"
+    "¡Invita amigos para multiplicar tus ganancias! 💎"
+  ),
+  'en':(
+    "⛏️ <b>Plan Activated! Your mining is now running.</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Earnings/hour:</b> {ton_per_hour} TON\n"
+    "📅 <b>Active until:</b> {expires}\n\n"
+    "Every hour that passes, your balance grows automatically.\n"
+    "Invite friends to multiply your earnings! 💎"
+  ),
+  'pt':(
+    "⛏️ <b>Plano Ativado! Sua mineração já está rodando.</b>\n\n"
+    "📦 <b>Plano:</b> {plan_name}\n"
+    "💰 <b>Ganhos/hora:</b> {ton_per_hour} TON\n"
+    "📅 <b>Ativo até:</b> {expires}\n\n"
+    "A cada hora que passa, seu saldo cresce automaticamente.\n"
+    "Convide amigos para multiplicar seus ganhos! 💎"
+  ),
+  'fr':(
+    "⛏️ <b>Plan Activé! Votre minage est en cours.</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Gains/heure:</b> {ton_per_hour} TON\n"
+    "📅 <b>Actif jusqu'au:</b> {expires}\n\n"
+    "Chaque heure qui passe, votre solde grandit automatiquement.\n"
+    "Invitez des amis pour multiplier vos gains! 💎"
+  ),
 },
 'referral_validated':{
-  'es':"🎉 <b>¡Nuevo Referido Validado!</b>\n\n👤 <b>Referido:</b> {referred_name}\n💎 <b>Bono recibido:</b> +{reward} TON\n👥 <b>Total referidos:</b> {total_refs}\n💰 <b>Ganancias totales por referidos:</b> {total_earnings} TON\n\n¡Tu amigo activó su primer plan de minería! Sigue invitando para ganar más. 🚀",
-  'en':"🎉 <b>New Referral Validated!</b>\n\n👤 <b>Referral:</b> {referred_name}\n💎 <b>Bonus received:</b> +{reward} TON\n👥 <b>Total referrals:</b> {total_refs}\n💰 <b>Total referral earnings:</b> {total_earnings} TON\n\nYour friend activated their first mining plan! Keep inviting to earn more. 🚀",
-  'pt':"🎉 <b>Novo Indicado Validado!</b>\n\n👤 <b>Indicado:</b> {referred_name}\n💎 <b>Bônus recebido:</b> +{reward} TON\n👥 <b>Total de indicados:</b> {total_refs}\n💰 <b>Ganhos totais por indicações:</b> {total_earnings} TON\n\nSeu amigo ativou o primeiro plano de mineração! Continue convidando para ganhar mais. 🚀",
-  'fr':"🎉 <b>Nouveau Filleul Validé!</b>\n\n👤 <b>Filleul:</b> {referred_name}\n💎 <b>Bonus reçu:</b> +{reward} TON\n👥 <b>Total filleuls:</b> {total_refs}\n💰 <b>Gains totaux par parrainages:</b> {total_earnings} TON\n\nVotre ami a activé son premier plan de minage! Continuez à inviter pour gagner plus. 🚀",
+  'es':(
+    "🎉 <b>¡Comisión recibida!</b>\n\n"
+    "👤 <b>Referido:</b> {referred_name}\n"
+    "💎 <b>Bono ganado:</b> +{reward} TON\n"
+    "👥 <b>Total referidos activos:</b> {total_refs}\n"
+    "💰 <b>Total ganado por referidos:</b> {total_earnings} TON\n\n"
+    "Tu amigo acaba de activar su primer plan. ¡Sigue creciendo tu red y tus ingresos! 🚀"
+  ),
+  'en':(
+    "🎉 <b>Commission Received!</b>\n\n"
+    "👤 <b>Referral:</b> {referred_name}\n"
+    "💎 <b>Bonus earned:</b> +{reward} TON\n"
+    "👥 <b>Total active referrals:</b> {total_refs}\n"
+    "💰 <b>Total referral earnings:</b> {total_earnings} TON\n\n"
+    "Your friend just activated their first plan. Keep growing your network and your income! 🚀"
+  ),
+  'pt':(
+    "🎉 <b>Comissão Recebida!</b>\n\n"
+    "👤 <b>Indicado:</b> {referred_name}\n"
+    "💎 <b>Bônus ganho:</b> +{reward} TON\n"
+    "👥 <b>Total de indicados ativos:</b> {total_refs}\n"
+    "💰 <b>Total ganho por indicações:</b> {total_earnings} TON\n\n"
+    "Seu amigo acabou de ativar o primeiro plano. Continue expandindo sua rede e seus ganhos! 🚀"
+  ),
+  'fr':(
+    "🎉 <b>Commission Reçue!</b>\n\n"
+    "👤 <b>Filleul:</b> {referred_name}\n"
+    "💎 <b>Bonus gagné:</b> +{reward} TON\n"
+    "👥 <b>Total filleuls actifs:</b> {total_refs}\n"
+    "💰 <b>Total gains par parrainages:</b> {total_earnings} TON\n\n"
+    "Votre ami vient d'activer son premier plan. Continuez à développer votre réseau et vos revenus! 🚀"
+  ),
 },
 'generic_reply':{
-  'es':"👋 <b>Hola, {name}!</b>\n\nUsa el botón de abajo para abrir la app Doge Pixel y gestionar tu cuenta. 👇",
-  'en':"👋 <b>Hi, {name}!</b>\n\nUse the button below to open the Doge Pixel app and manage your account. 👇",
-  'pt':"👋 <b>Olá, {name}!</b>\n\nUse o botão abaixo para acessar o app Doge Pixel e gerenciar sua conta. 👇",
-  'fr':"👋 <b>Bonjour, {name}!</b>\n\nUtilisez le bouton ci-dessous pour ouvrir l'app Doge Pixel et gérer votre compte. 👇",
+  'es':(
+    "👋 <b>¡Hola, {name}!</b>\n\n"
+    "Para ver tu saldo, activar planes o retirar ganancias,\n"
+    "abre la app desde el botón de abajo. 👇"
+  ),
+  'en':(
+    "👋 <b>Hey, {name}!</b>\n\n"
+    "To check your balance, activate plans, or withdraw earnings,\n"
+    "open the app using the button below. 👇"
+  ),
+  'pt':(
+    "👋 <b>Olá, {name}!</b>\n\n"
+    "Para ver seu saldo, ativar planos ou sacar seus ganhos,\n"
+    "abra o app pelo botão abaixo. 👇"
+  ),
+  'fr':(
+    "👋 <b>Salut, {name}!</b>\n\n"
+    "Pour voir votre solde, activer des plans ou retirer vos gains,\n"
+    "ouvrez l'app via le bouton ci-dessous. 👇"
+  ),
 },
 }
 
