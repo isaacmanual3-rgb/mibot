@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python311", "pkg-config", "libmysqlclient-dev", "libsodium", "openssl", "gcc", "libffi"]
+nixPkgs = ["python311", "pkg-config", "libmysqlclient", "libsodium", "openssl"]
 
 [phases.install]
 cmds = ["pip install --no-cache-dir --upgrade pip", "pip install --no-cache-dir -r requirements.txt"]
