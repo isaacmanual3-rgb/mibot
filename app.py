@@ -379,10 +379,17 @@ def _validate_referral_on_purchase(user_id):
         try:
             referrer_obj = get_user(referrer_id)
             lang_code = referrer_obj.get('language_code') if referrer_obj else None
+            # Obtener datos actualizados del referidor tras el pago del bono
+            referrer_fresh = get_user(referrer_id)
+            bonus_amount = float(get_config('referral_bonus', '0.05'))
+            total_refs = referrer_fresh.get('validated_referrals', 0) if referrer_fresh else 0
+            total_earnings = referrer_fresh.get('referral_earnings', 0.0) if referrer_fresh else 0.0
             notify_referral_validated(
                 referrer_id=int(referrer_id),
                 referred_name=referred_name,
-                reward='1',
+                reward=f"{bonus_amount:.2f}",
+                total_refs=total_refs,
+                total_earnings=f"{float(total_earnings):.2f}",
                 language_code=lang_code,
             )
         except Exception as _ne:
@@ -2428,14 +2435,14 @@ def _handle_callback(cq):
         _bot_answer(cq_id)
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
         texts = {
-            'es': f"📤 <b>Tu Link de Referido</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gana <b>1 S-E</b> por cada amigo que complete su primera tarea.\n📊 Además, <b>5% de comisión</b> del minado de tus referidos.",
-            'en': f"📤 <b>Your Referral Link</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Earn <b>1 S-E</b> for each friend who completes their first task.\n📊 Plus, <b>5% commission</b> from your referrals' mining.",
-            'pt': f"📤 <b>Seu Link de Indicação</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Ganhe <b>1 S-E</b> por cada amigo que completar a primeira tarefa.\n📊 Mais, <b>5% de comissão</b> da mineração dos seus indicados.",
-            'fr': f"📤 <b>Votre Lien de Parrainage</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gagnez <b>1 S-E</b> pour chaque ami qui complète sa première tâche.\n📊 Plus, <b>5% de commission</b> du minage de vos filleuls.",
+            'es': f"📤 <b>Tu Link de Referido</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gana <b>1 TON</b> por cada amigo que complete su primera tarea.\n📊 Además, <b>5% de comisión</b> del minado de tus referidos.",
+            'en': f"📤 <b>Your Referral Link</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Earn <b>1 TON</b> for each friend who completes their first task.\n📊 Plus, <b>5% commission</b> from your referrals' mining.",
+            'pt': f"📤 <b>Seu Link de Indicação</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Ganhe <b>1 TON</b> por cada amigo que completar a primeira tarefa.\n📊 Mais, <b>5% de comissão</b> da mineração dos seus indicados.",
+            'fr': f"📤 <b>Votre Lien de Parrainage</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gagnez <b>1 TON</b> pour chaque ami qui complète sa première tâche.\n📊 Plus, <b>5% de commission</b> du minage de vos filleuls.",
         }
         share_text = {"es":"📤 Compartir link","en":"📤 Share link","pt":"📤 Compartilhar","fr":"📤 Partager"}
         kb = {"inline_keyboard":[
-            [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": f"Únete a SALLY-E y gana tokens! {ref_link}"}],
+            [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": f"Únete a Doge Pixel y gana tokens! {ref_link}"}],
             [{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}],
         ]}
         _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), kb)
@@ -2567,7 +2574,7 @@ def bot_status():
 
     html_out = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<title>Bot Status — SALLY-E</title>
+<title>Bot Status — Doge Pixel</title>
 <style>
   body{{font-family:monospace;background:#0d1117;color:#e6edf3;padding:2rem;}}
   h1{{color:#58a6ff;}} h2{{color:#79c0ff;border-bottom:1px solid #30363d;padding-bottom:.3rem;}}
@@ -2578,7 +2585,7 @@ def bot_status():
   a.btn.red{{background:#b62324;}} a.btn.blue{{background:#1f6feb;}}
   table{{width:100%;border-collapse:collapse;}} td,th{{padding:.4rem .8rem;border:1px solid #30363d;text-align:left;}}
 </style></head><body>
-<h1>🤖 SALLY-E Bot — Diagnóstico</h1>
+<h1>🤖 Doge Pixel Bot — Diagnóstico</h1>
 
 <div class="card">
   <h2>1. Bot Token</h2>

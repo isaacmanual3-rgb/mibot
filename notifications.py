@@ -1,5 +1,5 @@
 """
-notifications.py - Notificaciones privadas SALLY-E
+notifications.py - Notificaciones privadas Doge Pixel
 Usa requests (síncrono) — compatible con Flask/Gunicorn sin asyncio.
 Detecta idioma automáticamente por language_code de Telegram.
 """
@@ -43,10 +43,10 @@ _TEXTS = {
   'fr':"👋 <b>Bienvenue sur {bot_title}, {name}!</b>\n\n🎉 Vous faites maintenant partie de notre communauté.\n\n💰 Gagnez des tokens par le minage automatique\n✅ Complétez des tâches et obtenez des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\n👇 <b>Appuyez sur le bouton pour ouvrir l'app:</b>",
 },
 'deposit_confirmed':{
-  'es':"✅ <b>¡Depósito Confirmado!</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🪙 <b>Crédito recibido:</b> {credited} S-E\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nTu saldo fue actualizado. ¡Sigue minando! ⛏️",
-  'en':"✅ <b>Deposit Confirmed!</b>\n\n💵 <b>Amount:</b> {amount} {currency}\n🪙 <b>Credited:</b> {credited} S-E\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nYour balance has been updated. Keep mining! ⛏️",
-  'pt':"✅ <b>Depósito Confirmado!</b>\n\n💵 <b>Valor:</b> {amount} {currency}\n🪙 <b>Creditado:</b> {credited} S-E\n🕐 <b>Data:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nSeu saldo foi atualizado. Continue minerando! ⛏️",
-  'fr':"✅ <b>Dépôt Confirmé!</b>\n\n💵 <b>Montant:</b> {amount} {currency}\n🪙 <b>Crédité:</b> {credited} S-E\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nVotre solde a été mis à jour. Continuez à miner! ⛏️",
+  'es':"✅ <b>¡Depósito Confirmado!</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🪙 <b>Crédito recibido:</b> {credited} TON\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nTu saldo fue actualizado. ¡Sigue minando! ⛏️",
+  'en':"✅ <b>Deposit Confirmed!</b>\n\n💵 <b>Amount:</b> {amount} {currency}\n🪙 <b>Credited:</b> {credited} TON\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nYour balance has been updated. Keep mining! ⛏️",
+  'pt':"✅ <b>Depósito Confirmado!</b>\n\n💵 <b>Valor:</b> {amount} {currency}\n🪙 <b>Creditado:</b> {credited} TON\n🕐 <b>Data:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nSeu saldo foi atualizado. Continue minerando! ⛏️",
+  'fr':"✅ <b>Dépôt Confirmé!</b>\n\n💵 <b>Montant:</b> {amount} {currency}\n🪙 <b>Crédité:</b> {credited} TON\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nVotre solde a été mis à jour. Continuez à miner! ⛏️",
 },
 'withdrawal_approved':{
   'es':"💸 <b>¡Retiro TON Enviado!</b>\n\n✅ Tu retiro fue procesado y enviado automáticamente.\n\n💵 <b>Monto:</b> {amount} {currency}\n📬 <b>Wallet:</b> <code>{wallet}</code>\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID Retiro:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Ver en Tonscan</a>\n\n¡Tu TON ha sido enviado! 🚀",
@@ -67,16 +67,16 @@ _TEXTS = {
   'fr':"⛏️ <b>Plan Activé!</b>\n\n🚀 Votre plan de minage a été activé avec succès.\n\n📦 <b>Plan:</b> {plan_name}\n💰 <b>Gains/heure:</b> {ton_per_hour} TON\n📅 <b>Expire:</b> {expires}\n\nVotre rig mine automatiquement. En avant! 💎",
 },
 'referral_validated':{
-  'es':"🎉 <b>¡Referido Validado!</b>\n\n👤 <b>Tu referido:</b> {referred_name}\n💎 <b>Recompensa:</b> +{reward} S-E\n\n¡Tu amigo activó su primer plan! Sigue invitando para ganar más. 🚀",
-  'en':"🎉 <b>Referral Validated!</b>\n\n👤 <b>Your referral:</b> {referred_name}\n💎 <b>Reward:</b> +{reward} S-E\n\nYour friend activated their first plan! Keep inviting to earn more. 🚀",
-  'pt':"🎉 <b>Indicado Validado!</b>\n\n👤 <b>Seu indicado:</b> {referred_name}\n💎 <b>Recompensa:</b> +{reward} S-E\n\nSeu amigo ativou o primeiro plano! Continue convidando para ganhar mais. 🚀",
-  'fr':"🎉 <b>Filleul Validé!</b>\n\n👤 <b>Votre filleul:</b> {referred_name}\n💎 <b>Récompense:</b> +{reward} S-E\n\nVotre ami a activé son premier plan! Continuez à inviter pour gagner plus. 🚀",
+  'es':"🎉 <b>¡Nuevo Referido Validado!</b>\n\n👤 <b>Referido:</b> {referred_name}\n💎 <b>Bono recibido:</b> +{reward} TON\n👥 <b>Total referidos:</b> {total_refs}\n💰 <b>Ganancias totales por referidos:</b> {total_earnings} TON\n\n¡Tu amigo activó su primer plan de minería! Sigue invitando para ganar más. 🚀",
+  'en':"🎉 <b>New Referral Validated!</b>\n\n👤 <b>Referral:</b> {referred_name}\n💎 <b>Bonus received:</b> +{reward} TON\n👥 <b>Total referrals:</b> {total_refs}\n💰 <b>Total referral earnings:</b> {total_earnings} TON\n\nYour friend activated their first mining plan! Keep inviting to earn more. 🚀",
+  'pt':"🎉 <b>Novo Indicado Validado!</b>\n\n👤 <b>Indicado:</b> {referred_name}\n💎 <b>Bônus recebido:</b> +{reward} TON\n👥 <b>Total de indicados:</b> {total_refs}\n💰 <b>Ganhos totais por indicações:</b> {total_earnings} TON\n\nSeu amigo ativou o primeiro plano de mineração! Continue convidando para ganhar mais. 🚀",
+  'fr':"🎉 <b>Nouveau Filleul Validé!</b>\n\n👤 <b>Filleul:</b> {referred_name}\n💎 <b>Bonus reçu:</b> +{reward} TON\n👥 <b>Total filleuls:</b> {total_refs}\n💰 <b>Gains totaux par parrainages:</b> {total_earnings} TON\n\nVotre ami a activé son premier plan de minage! Continuez à inviter pour gagner plus. 🚀",
 },
 'generic_reply':{
-  'es':"👋 <b>Hola, {name}!</b>\n\nUsa el botón de abajo para abrir la app SALLY-E y gestionar tu cuenta. 👇",
-  'en':"👋 <b>Hi, {name}!</b>\n\nUse the button below to open the SALLY-E app and manage your account. 👇",
-  'pt':"👋 <b>Olá, {name}!</b>\n\nUse o botão abaixo para acessar o app SALLY-E e gerenciar sua conta. 👇",
-  'fr':"👋 <b>Bonjour, {name}!</b>\n\nUtilisez le bouton ci-dessous pour ouvrir l'app SALLY-E et gérer votre compte. 👇",
+  'es':"👋 <b>Hola, {name}!</b>\n\nUsa el botón de abajo para abrir la app Doge Pixel y gestionar tu cuenta. 👇",
+  'en':"👋 <b>Hi, {name}!</b>\n\nUse the button below to open the Doge Pixel app and manage your account. 👇",
+  'pt':"👋 <b>Olá, {name}!</b>\n\nUse o botão abaixo para acessar o app Doge Pixel e gerenciar sua conta. 👇",
+  'fr':"👋 <b>Bonjour, {name}!</b>\n\nUtilisez le bouton ci-dessous pour ouvrir l'app Doge Pixel et gérer votre compte. 👇",
 },
 }
 
@@ -159,9 +159,9 @@ def notify_plan_activated(user_id, plan_name, ton_per_hour, expires, language_co
     _send(user_id,'plan_activated',detect_lang(language_code),user_id=user_id,
           plan_name=plan_name,ton_per_hour=ton_per_hour,expires=expires)
 
-def notify_referral_validated(referrer_id, referred_name, reward, language_code=None):
+def notify_referral_validated(referrer_id, referred_name, reward, total_refs=0, total_earnings=0, language_code=None):
     _send(referrer_id,'referral_validated',detect_lang(language_code),user_id=referrer_id,
-          referred_name=referred_name,reward=reward)
+          referred_name=referred_name,reward=reward,total_refs=total_refs,total_earnings=total_earnings)
 
 def notify_generic(user_id, first_name, language_code=None):
     _send(user_id,'generic_reply',detect_lang(language_code),user_id=user_id,name=first_name)

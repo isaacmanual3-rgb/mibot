@@ -1,5 +1,5 @@
 """
-main.py - Bot de Telegram para SALLY-E
+main.py - Bot de Telegram para Doge Pixel
 Maneja comandos, callbacks y WebApp
 FIXED VERSION - HTML formatting to avoid parse errors + Multi-channel verification
 """
@@ -140,7 +140,7 @@ def get_main_menu_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
     keyboard = [
         [InlineKeyboardButton(
-            "🚀 Abrir SALLY-E",
+            "🚀 Abrir Doge Pixel",
             web_app=WebAppInfo(url=webapp_url)
         )],
         [
@@ -227,7 +227,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Use HTML formatting - MUCH more reliable than Markdown
         welcome_text = (
             f"👋 <b>Hola {safe_first_name}!</b>\n\n"
-            f"🌟 Bienvenido a <b>SALLY-E Bot</b>\n\n"
+            f"🌟 Bienvenido a <b>Doge Pixel Bot</b>\n\n"
             f"Para acceder a todas las funciones, debes unirte a nuestros canales oficiales:\n\n"
             f"{channels_list}\n\n"
             f"Una vez que te unas a todos, presiona el botón <b>Ya me uní a todos</b> para continuar."
@@ -243,7 +243,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(f"Error sending message: {e}")
             # Fallback without formatting
             await update.message.reply_text(
-                f"Hola {first_name}! Bienvenido a SALLY-E Bot. "
+                f"Hola {first_name}! Bienvenido a Doge Pixel Bot. "
                 f"Debes unirte a los canales oficiales para continuar.",
                 reply_markup=get_channel_join_keyboard(missing_channels)
             )
@@ -252,7 +252,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Show main menu - Use HTML formatting
     welcome_text = (
         f"👋 <b>Hola {safe_first_name}!</b>\n\n"
-        f"🌟 Bienvenido a <b>SALLY-E Bot</b>\n\n"
+        f"🌟 Bienvenido a <b>Doge Pixel Bot</b>\n\n"
         f"💰 Gana tokens minando\n"
         f"✅ Completa tareas para obtener recompensas\n"
         f"👥 Invita amigos y gana comisiones\n"
@@ -270,7 +270,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error sending welcome message: {e}")
         # Fallback without formatting
         await update.message.reply_text(
-            f"Hola {first_name}! Bienvenido a SALLY-E Bot. "
+            f"Hola {first_name}! Bienvenido a Doge Pixel Bot. "
             f"Gana tokens minando, completa tareas y retira en USDT o DOGE.",
             reply_markup=get_main_menu_keyboard(user_id)
         )
@@ -303,7 +303,7 @@ async def verify_channels_callback(update: Update, context: ContextTypes.DEFAULT
     # Show main menu
     welcome_text = (
         f"✅ <b>Verificación exitosa!</b>\n\n"
-        f"🌟 Ya puedes acceder a <b>SALLY-E Bot</b>\n\n"
+        f"🌟 Ya puedes acceder a <b>Doge Pixel Bot</b>\n\n"
         f"💰 Gana tokens minando\n"
         f"✅ Completa tareas para obtener recompensas\n"
         f"👥 Invita amigos y gana comisiones\n"
@@ -320,7 +320,7 @@ async def verify_channels_callback(update: Update, context: ContextTypes.DEFAULT
     except Exception as e:
         logger.error(f"Error editing message: {e}")
         await query.edit_message_text(
-            "Verificación exitosa! Ya puedes acceder a SALLY-E Bot.",
+            "Verificación exitosa! Ya puedes acceder a Doge Pixel Bot.",
             reply_markup=get_main_menu_keyboard(user_id)
         )
 
@@ -394,14 +394,14 @@ async def share_referral_callback(update: Update, context: ContextTypes.DEFAULT_
     text = (
         "📤 <b>Comparte tu Link de Referido</b>\n\n"
         f"🔗 Tu link personal:\n<code>{referral_link}</code>\n\n"
-        "💰 Gana <b>1 S-E</b> por cada amigo que invite y complete al menos una tarea.\n\n"
+        "💰 Gana <b>1 TON</b> por cada amigo que invite y complete al menos una tarea.\n\n"
         "📊 Además, recibes <b>5% de comisión</b> de todo lo que tus referidos minen.\n\n"
         "⚠️ <i>Nota: La recompensa se activa cuando tu referido completa su primera tarea.</i>"
     )
 
     keyboard = [
         [InlineKeyboardButton("📤 Compartir Link",
-                            switch_inline_query=f"Únete a SALLY-E y gana tokens! {referral_link}")],
+                            switch_inline_query=f"Únete a Doge Pixel y gana tokens! {referral_link}")],
         [InlineKeyboardButton("⬅️ Volver", callback_data="start")]
     ]
 
@@ -430,7 +430,7 @@ async def start_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_text = (
         f"👋 <b>Hola {safe_first_name}!</b>\n\n"
-        f"🌟 Bienvenido a <b>SALLY-E Bot</b>\n\n"
+        f"🌟 Bienvenido a <b>Doge Pixel Bot</b>\n\n"
         f"💰 Gana tokens minando\n"
         f"✅ Completa tareas para obtener recompensas\n"
         f"👥 Invita amigos y gana comisiones\n"
@@ -447,7 +447,7 @@ async def start_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Error in start callback: {e}")
         await query.edit_message_text(
-            f"Hola! Bienvenido a SALLY-E Bot.",
+            f"Hola! Bienvenido a Doge Pixel Bot.",
             reply_markup=get_main_menu_keyboard(user_id)
         )
 
@@ -488,7 +488,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     channels_text = ', '.join(OFFICIAL_CHANNELS) if OFFICIAL_CHANNELS else "@SallyE_Comunity"
 
     text = (
-        "ℹ️ <b>Ayuda de SALLY-E Bot</b>\n\n"
+        "ℹ️ <b>Ayuda de Doge Pixel Bot</b>\n\n"
         "<b>Comandos disponibles:</b>\n"
         "/start - Iniciar el bot\n"
         "/help - Ver esta ayuda\n\n"
@@ -500,7 +500,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5️⃣ Retira en USDT o DOGE\n\n"
         "<b>Sistema de Referidos:</b>\n"
         "• Comparte tu link de referido\n"
-        "• Recibes 1 S-E cuando tu referido complete su primera tarea\n"
+        "• Recibes 1 TON cuando tu referido complete su primera tarea\n"
         "• Ganas 5% de comisión del minado de tus referidos\n\n"
         f"📢 Canales: {escape_html(channels_text)}\n"
         f"💬 Soporte: {escape_html(SUPPORT_GROUP)}"
@@ -559,7 +559,7 @@ async def generic_message_handler(update: Update, context: ContextTypes.DEFAULT_
         # Fallback: direct reply in Spanish
         welcome_text = (
             f"👋 <b>Hola {safe_first_name}!</b>\n\n"
-            "Usa el botón de abajo para acceder a SALLY-E. 👇"
+            "Usa el botón de abajo para acceder a Doge Pixel. 👇"
         )
         try:
             await update.message.reply_text(
@@ -599,7 +599,7 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generic_message_handler))
 
     # Start bot
-    print("🤖 SALLY-E Bot starting...")
+    print("🤖 Doge Pixel Bot starting...")
     print(f"📢 Channels: {OFFICIAL_CHANNELS}")
     print(f"🌐 WebApp: {WEBAPP_URL}")
 
