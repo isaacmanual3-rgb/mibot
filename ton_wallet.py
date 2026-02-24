@@ -1,5 +1,6 @@
 """
 ton_wallet.py — WalletV5R1 via tonutils 2.x
+Compatible con tonutils >= 2.0.0
 """
 import asyncio
 import logging
@@ -47,68 +48,80 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 async def _send(words, to_addr, ton_amount, memo, api_key):
     errors = []
 
-    # ── Intento 1: ToncenterV3Client ───────────────────────────────────
+    # ── Intento 1: tonutils 2.x ────────────────────────────────────────
     try:
-        from tonutils.client import ToncenterV3Client
-        from tonutils.wallet import WalletV5R1
+        import tonutils
+        logger.info(f'tonutils version: {getattr(tonutils, "__version__", "unknown")}')
+        logger.info(f'tonutils path: {tonutils.__file__}')
 
-        client = ToncenterV3Client(api_key=api_key, is_testnet=False)
+        # Listar submódulos disponibles
+        import pkgutil
+        mods = [m.name for m in pkgutil.iter_modules(tonutils.__path__)]
+        logger.info(f'tonutils modules: {mods}')
+    except Exception as e:
+        logger.warning(f'No se pudo inspeccionar tonutils: {e}')
+
+    # ── Intento con imports de tonutils 2.x ────────────────────────────
+    try:
+        from tonutils.wallet import WalletV5R1
+        from tonutils.providers.toncenter import ToncenterClient
+
+        client = ToncenterClient(api_key=api_key, is_testnet=False)
         wallet, _, _, _ = await WalletV5R1.from_mnemonic(client, words)
-        logger.info(f'[V5R1] Enviando {ton_amount} TON -> {to_addr} (ToncenterV3)')
+        logger.info(f'[V5R1] Enviando {ton_amount} TON -> {to_addr}')
         tx = await wallet.transfer(
             destination=to_addr,
             amount=ton_amount,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS via ToncenterV3: {tx}')
+        logger.info(f'SUCCESS: {tx}')
         return True, str(tx), None
     except ImportError as e:
-        errors.append(f'ImportError: {e}')
+        logger.warning(f'Import 1 fallo: {e}')
+        errors.append(f'Import1: {e}')
     except Exception as e:
-        logger.warning(f'ToncenterV3 fallo: {e}')
-        errors.append(f'ToncenterV3: {e}')
+        logger.warning(f'Intento 1 fallo: {e}')
+        errors.append(f'Intento1: {e}')
 
-    # ── Intento 2: ToncenterV2Client ───────────────────────────────────
+    # ── Intento con imports alternativos ───────────────────────────────
     try:
-        from tonutils.client import ToncenterV2Client
         from tonutils.wallet import WalletV5R1
+        from tonutils.toncenter import ToncenterClient
 
-        client = ToncenterV2Client(api_key=api_key, is_testnet=False)
+        client = ToncenterClient(api_key=api_key, is_testnet=False)
         wallet, _, _, _ = await WalletV5R1.from_mnemonic(client, words)
-        logger.info(f'[V5R1] Enviando {ton_amount} TON -> {to_addr} (ToncenterV2)')
         tx = await wallet.transfer(
             destination=to_addr,
             amount=ton_amount,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS via ToncenterV2: {tx}')
+        logger.info(f'SUCCESS (alt): {tx}')
         return True, str(tx), None
     except ImportError as e:
-        errors.append(f'ImportError: {e}')
+        logger.warning(f'Import 2 fallo: {e}')
+        errors.append(f'Import2: {e}')
     except Exception as e:
-        logger.warning(f'ToncenterV2 fallo: {e}')
-        errors.append(f'ToncenterV2: {e}')
+        logger.warning(f'Intento 2 fallo: {e}')
+        errors.append(f'Intento2: {e}')
 
-    # ── Intento 3: TonapiClient ────────────────────────────────────────
+    # ── Intento directo sin client ─────────────────────────────────────
     try:
-        from tonutils.client import TonapiClient
         from tonutils.wallet import WalletV5R1
 
-        client = TonapiClient(api_key=api_key, is_testnet=False)
-        wallet, _, _, _ = await WalletV5R1.from_mnemonic(client, words)
-        logger.info(f'[V5R1] Enviando {ton_amount} TON -> {to_addr} (TonapiClient)')
+        wallet, _, _, _ = await WalletV5R1.from_mnemonic(None, words)
         tx = await wallet.transfer(
             destination=to_addr,
             amount=ton_amount,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS via TonapiClient: {tx}')
+        logger.info(f'SUCCESS (no client): {tx}')
         return True, str(tx), None
     except ImportError as e:
-        errors.append(f'ImportError: {e}')
+        logger.warning(f'Import 3 fallo: {e}')
+        errors.append(f'Import3: {e}')
     except Exception as e:
-        logger.warning(f'TonapiClient fallo: {e}')
-        errors.append(f'TonapiClient: {e}')
+        logger.warning(f'Intento 3 fallo: {e}')
+        errors.append(f'Intento3: {e}')
 
     error_summary = ' | '.join(errors)
     logger.error(f'Todos los clientes fallaron: {error_summary}')
