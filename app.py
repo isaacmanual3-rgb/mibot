@@ -601,6 +601,23 @@ def api_ton_withdraw_init(user):
             (tx_hash, withdrawal_id)
         )
         logger.info(f"TON auto-withdrawal {withdrawal_id}: sent {ton_amount} TON to {ton_wallet} tx={tx_hash}")
+
+        # Notificar al usuario via bot de Telegram
+        try:
+            from notifications import notify_withdrawal_approved
+            from datetime import datetime
+            notify_withdrawal_approved(
+                user_id=user['user_id'],
+                amount=ton_amount,
+                currency='TON',
+                wallet=ton_wallet,
+                withdrawal_id=withdrawal_id,
+                date=datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
+                language_code=user.get('language_code')
+            )
+        except Exception as notify_err:
+            logger.warning(f"notify_withdrawal_approved error: {notify_err}")
+
         return jsonify({
             'success':       True,
             'auto_sent':     True,

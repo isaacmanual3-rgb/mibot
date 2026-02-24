@@ -3,7 +3,7 @@ ton_wallet.py — tonutils con ToncenterClient
 """
 import asyncio
 import logging
-import hashlib
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -47,41 +47,36 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 
 
 def _extract_hash(tx) -> str:
-    """Extrae el hash de la transacción de distintos formatos que puede devolver tonutils."""
-    # Si es string limpio (hex de 64 chars), úsalo directo
-    if isinstance(tx, str):
-        s = tx.strip()
-        # Si parece un hash hex puro, devuélvelo
-        if len(s) <= 200 and all(c in '0123456789abcdefABCDEF' for c in s):
-            return s
-        # Si es muy largo (objeto serializado), intenta extraer hash interno
-        # Buscar patrón de 64 chars hex dentro del string
-        import re
-        matches = re.findall(r'\b[0-9a-fA-F]{64}\b', s)
-        if matches:
-            return matches[0]
-        # Último recurso: truncar a 190 chars
-        return s[:190]
-
-    # Si tiene atributo hash o cell_hash
+    """Extrae hash hex limpio de 64 chars del resultado de tonutils."""
+    # Intentar atributos directos primero
     for attr in ('hash', 'cell_hash', 'tx_hash', 'body_hash'):
         val = getattr(tx, attr, None)
         if val is not None:
             if isinstance(val, bytes):
                 return val.hex()
-            return str(val)[:190]
+            s = str(val).strip()
+            if re.match(r'^[0-9a-fA-F]{64}$', s):
+                return s
 
-    # Si tiene método hash()
+    # Intentar método hash()
     try:
         h = tx.hash()
         if isinstance(h, bytes):
             return h.hex()
-        return str(h)[:190]
+        s = str(h).strip()
+        if re.match(r'^[0-9a-fA-F]{64}$', s):
+            return s
     except Exception:
         pass
 
-    # Último recurso
-    return str(tx)[:190]
+    # Buscar patrón hex de 64 chars dentro del string del objeto
+    s = str(tx)
+    matches = re.findall(r'[0-9a-fA-F]{64}', s)
+    if matches:
+        return matches[0]
+
+    # Último recurso: truncar
+    return s[:190]
 
 
 async def _send(words, to_addr, ton_amount, memo, api_key):
