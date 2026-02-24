@@ -1,8 +1,9 @@
 """
-ton_wallet.py — tonutils con ToncenterClient conectado correctamente
+ton_wallet.py — tonutils con ToncenterClient
 """
 import asyncio
 import logging
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +46,50 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         return False, None, str(e)
 
 
+def _extract_hash(tx) -> str:
+    """Extrae el hash de la transacción de distintos formatos que puede devolver tonutils."""
+    # Si es string limpio (hex de 64 chars), úsalo directo
+    if isinstance(tx, str):
+        s = tx.strip()
+        # Si parece un hash hex puro, devuélvelo
+        if len(s) <= 200 and all(c in '0123456789abcdefABCDEF' for c in s):
+            return s
+        # Si es muy largo (objeto serializado), intenta extraer hash interno
+        # Buscar patrón de 64 chars hex dentro del string
+        import re
+        matches = re.findall(r'\b[0-9a-fA-F]{64}\b', s)
+        if matches:
+            return matches[0]
+        # Último recurso: truncar a 190 chars
+        return s[:190]
+
+    # Si tiene atributo hash o cell_hash
+    for attr in ('hash', 'cell_hash', 'tx_hash', 'body_hash'):
+        val = getattr(tx, attr, None)
+        if val is not None:
+            if isinstance(val, bytes):
+                return val.hex()
+            return str(val)[:190]
+
+    # Si tiene método hash()
+    try:
+        h = tx.hash()
+        if isinstance(h, bytes):
+            return h.hex()
+        return str(h)[:190]
+    except Exception:
+        pass
+
+    # Último recurso
+    return str(tx)[:190]
+
+
 async def _send(words, to_addr, ton_amount, memo, api_key):
     from tonutils.clients import ToncenterClient
     from tonutils.contracts.wallet import WalletV5R1
 
     amount_nano = int(round(ton_amount * TON_TO_NANO))
 
-    # ToncenterClient necesita usarse como async context manager para conectarse
     try:
         client = ToncenterClient(api_key=api_key, is_testnet=False)
     except TypeError:
@@ -69,5 +107,7 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
             amount=amount_nano,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS: {tx}')
-        return True, str(tx), None
+
+        tx_hash = _extract_hash(tx)
+        logger.info(f'SUCCESS tx_hash={tx_hash}')
+        return True, tx_hash, None
