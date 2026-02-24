@@ -44,11 +44,7 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 
 async def _send(words, to_addr, ton_amount, memo, api_key):
     # WalletV5R1 — coincide con "wallet v5 r1" mostrado en tonscan.org
-    try:
-        from tonutils.wallet import WalletV5R1
-    except ImportError:
-        return False, None, "tonutils no instalado — agrega 'tonutils' a requirements.txt"
-
+    from tonutils.wallet import WalletV5R1
 
     errors = []
 
