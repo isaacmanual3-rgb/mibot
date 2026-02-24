@@ -49,10 +49,10 @@ _TEXTS = {
   'fr':"✅ <b>Dépôt Confirmé!</b>\n\n💵 <b>Montant:</b> {amount} {currency}\n🪙 <b>Crédité:</b> {credited} S-E\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nVotre solde a été mis à jour. Continuez à miner! ⛏️",
 },
 'withdrawal_approved':{
-  'es':"💸 <b>¡Retiro Procesado!</b>\n\n✅ Tu retiro fue aprobado y enviado.\n\n💵 <b>Monto:</b> {amount} {currency}\n📬 <b>Dirección:</b> <code>{wallet}</code>\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n\nEl pago puede tardar unos minutos. 🙌",
-  'en':"💸 <b>Withdrawal Processed!</b>\n\n✅ Your withdrawal was approved and sent.\n\n💵 <b>Amount:</b> {amount} {currency}\n📬 <b>Address:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n\nPayment may take a few minutes. 🙌",
-  'pt':"💸 <b>Saque Processado!</b>\n\n✅ Seu saque foi aprovado e enviado.\n\n💵 <b>Valor:</b> {amount} {currency}\n📬 <b>Endereço:</b> <code>{wallet}</code>\n🕐 <b>Data:</b> {date}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n\nO pagamento pode levar alguns minutos. 🙌",
-  'fr':"💸 <b>Retrait Traité!</b>\n\n✅ Votre retrait a été approuvé et envoyé.\n\n💵 <b>Montant:</b> {amount} {currency}\n📬 <b>Adresse:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n\nLe paiement peut prendre quelques minutes. 🙌",
+  'es':"💸 <b>¡Retiro TON Enviado!</b>\n\n✅ Tu retiro fue procesado y enviado automáticamente.\n\n💵 <b>Monto:</b> {amount} {currency}\n📬 <b>Wallet:</b> <code>{wallet}</code>\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID Retiro:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Ver en Tonscan</a>\n\n¡Tu TON ha sido enviado! 🚀",
+  'en':"💸 <b>TON Withdrawal Sent!</b>\n\n✅ Your withdrawal was processed and sent automatically.\n\n💵 <b>Amount:</b> {amount} {currency}\n📬 <b>Wallet:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>Withdrawal ID:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">View on Tonscan</a>\n\nYour TON has been sent! 🚀",
+  'pt':"💸 <b>Saque TON Enviado!</b>\n\n✅ Seu saque foi processado e enviado automaticamente.\n\n💵 <b>Valor:</b> {amount} {currency}\n📬 <b>Carteira:</b> <code>{wallet}</code>\n🕐 <b>Data:</b> {date}\n🆔 <b>ID Saque:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Ver no Tonscan</a>\n\nSeu TON foi enviado! 🚀",
+  'fr':"💸 <b>Retrait TON Envoyé!</b>\n\n✅ Votre retrait a été traité et envoyé automatiquement.\n\n💵 <b>Montant:</b> {amount} {currency}\n📬 <b>Portefeuille:</b> <code>{wallet}</code>\n🕐 <b>Date:</b> {date}\n🆔 <b>ID Retrait:</b> <code>{withdrawal_id}</code>\n🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Voir sur Tonscan</a>\n\nVotre TON a été envoyé! 🚀",
 },
 'withdrawal_rejected':{
   'es':"❌ <b>Retiro Rechazado</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🆔 <b>ID:</b> <code>{withdrawal_id}</code>\n📋 <b>Motivo:</b> {reason}\n\nEl monto fue devuelto a tu saldo. Contacta soporte si tienes dudas. 🤝",
@@ -147,9 +147,9 @@ def notify_deposit(user_id, amount, currency, credited, deposit_id, date, langua
     _send(user_id,'deposit_confirmed',detect_lang(language_code),user_id=user_id,
           amount=amount,currency=currency,credited=credited,deposit_id=deposit_id,date=date)
 
-def notify_withdrawal_approved(user_id, amount, currency, wallet, withdrawal_id, date, language_code=None):
+def notify_withdrawal_approved(user_id, amount, currency, wallet, withdrawal_id, date, tx_hash='', language_code=None):
     _send(user_id,'withdrawal_approved',detect_lang(language_code),user_id=user_id,
-          amount=amount,currency=currency,wallet=wallet,withdrawal_id=withdrawal_id,date=date)
+          amount=amount,currency=currency,wallet=wallet,withdrawal_id=withdrawal_id,date=date,tx_hash=tx_hash or '—')
 
 def notify_withdrawal_rejected(user_id, amount, currency, withdrawal_id, reason='N/A', language_code=None):
     _send(user_id,'withdrawal_rejected',detect_lang(language_code),user_id=user_id,

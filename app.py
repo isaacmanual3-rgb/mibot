@@ -608,11 +608,12 @@ def api_ton_withdraw_init(user):
             from datetime import datetime
             notify_withdrawal_approved(
                 user_id=user['user_id'],
-                amount=ton_amount,
+                amount=f"{ton_amount:.4f}",
                 currency='TON',
                 wallet=ton_wallet,
                 withdrawal_id=withdrawal_id,
                 date=datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
+                tx_hash=tx_hash or '—',
                 language_code=user.get('language_code')
             )
         except Exception as notify_err:
