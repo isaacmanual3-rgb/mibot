@@ -1796,3 +1796,99 @@ def create_ton_deposit_pending(user_id, memo):
         ON DUPLICATE KEY UPDATE deposit_id = deposit_id
     """, (deposit_id, str(user_id), memo))
     return deposit_id
+
+
+# ============================================
+# ANTI-FRAUD / MULTI-ACCOUNT DETECTION
+# ============================================
+
+def _ensure_fraud_columns():
+    """Add fraud columns to users table if not present (run once at startup)."""
+    for col, definition in [
+        ('withdrawal_blocked', 'TINYINT(1) DEFAULT 0'),
+        ('fraud_reason',       'VARCHAR(255) DEFAULT NULL'),
+        ('fraud_flagged_at',   'DATETIME DEFAULT NULL'),
+    ]:
+        try:
+            execute_query(f"ALTER TABLE users ADD COLUMN {col} {definition}")
+        except Exception:
+            pass  # column already exists
+
+_ensure_fraud_columns()
+
+
+def get_shared_ip_accounts(user_id, min_times_seen=2):
+    """
+    Return list of OTHER user_ids that have shared at least one IP
+    with this user (excluding single-hit proxies by requiring min_times_seen).
+    """
+    rows = execute_query("""
+        SELECT DISTINCT ui2.user_id
+        FROM user_ips ui1
+        JOIN user_ips ui2
+          ON ui1.ip_address = ui2.ip_address
+         AND ui2.user_id != ui1.user_id
+        WHERE ui1.user_id = %s
+          AND ui1.times_seen >= %s
+          AND ui2.times_seen >= %s
+    """, (str(user_id), min_times_seen, min_times_seen), fetch_all=True)
+    return [r['user_id'] for r in rows] if rows else []
+
+
+def flag_user_fraud(user_id, reason):
+    """Mark user withdrawal as blocked and record reason."""
+    execute_query("""
+        UPDATE users
+        SET withdrawal_blocked = 1,
+            fraud_reason       = %s,
+            fraud_flagged_at   = NOW()
+        WHERE user_id = %s
+    """, (reason[:255], str(user_id)))
+
+
+def unflag_user_fraud(user_id):
+    """Clear fraud flag (admin action)."""
+    execute_query("""
+        UPDATE users
+        SET withdrawal_blocked = 0,
+            fraud_reason       = NULL,
+            fraud_flagged_at   = NULL
+        WHERE user_id = %s
+    """, (str(user_id),))
+
+
+def is_withdrawal_blocked(user_id):
+    """Return (blocked: bool, reason: str|None)."""
+    row = execute_query(
+        "SELECT withdrawal_blocked, fraud_reason FROM users WHERE user_id = %s",
+        (str(user_id),), fetch_one=True
+    )
+    if not row:
+        return False, None
+    return bool(row.get('withdrawal_blocked')), row.get('fraud_reason')
+
+
+def check_and_flag_multi_account(user_id, min_times_seen=2):
+    """
+    Check if user shares IPs with other accounts.
+    If yes, flag ALL involved accounts and return list of flagged user_ids.
+    Returns [] if no fraud detected.
+    """
+    shared = get_shared_ip_accounts(user_id, min_times_seen=min_times_seen)
+    if not shared:
+        return []
+
+    ids_str = ', '.join(str(u) for u in shared[:5])
+    reason = f"Multi-account: shared IP with user(s) {ids_str}"
+
+    all_involved = [str(user_id)] + [str(u) for u in shared]
+    for uid in all_involved:
+        already_blocked, _ = is_withdrawal_blocked(uid)
+        if not already_blocked:
+            flag_user_fraud(uid, reason)
+
+    import logging
+    logging.getLogger(__name__).warning(
+        f"[ANTI-FRAUD] Multi-account flag: {all_involved} — {reason}"
+    )
+    return all_involved

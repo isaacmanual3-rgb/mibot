@@ -46,7 +46,10 @@ from database import (
     create_ton_deposit, confirm_ton_deposit, get_user_ton_deposits,
     create_ton_withdrawal,
     get_pending_ton_deposits, save_user_ton_wallet,
-    get_or_create_user_deposit_address, create_ton_deposit_pending
+    get_or_create_user_deposit_address, create_ton_deposit_pending,
+    # Anti-fraud
+    is_withdrawal_blocked, check_and_flag_multi_account, unflag_user_fraud,
+    get_shared_ip_accounts
 )
 
 # ── NOTIFICATION HELPERS ──────────────────────────────────────────
@@ -436,7 +439,13 @@ def require_user(f):
         
         # Record activity
         record_user_ip(user_id, client_ip)
-        
+
+        # Passive multi-account scan (silent — only flags, doesn't block browsing)
+        try:
+            check_and_flag_multi_account(user_id)
+        except Exception as _fraud_err:
+            logger.warning(f"[ANTI-FRAUD] scan error: {_fraud_err}")
+
         return f(user, *args, **kwargs)
     return decorated
 
@@ -591,6 +600,17 @@ def api_ton_withdraw_init(user):
 
     if not ton_wallet:
         return jsonify({'success': False, 'message': _t('api_no_wallet')})
+
+    # ── Anti-fraud: run multi-account check before anything else ──
+    check_and_flag_multi_account(user['user_id'])
+    blocked, fraud_reason = is_withdrawal_blocked(user['user_id'])
+    if blocked:
+        lang = session.get('lang', 'en')
+        msg = ('⛔ Retiro bloqueado por actividad sospechosa. Contacta soporte.'
+               if lang == 'es' else
+               '⛔ Withdrawal blocked due to suspicious activity. Contact support.')
+        logger.warning(f"[ANTI-FRAUD] Blocked withdrawal attempt by user {user['user_id']} — {fraud_reason}")
+        return jsonify({'success': False, 'message': msg})
 
     if get_config('ton_withdrawal_enabled', '1') != '1':
         return jsonify({'success': False, 'message': _t('api_wd_disabled')})
@@ -2101,7 +2121,30 @@ def admin_api_unban_user(user_id):
     unban_user(user_id)
     return jsonify({'success': True})
 
-@app.route('/admin/logout')
+
+@app.route('/admin/api/unflag_fraud/<user_id>', methods=['POST'])
+@require_admin
+def admin_api_unflag_fraud(user_id):
+    """Clear anti-fraud withdrawal block for a user (admin action)"""
+    unflag_user_fraud(user_id)
+    logger.info(f"[ANTI-FRAUD] Admin cleared fraud flag for user {user_id}")
+    return jsonify({'success': True, 'message': f'Fraud flag cleared for user {user_id}'})
+
+
+@app.route('/admin/api/fraud_status/<user_id>')
+@require_admin
+def admin_api_fraud_status(user_id):
+    """Get fraud flag status for a user"""
+    blocked, reason = is_withdrawal_blocked(user_id)
+    shared = get_shared_ip_accounts(user_id)
+    return jsonify({
+        'user_id':            user_id,
+        'withdrawal_blocked': blocked,
+        'fraud_reason':       reason,
+        'shared_ip_accounts': shared
+    })
+
+
 def admin_logout():
     """Admin logout"""
     session.pop('admin_authenticated', None)
