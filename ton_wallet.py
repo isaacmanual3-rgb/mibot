@@ -1,6 +1,6 @@
 """
-ton_wallet.py — WalletV5R1 via tonutils 2.x
-Compatible con tonutils >= 2.0.0
+ton_wallet.py — WalletV5R1 via tonutils 2.0.0
+Módulos disponibles: clients, contracts, types, utils
 """
 import asyncio
 import logging
@@ -48,23 +48,10 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 async def _send(words, to_addr, ton_amount, memo, api_key):
     errors = []
 
-    # ── Intento 1: tonutils 2.x ────────────────────────────────────────
+    # ── Intento 1: tonutils 2.0.0 — clients + contracts ───────────────
     try:
-        import tonutils
-        logger.info(f'tonutils version: {getattr(tonutils, "__version__", "unknown")}')
-        logger.info(f'tonutils path: {tonutils.__file__}')
-
-        # Listar submódulos disponibles
-        import pkgutil
-        mods = [m.name for m in pkgutil.iter_modules(tonutils.__path__)]
-        logger.info(f'tonutils modules: {mods}')
-    except Exception as e:
-        logger.warning(f'No se pudo inspeccionar tonutils: {e}')
-
-    # ── Intento con imports de tonutils 2.x ────────────────────────────
-    try:
-        from tonutils.wallet import WalletV5R1
-        from tonutils.providers.toncenter import ToncenterClient
+        from tonutils.clients import ToncenterClient
+        from tonutils.contracts import WalletV5R1
 
         client = ToncenterClient(api_key=api_key, is_testnet=False)
         wallet, _, _, _ = await WalletV5R1.from_mnemonic(client, words)
@@ -74,7 +61,7 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
             amount=ton_amount,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS: {tx}')
+        logger.info(f'SUCCESS via ToncenterClient: {tx}')
         return True, str(tx), None
     except ImportError as e:
         logger.warning(f'Import 1 fallo: {e}')
@@ -83,10 +70,10 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
         logger.warning(f'Intento 1 fallo: {e}')
         errors.append(f'Intento1: {e}')
 
-    # ── Intento con imports alternativos ───────────────────────────────
+    # ── Intento 2: contracts con wallet submodule ──────────────────────
     try:
-        from tonutils.wallet import WalletV5R1
-        from tonutils.toncenter import ToncenterClient
+        from tonutils.clients import ToncenterClient
+        from tonutils.contracts.wallet import WalletV5R1
 
         client = ToncenterClient(api_key=api_key, is_testnet=False)
         wallet, _, _, _ = await WalletV5R1.from_mnemonic(client, words)
@@ -95,7 +82,7 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
             amount=ton_amount,
             body=memo if memo else None
         )
-        logger.info(f'SUCCESS (alt): {tx}')
+        logger.info(f'SUCCESS via contracts.wallet: {tx}')
         return True, str(tx), None
     except ImportError as e:
         logger.warning(f'Import 2 fallo: {e}')
@@ -104,25 +91,19 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
         logger.warning(f'Intento 2 fallo: {e}')
         errors.append(f'Intento2: {e}')
 
-    # ── Intento directo sin client ─────────────────────────────────────
+    # ── Intento 3: explorar contratos disponibles ──────────────────────
     try:
-        from tonutils.wallet import WalletV5R1
+        import tonutils.contracts as c
+        import pkgutil
+        submods = [m.name for m in pkgutil.iter_modules(c.__path__)]
+        logger.info(f'contracts submódulos: {submods}')
 
-        wallet, _, _, _ = await WalletV5R1.from_mnemonic(None, words)
-        tx = await wallet.transfer(
-            destination=to_addr,
-            amount=ton_amount,
-            body=memo if memo else None
-        )
-        logger.info(f'SUCCESS (no client): {tx}')
-        return True, str(tx), None
-    except ImportError as e:
-        logger.warning(f'Import 3 fallo: {e}')
-        errors.append(f'Import3: {e}')
+        import tonutils.clients as cl
+        submods2 = [m.name for m in pkgutil.iter_modules(cl.__path__)]
+        logger.info(f'clients submódulos: {submods2}')
     except Exception as e:
-        logger.warning(f'Intento 3 fallo: {e}')
-        errors.append(f'Intento3: {e}')
+        logger.warning(f'Diagnóstico fallo: {e}')
 
     error_summary = ' | '.join(errors)
-    logger.error(f'Todos los clientes fallaron: {error_summary}')
+    logger.error(f'Todos los intentos fallaron: {error_summary}')
     return False, None, error_summary
