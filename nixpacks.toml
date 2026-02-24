@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python311", "pkg-config", "libmysqlclient-dev"]
+nixPkgs = ["python311", "pkg-config", "libmysqlclient-dev", "libsodium"]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
