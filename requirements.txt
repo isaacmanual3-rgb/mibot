@@ -1,4 +1,4 @@
-# Doge Pixel - Dependencies
+# SALLY-E / Doge Pixel - Dependencies
 # Python 3.9+
 
 # Web Framework
@@ -9,10 +9,10 @@ Werkzeug==3.0.1
 # Database
 mysql-connector-python==8.2.0
 
-# HTTP Requests (for Telegram API + TON toncenter)
+# HTTP Requests (Telegram Bot API + TON toncenter)
 requests==2.31.0
 
-# TON wallet signing (Ed25519) — usado por ton_wallet.py
+# TON wallet signing (Ed25519)
 cryptography==42.0.5
 
 # Environment Variables
