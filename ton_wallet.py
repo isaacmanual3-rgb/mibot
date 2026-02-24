@@ -1,10 +1,13 @@
 """
 ton_wallet.py — tonutils (ToncenterClient desde tonutils.clients)
+amount debe pasarse en nanotons (int), no en TON (float)
 """
 import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
+
+TON_TO_NANO = 1_000_000_000  # 1 TON = 1e9 nanotons
 
 
 def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
@@ -44,7 +47,6 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
 
 
 async def _send(words, to_addr, ton_amount, memo, api_key):
-    # Importar directo del paquete raíz clients (no submodulo .http ni .base)
     from tonutils.clients import ToncenterClient
     from tonutils.contracts.wallet import WalletV5R1
 
@@ -59,10 +61,13 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
         result = await result
     wallet = result[0] if isinstance(result, (tuple, list)) else result
 
-    logger.info(f'Enviando {ton_amount} TON -> {to_addr}')
+    # Convertir TON a nanotons (int)
+    amount_nano = int(round(ton_amount * TON_TO_NANO))
+
+    logger.info(f'Enviando {ton_amount} TON ({amount_nano} nanotons) -> {to_addr}')
     tx = await wallet.transfer(
         destination=to_addr,
-        amount=ton_amount,
+        amount=amount_nano,
         body=memo if memo else None
     )
     logger.info(f'SUCCESS: {tx}')
