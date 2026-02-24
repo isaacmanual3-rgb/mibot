@@ -42,7 +42,7 @@ TRANSLATIONS = {
     'idx_stat_earned':   {'en': 'TOTAL EARNED',          'es': 'TOTAL GANADO'},
     'idx_stat_machines': {'en': 'MACHINES',              'es': 'MÁQUINAS'},
     'idx_stat_refs':     {'en': 'REFERRALS',             'es': 'REFERIDOS'},
-    'idx_actions_label': {'en': 'QUICK ACTIONS',      'es': 'ACCIONES RAPIDAS'},
+    'idx_actions_label': {'en': 'QUICK ACTIONS',      'es': 'ACCIONES RÁPIDAS'},
     'idx_btn_mining':    {'en': 'MINE',                'es': 'MINERIA'},
     'idx_btn_tasks':     {'en': 'TASKS',               'es': 'TAREAS'},
     'idx_btn_invite':    {'en': 'INVITE',              'es': 'INVITAR'},
@@ -202,7 +202,7 @@ TRANSLATIONS = {
     'js_connection_error':    {'en': 'Connection error',                    'es': 'Error de conexión'},
     'js_link_copied':         {'en': 'Link copied!',                        'es': '¡Enlace copiado!'},
     'js_enter_valid_amount':  {'en': 'Enter a valid amount',                'es': 'Ingresa una cantidad válida'},
-    'js_enter_valid_wallet':  {'en': 'Enter a valid DOGE wallet address',   'es': 'Ingresa una dirección DOGE válida'},
+    'js_enter_valid_wallet':  {'en': 'Enter a valid TON wallet address',    'es': 'Ingresa una dirección TON válida'},
     'js_withdrawal_submitted':{'en': 'Withdrawal request submitted!',       'es': '¡Solicitud de retiro enviada!'},
     'js_withdrawal_failed':   {'en': 'Withdrawal failed',                   'es': 'Error al procesar el retiro'},
     'js_enter_promo':         {'en': 'Enter a promo code',                  'es': 'Ingresa un código promo'},
@@ -253,7 +253,7 @@ TRANSLATIONS = {
     'wl_wd_send_soon':{'en': 'TON will be sent in the next few minutes.', 'es': 'El TON se enviará en los próximos minutos.'},
     # Wallet deposit success messages
     'wl_dep_received':{'en': 'TON received',              'es': 'TON recibidos'},
-    'wl_dep_credited_to':{'en': 'DOGE credited to your account', 'es': 'DOGE acreditados a tu cuenta'},
+    'wl_dep_credited_to':{'en': 'TON credited to your account', 'es': 'TON acreditados a tu cuenta'},
 
     # ── REFERRALS PAGE ─────────────────────────────────────────
     'rf_ticker': {

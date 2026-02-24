@@ -478,7 +478,15 @@ def auth():
         session['username']   = username
         session['first_name'] = first_name
         session.permanent     = True
-        
+
+        # Auto-detect language from Telegram user's language_code
+        # Only set if not already manually chosen by the user
+        if 'lang' not in session:
+            language_code = user_data.get('language_code', '')
+            from notifications import detect_lang
+            detected = detect_lang(language_code)
+            session['lang'] = detected if detected in get_supported_langs() else 'en'
+
         # start_param = referral
         start_param = params.get('start_param') or data.get('start_param', '')
         if start_param and start_param != user_id:
