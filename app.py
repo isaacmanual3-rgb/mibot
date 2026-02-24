@@ -2210,9 +2210,9 @@ def _detect_lang_from_update(user_obj):
 
 
 def _main_keyboard(user_id, lang='es'):
-    from notifications import _OPEN_BTN
+    from notifications import _get_open_btn
     webapp_url = f"{_WEBAPP_URL}?user_id={user_id}" if _WEBAPP_URL else None
-    btn_text = _OPEN_BTN.get(lang, '🚀 Open SALLY-E')
+    btn_text = _get_open_btn(lang)
     rows = []
     if webapp_url:
         rows.append([{"text": btn_text, "web_app": {"url": webapp_url}}])
@@ -2243,10 +2243,10 @@ def _join_keyboard(missing, lang='es'):
 def _welcome_text(name, lang='es', verified=False):
     safe = _html.escape(str(name))
     msgs = {
-      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>SALLY-E Bot</b>\n\n💰 Gana tokens minando\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\nPresiona el botón de abajo para comenzar:",
-      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>SALLY-E Bot</b>\n\n💰 Earn tokens by mining\n✅ Complete tasks for rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\nPress the button below to start:",
-      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>SALLY-E Bot</b>\n\n💰 Ganhe tokens minerando\n✅ Complete tarefas e obtenha recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\nPressione o botão abaixo para começar:",
-      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>SALLY-E Bot</b>\n\n💰 Gagnez des tokens en minant\n✅ Complétez des tâches pour des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\nAppuyez sur le bouton ci-dessous pour commencer:",
+      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>{_BOT_TITLE}</b>\n\n💰 Gana tokens minando\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\nPresiona el botón de abajo para comenzar:",
+      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>{_BOT_TITLE}</b>\n\n💰 Earn tokens by mining\n✅ Complete tasks for rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\nPress the button below to start:",
+      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>{_BOT_TITLE}</b>\n\n💰 Ganhe tokens minerando\n✅ Complete tarefas e obtenha recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\nPressione o botão abaixo para começar:",
+      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>{_BOT_TITLE}</b>\n\n💰 Gagnez des tokens en minant\n✅ Complétez des tâches pour des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\nAppuyez sur le bouton ci-dessous pour commencer:",
     }
     return msgs.get(lang, msgs['es'])
 
@@ -2255,10 +2255,10 @@ def _join_needed_text(name, missing, lang='es'):
     safe = _html.escape(str(name))
     chs = '\n'.join([f"📢 {ch}" for ch in missing])
     msgs = {
-      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>SALLY-E Bot</b>\n\nPara continuar debes unirte a:\n\n{chs}\n\nUna vez que te unas, presiona <b>Ya me uní</b>.",
-      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>SALLY-E Bot</b>\n\nTo continue you must join:\n\n{chs}\n\nOnce joined, press <b>I joined</b>.",
-      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>SALLY-E Bot</b>\n\nPara continuar você deve entrar:\n\n{chs}\n\nDepois de entrar, pressione <b>Já entrei</b>.",
-      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>SALLY-E Bot</b>\n\nPour continuer vous devez rejoindre:\n\n{chs}\n\nUne fois rejoint, appuyez sur <b>J'ai rejoint</b>.",
+      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>{_BOT_TITLE}</b>\n\nPara continuar debes unirte a:\n\n{chs}\n\nUna vez que te unas, presiona <b>Ya me uní</b>.",
+      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>{_BOT_TITLE}</b>\n\nTo continue you must join:\n\n{chs}\n\nOnce joined, press <b>I joined</b>.",
+      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>{_BOT_TITLE}</b>\n\nPara continuar você deve entrar:\n\n{chs}\n\nDepois de entrar, pressione <b>Já entrei</b>.",
+      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>{_BOT_TITLE}</b>\n\nPour continuer vous devez rejoindre:\n\n{chs}\n\nUne fois rejoint, appuyez sur <b>J'ai rejoint</b>.",
     }
     return msgs.get(lang, msgs['es'])
 
@@ -2682,58 +2682,65 @@ def bot_delete_webhook_admin():
     return jsonify(result)
 
 
-# ─── Auto-setup del webhook al arrancar ──────────────────
+# ── Auto-setup del webhook al arrancar ────────────────────────
 
 def _auto_register_webhook():
     """
-    Intenta registrar el webhook automáticamente usando WEBAPP_URL.
-    Se llama una vez al arrancar la app.
+    Registra el webhook automaticamente.
+    Usa un archivo lock para evitar que multiples workers de gunicorn
+    llamen a setWebhook al mismo tiempo (causa Too Many Requests).
     """
     if not BOT_TOKEN or not _WEBAPP_URL:
         logger.warning("Auto-webhook: BOT_TOKEN o WEBAPP_URL no configurados, saltando auto-setup.")
         return
 
-    webhook_url = f"{_WEBAPP_URL.rstrip('/')}/webhook/{BOT_TOKEN}"
+    import tempfile
+    lock_path = os.path.join(tempfile.gettempdir(), 'sally_webhook.lock')
     try:
-        # Primero verifica si ya está registrado correctamente
+        import fcntl
+        lock_file = open(lock_path, 'w')
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        return  # Otro worker ya ejecuta el setup
+
+    try:
+        webhook_url = f"{_WEBAPP_URL.rstrip('/')}/webhook/{BOT_TOKEN}"
         r = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getWebhookInfo", timeout=8)
         info = r.json()
         current_url = info.get('result', {}).get('url', '')
-
         if current_url == webhook_url:
-            logger.info(f"Webhook ya registrado correctamente: {webhook_url}")
+            logger.info(f"Webhook ya registrado: {webhook_url}")
             return
-
-        # Registrar
         result = requests.post(
             f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook",
-            json={
-                "url": webhook_url,
-                "allowed_updates": ["message", "callback_query"],
-                "drop_pending_updates": True,
-                "max_connections": 40,
-            },
+            json={"url": webhook_url, "allowed_updates": ["message","callback_query"],
+                  "drop_pending_updates": True, "max_connections": 40},
             timeout=10
         ).json()
-
         if result.get('ok'):
-            logger.info(f"✅ Webhook auto-registrado: {webhook_url}")
+            logger.info(f"Webhook registrado OK: {webhook_url}")
         else:
-            logger.error(f"❌ Error auto-webhook: {result.get('description')}")
+            logger.error(f"Error setWebhook: {result.get('description')}")
     except Exception as e:
         logger.error(f"Auto-webhook exception: {e}")
+    finally:
+        try:
+            import fcntl
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+            lock_file.close()
+        except Exception:
+            pass
 
 
-# Registrar webhook al arrancar (solo en producción, no en dev con reloader)
 import threading as _threading
 
 def _delayed_webhook_setup():
     import time
-    time.sleep(3)  # Espera a que Flask esté listo
+    time.sleep(4)
     _auto_register_webhook()
 
-_wh_thread = _threading.Thread(target=_delayed_webhook_setup, daemon=True)
-_wh_thread.start()
+_threading.Thread(target=_delayed_webhook_setup, daemon=True).start()
+
 
 
 # ============================================

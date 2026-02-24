@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN    = os.environ.get('BOT_TOKEN', '')
 WEBAPP_URL   = os.environ.get('WEBAPP_URL', '')
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'SallyEbot')
+_BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
 
 # ──────────────────────────────────────────────────────────
 # DETECCIÓN DE IDIOMA
@@ -36,10 +37,10 @@ def detect_lang(language_code):
 # ──────────────────────────────────────────────────────────
 _TEXTS = {
 'welcome':{
-  'es':"👋 <b>¡Bienvenido/a a SALLY-E, {name}!</b>\n\n🎉 Ya formas parte de nuestra comunidad.\n\n💰 Gana tokens minando automáticamente\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\n👇 <b>Presiona el botón para abrir la app:</b>",
-  'en':"👋 <b>Welcome to SALLY-E, {name}!</b>\n\n🎉 You are now part of our community.\n\n💰 Earn tokens by auto-mining\n✅ Complete tasks and get rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\n👇 <b>Press the button to open the app:</b>",
-  'pt':"👋 <b>Bem-vindo(a) ao SALLY-E, {name}!</b>\n\n🎉 Você agora faz parte da nossa comunidade.\n\n💰 Ganhe tokens com mineração automática\n✅ Complete tarefas e receba recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\n👇 <b>Pressione o botão para abrir o app:</b>",
-  'fr':"👋 <b>Bienvenue sur SALLY-E, {name}!</b>\n\n🎉 Vous faites maintenant partie de notre communauté.\n\n💰 Gagnez des tokens par le minage automatique\n✅ Complétez des tâches et obtenez des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\n👇 <b>Appuyez sur le bouton pour ouvrir l'app:</b>",
+  'es':"👋 <b>¡Bienvenido/a a {bot_title}, {name}!</b>\n\n🎉 Ya formas parte de nuestra comunidad.\n\n💰 Gana tokens minando automáticamente\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\n👇 <b>Presiona el botón para abrir la app:</b>",
+  'en':"👋 <b>Welcome to {bot_title}, {name}!</b>\n\n🎉 You are now part of our community.\n\n💰 Earn tokens by auto-mining\n✅ Complete tasks and get rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\n👇 <b>Press the button to open the app:</b>",
+  'pt':"👋 <b>Bem-vindo(a) ao {bot_title}, {name}!</b>\n\n🎉 Você agora faz parte da nossa comunidade.\n\n💰 Ganhe tokens com mineração automática\n✅ Complete tarefas e receba recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\n👇 <b>Pressione o botão para abrir o app:</b>",
+  'fr':"👋 <b>Bienvenue sur {bot_title}, {name}!</b>\n\n🎉 Vous faites maintenant partie de notre communauté.\n\n💰 Gagnez des tokens par le minage automatique\n✅ Complétez des tâches et obtenez des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\n👇 <b>Appuyez sur le bouton pour ouvrir l'app:</b>",
 },
 'deposit_confirmed':{
   'es':"✅ <b>¡Depósito Confirmado!</b>\n\n💵 <b>Monto:</b> {amount} {currency}\n🪙 <b>Crédito recibido:</b> {credited} S-E\n🕐 <b>Fecha:</b> {date}\n🆔 <b>ID:</b> <code>{deposit_id}</code>\n\nTu saldo fue actualizado. ¡Sigue minando! ⛏️",
@@ -79,7 +80,10 @@ _TEXTS = {
 },
 }
 
-_OPEN_BTN = {'es':'🚀 Abrir SALLY-E','en':'🚀 Open SALLY-E','pt':'🚀 Abrir SALLY-E','fr':'🚀 Ouvrir SALLY-E'}
+def _get_open_btn(lang):
+    labels = {'es': f'🚀 Abrir {_BOT_TITLE}', 'en': f'🚀 Open {_BOT_TITLE}',
+              'pt': f'🚀 Abrir {_BOT_TITLE}', 'fr': f'🚀 Ouvrir {_BOT_TITLE}'}
+    return labels.get(lang, f'🚀 Open {_BOT_TITLE}')
 
 # ──────────────────────────────────────────────────────────
 # ENVÍO VÍA BOT API (síncrono, solo requests)
@@ -107,12 +111,14 @@ def _keyboard(user_id, lang):
     if not WEBAPP_URL:
         return None
     url = f"{WEBAPP_URL.rstrip('/')}?user_id={user_id}"
-    return {"inline_keyboard":[[{"text": _OPEN_BTN.get(lang,'🚀 Open SALLY-E'), "web_app":{"url": url}}]]}
+    return {"inline_keyboard":[[{"text": _get_open_btn(lang), "web_app":{"url": url}}]]}
 
 
 def _send(chat_id, notif_type, lang, user_id=None, **kwargs):
     texts = _TEXTS.get(notif_type, {})
     tmpl  = texts.get(lang) or texts.get('es') or texts.get('en','')
+    # Always inject bot_title so templates can use {bot_title}
+    kwargs.setdefault('bot_title', _BOT_TITLE)
     try:
         text = tmpl.format(**kwargs)
     except KeyError as e:
