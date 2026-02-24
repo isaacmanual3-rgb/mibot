@@ -1178,16 +1178,60 @@ body::after {
     pointer-events: none;
 }
 
+/* ── Spinner container ── */
 .loading-spinner {
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    border: 3px solid rgba(0,170,255,0.15);
-    border-top-color: var(--blue-primary);
-    box-shadow: 0 0 18px rgba(0,170,255,0.3);
-    animation: spinner-rotate 0.75s linear infinite;
     position: relative; z-index: 1;
+    width: 72px; height: 72px;
 }
-@keyframes spinner-rotate { to { transform: rotate(360deg); } }
+
+/* ── Ring base shared styles ── */
+.loading-spinner::before,
+.loading-spinner::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border-style: solid;
+    border-color: transparent;
+}
+
+/* ── Outer ring — slow, clockwise ── */
+.loading-spinner::before {
+    inset: 0;
+    border-width: 2.5px;
+    border-top-color: var(--blue-primary);
+    border-right-color: rgba(0,170,255,0.25);
+    filter: drop-shadow(0 0 6px rgba(0,170,255,0.6));
+    animation: spin-cw 1.2s cubic-bezier(0.4,0,0.2,1) infinite;
+}
+
+/* ── Inner ring — faster, counter-clockwise ── */
+.loading-spinner::after {
+    inset: 14px;
+    border-width: 2px;
+    border-bottom-color: var(--blue-bright);
+    border-left-color: rgba(0,221,255,0.2);
+    filter: drop-shadow(0 0 4px rgba(0,221,255,0.5));
+    animation: spin-ccw 0.8s cubic-bezier(0.4,0,0.2,1) infinite;
+}
+
+/* ── Centre dot ── */
+.loading-spinner-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--blue-primary);
+    box-shadow: 0 0 10px 3px rgba(0,170,255,0.7);
+    animation: dot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes spin-cw  { to { transform: rotate(360deg);  } }
+@keyframes spin-ccw { to { transform: rotate(-360deg); } }
+@keyframes dot-pulse {
+    0%, 100% { opacity: 1;   box-shadow: 0 0 10px 3px rgba(0,170,255,0.7); }
+    50%       { opacity: 0.4; box-shadow: 0 0 4px 1px  rgba(0,170,255,0.3); }
+}
 
 /* ══════════════════════════════
    MINING PAGE
