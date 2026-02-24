@@ -1,13 +1,12 @@
 """
-ton_wallet.py — tonutils (ToncenterClient desde tonutils.clients)
-amount debe pasarse en nanotons (int), no en TON (float)
+ton_wallet.py — tonutils con ToncenterClient conectado correctamente
 """
 import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
 
-TON_TO_NANO = 1_000_000_000  # 1 TON = 1e9 nanotons
+TON_TO_NANO = 1_000_000_000
 
 
 def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
@@ -50,25 +49,25 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
     from tonutils.clients import ToncenterClient
     from tonutils.contracts.wallet import WalletV5R1
 
+    amount_nano = int(round(ton_amount * TON_TO_NANO))
+
+    # ToncenterClient necesita usarse como async context manager para conectarse
     try:
         client = ToncenterClient(api_key=api_key, is_testnet=False)
     except TypeError:
         client = ToncenterClient(api_key=api_key)
 
-    # from_mnemonic en versiones recientes NO es awaitable
-    result = WalletV5R1.from_mnemonic(client, words)
-    if asyncio.iscoroutine(result):
-        result = await result
-    wallet = result[0] if isinstance(result, (tuple, list)) else result
+    async with client:
+        result = WalletV5R1.from_mnemonic(client, words)
+        if asyncio.iscoroutine(result):
+            result = await result
+        wallet = result[0] if isinstance(result, (tuple, list)) else result
 
-    # Convertir TON a nanotons (int)
-    amount_nano = int(round(ton_amount * TON_TO_NANO))
-
-    logger.info(f'Enviando {ton_amount} TON ({amount_nano} nanotons) -> {to_addr}')
-    tx = await wallet.transfer(
-        destination=to_addr,
-        amount=amount_nano,
-        body=memo if memo else None
-    )
-    logger.info(f'SUCCESS: {tx}')
-    return True, str(tx), None
+        logger.info(f'Enviando {ton_amount} TON ({amount_nano} nanotons) -> {to_addr}')
+        tx = await wallet.transfer(
+            destination=to_addr,
+            amount=amount_nano,
+            body=memo if memo else None
+        )
+        logger.info(f'SUCCESS: {tx}')
+        return True, str(tx), None
