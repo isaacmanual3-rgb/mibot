@@ -202,52 +202,15 @@
   line-height: 2;
 }
 
-/* TON Crystal — pixel art diamond */
-.px-ton-crystal {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.px-ton-crystal::before {
-  content: '◈';
-  font-size: 3.2rem;
-  color: #40c4ff;
-  text-shadow:
-    0 0 12px rgba(64,196,255,0.9),
-    0 0 30px rgba(64,196,255,0.5),
-    0 0 50px rgba(64,196,255,0.2);
-  animation: ton-pulse 2s ease-in-out infinite;
-  display: block;
+/* CSS pixel dog */
+.px-doge-art {
+  font-size: 2.4rem;
   line-height: 1;
+  animation: doge-bounce 0.9s steps(1) infinite;
 }
-.px-ton-crystal::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 4px;
-  background: radial-gradient(ellipse, rgba(64,196,255,0.4) 0%, transparent 70%);
-  animation: ton-pulse 2s ease-in-out infinite;
-}
-.px-ton-label {
-  display: block;
-  text-align: center;
-  font-family: var(--px-font);
-  font-size: 0.32rem;
-  color: #40c4ff;
-  letter-spacing: 0.15em;
-  margin-top: 2px;
-  opacity: 0.8;
-}
-@keyframes ton-pulse {
-  0%, 100% { text-shadow: 0 0 12px rgba(64,196,255,0.9), 0 0 30px rgba(64,196,255,0.5); }
-  50%       { text-shadow: 0 0 20px rgba(64,196,255,1),   0 0 50px rgba(64,196,255,0.8), 0 0 80px rgba(64,196,255,0.3); }
+@keyframes doge-bounce {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
 }
 
 /* ═══════════════════════════════════════
@@ -955,12 +918,6 @@ canvas#oscCanvas {
   padding: 16px 10px;
   text-align: center;
 }
-.px-stat-icon {
-  display: block;
-  font-size: 1.3rem;
-  margin-bottom: 6px;
-  filter: drop-shadow(0 0 6px rgba(255,215,0,0.35));
-}
 .px-stat-val {
   display: block;
   font-size: 0.72rem;
@@ -1093,7 +1050,7 @@ canvas#oscCanvas {
           <div class="px-welcome-name">{{ user.first_name or 'PLAYER' }}!</div>
           <div class="px-welcome-sub">{{ t.idx_daily_quest }}</div>
         </div>
-        <div class="px-ton-crystal" aria-hidden="true"><span class="px-ton-label">TON</span></div>
+        <div class="px-doge-art" aria-hidden="true">🐕</div>
       </div>
     </div>
 
@@ -1278,25 +1235,21 @@ canvas#oscCanvas {
 
     <!-- STATS -->
     <div class="px-card">
-      <div class="px-label">⚡ &nbsp;{{ t.idx_stats_label }}</div>
+      <div class="px-label">📊 &nbsp;{{ t.idx_stats_label }}</div>
       <div class="px-stats">
         <div class="px-stat-box">
-          <span class="px-stat-icon">💎</span>
           <span class="px-stat-val">{{ format_ton(user.doge_balance) }}</span>
           <span class="px-stat-lbl">{{ t.idx_stat_balance }}</span>
         </div>
         <div class="px-stat-box">
-          <span class="px-stat-icon">📈</span>
           <span class="px-stat-val">{{ format_ton(user.total_earned) }}</span>
           <span class="px-stat-lbl">{{ t.idx_stat_earned }}</span>
         </div>
         <div class="px-stat-box">
-          <span class="px-stat-icon">⛏️</span>
           <span class="px-stat-val" id="statMachines">—</span>
           <span class="px-stat-lbl">{{ t.idx_stat_machines }}</span>
         </div>
         <div class="px-stat-box">
-          <span class="px-stat-icon">👥</span>
           <span class="px-stat-val">{{ user.referral_count or 0 }}</span>
           <span class="px-stat-lbl">{{ t.idx_stat_refs }}</span>
         </div>
