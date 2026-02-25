@@ -248,12 +248,12 @@ TRANSLATIONS = {
 
     # ── INVITE PURCHASE TASK ───────────────────────────────────
     'tq_invite_task_title': {
-        'en': '👥 Invite a Friend (10% Bonus)',
-        'es': '👥 Invita un Amigo (10% Bono)',
+        'en': '👥 Invite & Earn 10%',
+        'es': '👥 Invita y Gana 10%',
     },
     'tq_invite_task_desc': {
-        'en': 'Invite a friend and earn 10% of their first plan purchase in TON!',
-        'es': '¡Invita a un amigo y gana el 10% de su primera compra de plan en TON!',
+        'en': 'Friend buys a plan → you earn 10% in TON',
+        'es': 'Tu amigo compra un plan → ganas 10% en TON',
     },
     'tq_invite_btn':   {'en': 'INVITE',   'es': 'INVITAR'},
     'tq_invite_rewarded_one':   {'en': '✓ 1 friend rewarded',    'es': '✓ 1 amigo recompensado'},
