@@ -663,33 +663,29 @@
   inset: 0;
   background: rgba(4,4,10,0.88);
   z-index: 100;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 0 0 env(safe-area-inset-bottom);
+  padding: 20px;
 }
 .tq-modal-bg.show {
   display: flex;
   animation: tq-modal-in .22s ease;
 }
 @keyframes tq-modal-in {
-  from { opacity:0; }
-  to   { opacity:1; }
+  from { opacity:0; transform: scale(0.96); }
+  to   { opacity:1; transform: scale(1); }
 }
 
 .tq-modal {
   background: var(--surface2);
   border: 2px solid var(--border);
-  border-bottom: none;
-  box-shadow: 0 -6px 40px rgba(0,0,0,0.6), -4px 0 0 0 #030308;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7), 4px 4px 0 0 #030308;
   width: 100%;
-  max-width: 560px;
+  max-width: 400px;
   padding: 28px 20px 32px;
   position: relative;
-  animation: tq-sheet-up .25s cubic-bezier(.22,.77,.42,1) both;
-}
-@keyframes tq-sheet-up {
-  from { transform: translateY(60px); opacity:0; }
-  to   { transform: translateY(0); opacity:1; }
+  border-radius: 2px;
+  animation: tq-modal-in .22s cubic-bezier(.22,.77,.42,1) both;
 }
 /* corner accents on modal */
 .tq-modal::before, .tq-modal::after {
@@ -702,11 +698,7 @@
 .tq-modal::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
 .tq-modal::after  { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
 
-.tq-modal-handle {
-  width: 36px; height: 4px;
-  background: var(--border);
-  margin: 0 auto 24px;
-}
+.tq-modal-handle { display: none; }
 
 .tq-modal-icon {
   display: flex;
