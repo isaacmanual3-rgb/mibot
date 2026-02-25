@@ -610,7 +610,13 @@
 .tq-btn-start:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 0 var(--gold-dark); }
 .tq-btn-start:active { transform: translate(2px,2px);  box-shadow: 1px 1px 0 0 var(--gold-dark); }
 
-/* ── DONE / LOCKED task overlay ── */
+/* ── INVITE PURCHASE TASK special styling ── */
+.tq-task-invite { border-color: rgba(255,215,0,0.45); animation: tq-invite-glow 2.5s ease-in-out infinite alternate; }
+@keyframes tq-invite-glow {
+  from { box-shadow: 3px 3px 0 0 #030308, 0 0 8px rgba(255,215,0,0.1); }
+  to   { box-shadow: 3px 3px 0 0 #030308, 0 0 18px rgba(255,215,0,0.35); }
+}
+
 .tq-task-done  { opacity: 0.75; }
 .tq-task-locked{ opacity: 0.55; }
 
@@ -868,7 +874,7 @@
     <div class="tq-list">
       {% if tasks %}
         {% for task in tasks %}
-        <div class="tq-task {% if task.completed %}tq-task-done{% elif task.locked %}tq-task-locked{% endif %}"
+        <div class="tq-task {% if task.completed %}tq-task-done{% elif task.locked %}tq-task-locked{% endif %}{% if task.task_id == 'invite_purchase' %} tq-task-invite{% endif %}"
              data-task-id="{{ task.id }}"
              data-category="{{ task.category|default('social') }}">
 
@@ -896,10 +902,24 @@
             {% if task.channel_username %}
             <span class="tq-task-channel">@{{ task.channel_username }}</span>
             {% endif %}
+            {% if task.task_id == 'invite_purchase' and task.invite_times and task.invite_times > 0 %}
+            <span class="tq-task-channel" style="color:var(--green);border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.07);">
+              ✓ {{ task.invite_times }} friend{{ 's' if task.invite_times > 1 else '' }} rewarded
+            </span>
+            {% endif %}
           </div>
 
           <!-- Right -->
           <div class="tq-task-right">
+            {% if task.task_id == 'invite_purchase' %}
+              <div class="tq-reward">
+                <span class="tq-reward-icon">Ð</span>
+                <span class="tq-reward-val">20%</span>
+              </div>
+              <a href="/referrals" style="text-decoration:none;">
+                <button class="tq-btn-start">INVITE</button>
+              </a>
+            {% else %}
             <div class="tq-reward">
               <span class="tq-reward-icon">Ð</span>
               <span class="tq-reward-val">+{{ format_ton(task.reward) }}</span>
@@ -912,6 +932,7 @@
               <button class="tq-btn-start" onclick="startTask({{ task.id }}, '{{ task.link|default('#') }}', '{{ task.channel_id|default('') }}')">
                 {{ t.tq_start_btn }}
               </button>
+            {% endif %}
             {% endif %}
           </div>
 
