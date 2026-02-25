@@ -119,6 +119,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'Dogepixelbot')
 APP_NAME     = os.environ.get('APP_NAME', 'app')   # Mini App short name
 APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","Dogepixelbot")}/app')
+_BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
 OFFICIAL_CHANNEL = os.environ.get('OFFICIAL_CHANNEL', '@Doge Pixel')
 
 # ============================================
@@ -2371,10 +2372,10 @@ def _join_keyboard(missing, lang='es'):
 def _welcome_text(name, lang='es', verified=False):
     safe = _html.escape(str(name))
     msgs = {
-      'es': f"👋 <b>¡Hola {safe}!</b>\n\n🌟 Bienvenido/a a <b>{_BOT_TITLE}</b>\n\n💰 Gana tokens minando\n✅ Completa tareas y obtén recompensas\n👥 Invita amigos y gana comisiones\n💸 Retira en USDT, DOGE o TON\n\nPresiona el botón de abajo para comenzar:",
-      'en': f"👋 <b>Hi {safe}!</b>\n\n🌟 Welcome to <b>{_BOT_TITLE}</b>\n\n💰 Earn tokens by mining\n✅ Complete tasks for rewards\n👥 Invite friends and earn commissions\n💸 Withdraw in USDT, DOGE or TON\n\nPress the button below to start:",
-      'pt': f"👋 <b>Olá {safe}!</b>\n\n🌟 Bem-vindo(a) ao <b>{_BOT_TITLE}</b>\n\n💰 Ganhe tokens minerando\n✅ Complete tarefas e obtenha recompensas\n👥 Convide amigos e ganhe comissões\n💸 Saque em USDT, DOGE ou TON\n\nPressione o botão abaixo para começar:",
-      'fr': f"👋 <b>Bonjour {safe}!</b>\n\n🌟 Bienvenue sur <b>{_BOT_TITLE}</b>\n\n💰 Gagnez des tokens en minant\n✅ Complétez des tâches pour des récompenses\n👥 Invitez des amis et gagnez des commissions\n💸 Retirez en USDT, DOGE ou TON\n\nAppuyez sur le bouton ci-dessous pour commencer:",
+      'es': f"⛏️ <b>¡Bienvenido/a, {safe}!</b>\n\n🌟 Esto es <b>{_BOT_TITLE}</b>\n\n⚡ Mina TON en tiempo real\n✅ Completa tareas y gana recompensas\n👥 Invita amigos y gana comisiones\n💎 Retira tus ganancias en <b>TON</b>\n\nPresiona el botón de abajo para comenzar:",
+      'en': f"⛏️ <b>Welcome, {safe}!</b>\n\n🌟 This is <b>{_BOT_TITLE}</b>\n\n⚡ Mine TON in real time\n✅ Complete tasks and earn rewards\n👥 Invite friends and earn commissions\n💎 Withdraw your earnings in <b>TON</b>\n\nPress the button below to start:",
+      'pt': f"⛏️ <b>Bem-vindo(a), {safe}!</b>\n\n🌟 Este é o <b>{_BOT_TITLE}</b>\n\n⚡ Mine TON em tempo real\n✅ Complete tarefas e ganhe recompensas\n👥 Convide amigos e ganhe comissões\n💎 Saque seus ganhos em <b>TON</b>\n\nPressione o botão abaixo para começar:",
+      'fr': f"⛏️ <b>Bienvenue, {safe}!</b>\n\n🌟 Voici <b>{_BOT_TITLE}</b>\n\n⚡ Minez du TON en temps réel\n✅ Complétez des tâches et gagnez des récompenses\n👥 Invitez des amis et gagnez des commissions\n💎 Retirez vos gains en <b>TON</b>\n\nAppuyez sur le bouton ci-dessous pour commencer:",
     }
     return msgs.get(lang, msgs['es'])
 
@@ -2428,7 +2429,11 @@ def _handle_start(msg):
 
     # Verificar canales
     if _OFFICIAL_CHANNELS:
-        ok, missing = _check_all_channels(user_id)
+        try:
+            ok, missing = _check_all_channels(user_id)
+        except Exception as e:
+            logger.warning(f"Error verificando canales en /start: {e}")
+            ok, missing = True, []
     else:
         ok, missing = True, []
 
@@ -2564,20 +2569,36 @@ def _process_update(update):
     """Procesa un update de Telegram."""
     if 'message' in update:
         msg = update['message']
-        text = msg.get('text', '')
+        text = msg.get('text', '') or ''
         chat_type = msg.get('chat', {}).get('type', '')
         if chat_type != 'private':
             return
-        if text.startswith('/start') or text.lower().strip() == 'start':
-            _handle_start(msg)
-        elif text.startswith('/help'):
-            user = msg['from']
-            lang = _detect_lang_from_update(user)
-            _bot_send(user['id'], _welcome_text(user.get('first_name', ''), lang), _main_keyboard(user['id'], lang))
-        elif text and not text.startswith('/'):
-            _handle_message(msg)
+        # Normalizar: soporta /start, /start@botname, start (sin slash)
+        text_lower = text.lower().strip()
+        # Extraer solo el comando base ignorando @botname
+        cmd = text_lower.split('@')[0].split()[0] if text_lower else ''
+        try:
+            if cmd in ('/start', 'start'):
+                _handle_start(msg)
+            elif cmd == '/help':
+                user = msg['from']
+                lang = _detect_lang_from_update(user)
+                _bot_send(user['id'], _welcome_text(user.get('first_name', ''), lang), _main_keyboard(user['id'], lang))
+            elif text and not text.startswith('/'):
+                _handle_message(msg)
+        except Exception as e:
+            logger.error(f"Error procesando mensaje '{text}': {e}", exc_info=True)
+            try:
+                user = msg.get('from', {})
+                if user.get('id'):
+                    _bot_send(user['id'], "⚠️ Ocurrió un error. Intenta de nuevo con /start")
+            except Exception:
+                pass
     elif 'callback_query' in update:
-        _handle_callback(update['callback_query'])
+        try:
+            _handle_callback(update['callback_query'])
+        except Exception as e:
+            logger.error(f"Error en callback_query: {e}", exc_info=True)
 
 
 @app.route(f'/webhook/{BOT_TOKEN}', methods=['POST'])

@@ -1580,13 +1580,6 @@ def init_all_tables():
     """)
     log.info("✓ mining_plans")
 
-    # ── Migration: add one_time_only column if missing ──────────
-    try:
-        execute_query("ALTER TABLE mining_plans ADD COLUMN one_time_only TINYINT(1) DEFAULT 0")
-        log.info("✓ migration: added one_time_only to mining_plans")
-    except Exception:
-        pass  # Column already exists — safe to ignore
-
     execute_query("""
         CREATE TABLE IF NOT EXISTS user_mining_machines (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1810,6 +1803,12 @@ if _should_init:
     except Exception as _e:
         logging.getLogger(__name__).error(f"[init_all_tables] FAILED: {_e}")
 
+# Always run migrations (safe — each one runs only once thanks to schema_migrations table)
+try:
+    _run_migrations()
+except Exception as _e:
+    logging.getLogger(__name__).error(f"[migrations] FAILED: {_e}")
+
 
 def create_ton_deposit(user_id, ton_amount, doge_credited, ton_wallet_from, ton_tx_hash=None, boc=None):
     """Create a new TON deposit record"""
@@ -1918,47 +1917,113 @@ def create_ton_deposit_pending(user_id, memo):
 
 
 # ============================================
-# ANTI-FRAUD / MULTI-ACCOUNT DETECTION
+# MIGRATION SYSTEM — runs each migration once
 # ============================================
 
-def _ensure_fraud_columns():
-    """Add fraud columns to users table and referrals table if not present (run once at startup)."""
-    for col, definition in [
-        ('withdrawal_blocked', 'TINYINT(1) DEFAULT 0'),
-        ('fraud_reason',       'VARCHAR(255) DEFAULT NULL'),
-        ('fraud_flagged_at',   'DATETIME DEFAULT NULL'),
-    ]:
-        try:
-            execute_query(f"ALTER TABLE users ADD COLUMN {col} {definition}")
-        except Exception:
-            pass  # column already exists
+def _run_migrations():
+    """
+    Execute pending schema migrations.
+    Each migration is recorded in the `schema_migrations` table so it
+    only ever runs once, no matter how many times the app restarts.
+    """
+    log = logging.getLogger(__name__)
 
-    # Add is_fraud column to referrals table
+    # 1. Ensure the migrations tracking table exists
     try:
-        execute_query("ALTER TABLE referrals ADD COLUMN is_fraud TINYINT(1) DEFAULT 0")
-    except Exception:
-        pass  # already exists
+        execute_query("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                migration_name VARCHAR(200) NOT NULL UNIQUE,
+                applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    except Exception as e:
+        log.error(f"[migrations] Could not create schema_migrations table: {e}")
+        return
 
-_ensure_fraud_columns()
+    def applied(name):
+        row = execute_query(
+            "SELECT id FROM schema_migrations WHERE migration_name = %s",
+            (name,), fetch_one=True
+        )
+        return row is not None
 
+    def mark_done(name):
+        try:
+            execute_query(
+                "INSERT IGNORE INTO schema_migrations (migration_name) VALUES (%s)",
+                (name,)
+            )
+        except Exception:
+            pass
+
+    def safe_run(name, *sqls):
+        """Run a list of SQL statements as a named migration, skip if already applied."""
+        if applied(name):
+            return
+        for sql in sqls:
+            try:
+                execute_query(sql)
+            except Exception as e:
+                # Log only unexpected errors (not duplicate column / key)
+                err = str(e)
+                if '42521' not in err and '42000' not in err and 'Duplicate' not in err and "Can't DROP" not in err:
+                    log.warning(f"[migrations] {name}: {e}")
+        mark_done(name)
+        log.info(f"[migrations] ✓ {name}")
+
+    # ── Define all migrations here ─────────────────────────────
+
+    safe_run("add_mining_plans_one_time_only",
+        "ALTER TABLE mining_plans ADD COLUMN one_time_only TINYINT(1) DEFAULT 0"
+    )
+
+    safe_run("add_users_withdrawal_blocked",
+        "ALTER TABLE users ADD COLUMN withdrawal_blocked TINYINT(1) DEFAULT 0"
+    )
+
+    safe_run("add_users_fraud_reason",
+        "ALTER TABLE users ADD COLUMN fraud_reason VARCHAR(255) DEFAULT NULL"
+    )
+
+    safe_run("add_users_fraud_flagged_at",
+        "ALTER TABLE users ADD COLUMN fraud_flagged_at DATETIME DEFAULT NULL"
+    )
+
+    safe_run("add_referrals_is_fraud",
+        "ALTER TABLE referrals ADD COLUMN is_fraud TINYINT(1) DEFAULT 0"
+    )
+
+    safe_run("add_task_completions_notes",
+        "ALTER TABLE task_completions ADD COLUMN notes VARCHAR(200) DEFAULT NULL"
+    )
+
+    safe_run("migrate_task_completions_index",
+        "ALTER TABLE task_completions DROP INDEX unique_completion",
+        "ALTER TABLE task_completions ADD INDEX idx_user_task (user_id, task_id)"
+    )
+
+    safe_run("add_users_ton_wallet",
+        "ALTER TABLE users ADD COLUMN ton_wallet VARCHAR(100) DEFAULT NULL"
+    )
+
+    safe_run("add_users_ton_deposit_address",
+        "ALTER TABLE users ADD COLUMN ton_deposit_address VARCHAR(200) DEFAULT NULL"
+    )
+
+    safe_run("add_ton_deposits_memo",
+        "ALTER TABLE ton_deposits ADD COLUMN memo VARCHAR(50) DEFAULT NULL"
+    )
+
+    log.info("[migrations] ✅ All migrations checked.")
+
+
+# ── ANTI-FRAUD stubs — kept for import compatibility ──────────
+def _ensure_fraud_columns():
+    pass  # Handled by _run_migrations()
 
 def _migrate_task_completions():
-    """Migrate task_completions: add notes column and drop unique constraint to allow multi-invite rewards."""
-    try:
-        execute_query("ALTER TABLE task_completions ADD COLUMN notes VARCHAR(200) DEFAULT NULL")
-    except Exception:
-        pass  # already exists
-    try:
-        # Drop old unique key so a user can earn invite_purchase reward multiple times (once per friend)
-        execute_query("ALTER TABLE task_completions DROP INDEX unique_completion")
-    except Exception:
-        pass  # already dropped or doesn't exist
-    try:
-        execute_query("ALTER TABLE task_completions ADD INDEX idx_user_task (user_id, task_id)")
-    except Exception:
-        pass
-
-_migrate_task_completions()
+    pass  # Handled by _run_migrations()
 
 
 

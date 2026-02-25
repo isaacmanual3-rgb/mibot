@@ -43,7 +43,7 @@ _TEXTS = {
     "⛏️ <b>Minería automática</b> — gana mientras duermes\n"
     "✅ <b>Tareas diarias</b> — recompensas extra cada día\n"
     "👥 <b>Programa de referidos</b> — comisiones por cada amigo\n"
-    "💸 <b>Retiros reales</b> — en USDT, DOGE o TON\n\n"
+    "💸 <b>Retiros reales</b> — directo en <b>TON</b>\n\n"
     "👇 <b>Abre la app y activa tu primer plan:</b>"
   ),
   'en':(
@@ -52,7 +52,7 @@ _TEXTS = {
     "⛏️ <b>Auto-mining</b> — earn while you sleep\n"
     "✅ <b>Daily tasks</b> — extra rewards every day\n"
     "👥 <b>Referral program</b> — commissions for every friend\n"
-    "💸 <b>Real withdrawals</b> — in USDT, DOGE or TON\n\n"
+    "💸 <b>Real withdrawals</b> — directly in <b>TON</b>\n\n"
     "👇 <b>Open the app and activate your first plan:</b>"
   ),
   'pt':(
@@ -61,7 +61,7 @@ _TEXTS = {
     "⛏️ <b>Mineração automática</b> — ganhe enquanto dorme\n"
     "✅ <b>Tarefas diárias</b> — recompensas extras todo dia\n"
     "👥 <b>Programa de indicações</b> — comissões por cada amigo\n"
-    "💸 <b>Saques reais</b> — em USDT, DOGE ou TON\n\n"
+    "💸 <b>Saques reais</b> — direto em <b>TON</b>\n\n"
     "👇 <b>Abra o app e ative seu primeiro plano:</b>"
   ),
   'fr':(
@@ -70,7 +70,7 @@ _TEXTS = {
     "⛏️ <b>Minage automatique</b> — gagnez pendant que vous dormez\n"
     "✅ <b>Tâches quotidiennes</b> — récompenses supplémentaires chaque jour\n"
     "👥 <b>Programme de parrainage</b> — commissions pour chaque ami\n"
-    "💸 <b>Retraits réels</b> — en USDT, DOGE ou TON\n\n"
+    "💸 <b>Retraits réels</b> — directement en <b>TON</b>\n\n"
     "👇 <b>Ouvrez l'app et activez votre premier plan:</b>"
   ),
 },
