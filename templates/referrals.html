@@ -383,6 +383,15 @@
   color: var(--orange); border-color: rgba(255,152,0,0.3);
   background: rgba(255,152,0,0.05);
 }
+.rf-badge.fraud-badge {
+  color: #ff3366; border-color: rgba(255,51,102,0.35);
+  background: rgba(255,51,102,0.06);
+}
+.rf-item.fraud::before { background: #ff3366; }
+.rf-item.fraud .rf-avatar {
+  border-color: rgba(255,51,102,0.4);
+  color: #ff3366;
+}
 
 /* Empty */
 .rf-empty {
@@ -632,7 +641,7 @@
       {% if referrals %}
       <div class="rf-list" id="rf-list">
         {% for ref in referrals %}
-        <div class="rf-item {% if ref.validated %}validated{% else %}pending{% endif %} paginated-item" data-list="rf-list">
+        <div class="rf-item {% if ref.validated %}{% if ref.referred_fraud %}fraud{% else %}validated{% endif %}{% else %}pending{% endif %} paginated-item" data-list="rf-list">
           <div class="rf-avatar">
             {{ (ref.referred_username or ref.referred_first_name or '?')[0]|upper }}
           </div>
@@ -642,13 +651,23 @@
           </div>
           <div>
             {% if ref.validated %}
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-              <span class="rf-badge validated">
-                <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                +{{ format_ton(referral_bonus) }}
-              </span>
-              <span style="font-family:var(--font-pixel); font-size:0.32rem; color:#ffd700; letter-spacing:0.06em;">{{ t.rf_commission_badge }}</span>
-            </div>
+              {% if ref.referred_fraud %}
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                <span class="rf-badge fraud-badge">
+                  <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff3366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+                  {{ t.rf_fraud_badge }}
+                </span>
+                <span style="font-family:var(--font-pixel); font-size:0.28rem; color:#ff3366; letter-spacing:0.06em; opacity:0.8;">{{ t.rf_fraud_hint }}</span>
+              </div>
+              {% else %}
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                <span class="rf-badge validated">
+                  <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  +{{ format_ton(referral_bonus) }}
+                </span>
+                <span style="font-family:var(--font-pixel); font-size:0.32rem; color:#ffd700; letter-spacing:0.06em;">{{ t.rf_commission_badge }}</span>
+              </div>
+              {% endif %}
             {% else %}
             <span class="rf-badge pending">
               <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
