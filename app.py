@@ -2568,7 +2568,7 @@ def _process_update(update):
         chat_type = msg.get('chat', {}).get('type', '')
         if chat_type != 'private':
             return
-        if text.startswith('/start'):
+        if text.startswith('/start') or text.lower().strip() == 'start':
             _handle_start(msg)
         elif text.startswith('/help'):
             user = msg['from']
