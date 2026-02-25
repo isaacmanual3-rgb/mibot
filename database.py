@@ -486,6 +486,41 @@ def delete_task(task_id):
     """Delete a task"""
     execute_query("DELETE FROM tasks WHERE task_id = %s", (task_id,))
 
+def create_referral_plan_task(referrer_id, referred_id, plan_name, plan_price):
+    """
+    Create a public reward task when a referred user purchases a mining plan.
+    Reward = plan_price / 5 (20%). Visible to everyone, claimable only once.
+    task_id encodes referrer so complete_task logic can verify ownership.
+    """
+    reward = round(float(plan_price) / 5, 8)
+    task_id = f"ref_bonus_{referrer_id}_{referred_id}"
+
+    # Avoid duplicates
+    existing = execute_query(
+        "SELECT id FROM tasks WHERE task_id = %s", (task_id,), fetch_one=True
+    )
+    if existing:
+        return None
+
+    referred_user = get_user(referred_id)
+    referred_name = (referred_user.get('first_name') or referred_user.get('username') or 'tu referido') if referred_user else 'tu referido'
+
+    title = f"🎁 Bono Referido — {plan_name}"
+    description = (
+        f"Tu referido {referred_name} compró el plan {plan_name} "
+        f"({float(plan_price):.2f} TON). ¡Reclama tu recompensa del 20%!"
+    )
+
+    execute_query("""
+        INSERT INTO tasks
+            (task_id, title, description, reward, icon, task_type,
+             requires_channel, active, max_completions, sort_order)
+        VALUES (%s, %s, %s, %s, 'gift', 'special', 0, 1, 1, 0)
+    """, (task_id, title, description, reward))
+
+    return get_task(task_id)
+
+
 def is_task_completed(user_id, task_id):
     """Check if user completed a task"""
     query = "SELECT id FROM task_completions WHERE user_id = %s AND task_id = %s"
@@ -500,6 +535,14 @@ def complete_task(user_id, task_id):
     task = get_task(task_id)
     if not task or not task.get('active'):
         return None
+
+    # ── Referral bonus tasks: only the correct referrer can claim ──
+    if str(task_id).startswith('ref_bonus_'):
+        parts = task_id.split('_')  # ref_bonus_{referrer_id}_{referred_id}
+        if len(parts) >= 4:
+            expected_referrer = parts[2]
+            if str(user_id) != str(expected_referrer):
+                return {'error': 'Esta recompensa no es para ti', 'locked': True}
 
     reward = float(task.get('reward', 0))
 
@@ -545,6 +588,14 @@ def get_user_tasks_status(user_id):
 
     for task in tasks:
         task['completed'] = task['task_id'] in done_ids
+        # Referral bonus tasks: lock for users who are not the intended referrer
+        tid = task.get('task_id', '')
+        if tid.startswith('ref_bonus_'):
+            parts = tid.split('_')
+            if len(parts) >= 4:
+                expected_referrer = parts[2]
+                if str(user_id) != str(expected_referrer):
+                    task['locked'] = True
 
     return tasks
 
