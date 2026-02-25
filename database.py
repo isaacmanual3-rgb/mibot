@@ -307,21 +307,22 @@ def get_checkin_history(user_id, days=7):
 # ============================================
 
 def add_referral(referrer_id, referred_id, referred_username=None, referred_first_name='Player'):
-    """Add a new referral"""
+    """Add a new referral — silently skips if already exists."""
     try:
-        execute_query("""
-            INSERT INTO referrals (referrer_id, referred_id, referred_username, referred_first_name)
+        rows = execute_query("""
+            INSERT IGNORE INTO referrals (referrer_id, referred_id, referred_username, referred_first_name)
             VALUES (%s, %s, %s, %s)
         """, (str(referrer_id), str(referred_id), referred_username, referred_first_name))
 
-        # Update referral count
-        execute_query(
-            "UPDATE users SET referral_count = referral_count + 1 WHERE user_id = %s",
-            (str(referrer_id),)
-        )
+        # Only update referral count if a new row was actually inserted
+        if rows:
+            execute_query(
+                "UPDATE users SET referral_count = referral_count + 1 WHERE user_id = %s",
+                (str(referrer_id),)
+            )
         return True
     except Exception as e:
-        logger.error(f"Failed to add referral: {e}")
+        logger.error(f"Error al agregar referencia: {e}")
         return False
 
 def validate_referral(referrer_id, referred_id):
@@ -1803,11 +1804,7 @@ if _should_init:
     except Exception as _e:
         logging.getLogger(__name__).error(f"[init_all_tables] FAILED: {_e}")
 
-# Always run migrations (safe — each one runs only once thanks to schema_migrations table)
-try:
-    _run_migrations()
-except Exception as _e:
-    logging.getLogger(__name__).error(f"[migrations] FAILED: {_e}")
+
 
 
 def create_ton_deposit(user_id, ton_amount, doge_credited, ton_wallet_from, ton_tx_hash=None, boc=None):
@@ -2024,6 +2021,17 @@ def _ensure_fraud_columns():
 
 def _migrate_task_completions():
     pass  # Handled by _run_migrations()
+
+# ── Auto-run migrations after all functions are defined ───────
+_should_init_migrations = (
+    os.environ.get('RAILWAY_ENVIRONMENT') or
+    os.environ.get('INIT_DB', '0') == '1' or
+    True  # Always safe to run — each migration executes only once
+)
+try:
+    _run_migrations()
+except Exception as _e:
+    logging.getLogger(__name__).error(f"[migrations] FAILED: {_e}")
 
 
 
