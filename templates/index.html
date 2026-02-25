@@ -608,30 +608,123 @@ canvas#oscCanvas {
 
 /* Claim button */
 .mdb-claim-btn {
-  width:100%; padding:18px 16px;
-  font-family:'Press Start 2P',monospace;
-  font-size:0.52rem; letter-spacing:0.08em;
-  background:var(--px-green); color:#020f06;
-  border:2px solid #00c853;
-  box-shadow:5px 5px 0 0 #002a12;
-  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
-  position:relative; overflow:hidden;
-  transition:transform .07s, box-shadow .07s;
-  animation:mdb-claim-pulse 2.5s ease-in-out infinite;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
-@keyframes mdb-claim-pulse {
-  0%,100%{ box-shadow:5px 5px 0 0 #002a12, 0 0 0 0 rgba(0,230,118,0); }
-  50%    { box-shadow:5px 5px 0 0 #002a12, 0 0 20px 4px rgba(0,230,118,0.18); }
-}
+.mdb-claim-btn:disabled { opacity: .42; cursor: not-allowed; pointer-events: none; }
+
+/* Rotating halo */
 .mdb-claim-btn::before {
-  content:''; position:absolute; top:-2px; left:-100%; width:60%; height:calc(100%+4px);
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
-  animation:mdb-claim-shine 3s ease-in-out infinite;
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  background: conic-gradient(from 0deg, #00e676, #69ff47, #00b0ff, #00e676);
+  opacity: 0;
+  filter: blur(14px);
+  transition: opacity .35s;
+  animation: mdb-halo-spin 3s linear infinite;
+  z-index: 0;
 }
-@keyframes mdb-claim-shine { to{left:150%} }
-.mdb-claim-btn:hover  { transform:translate(-2px,-2px); box-shadow:7px 7px 0 0 #002a12; animation:none; }
-.mdb-claim-btn:active { transform:translate(3px,3px);  box-shadow:1px 1px 0 0 #002a12; }
-.mdb-claim-btn:disabled { opacity:.45; cursor:not-allowed; transform:none; animation:none; }
+@keyframes mdb-halo-spin { to { transform: rotate(360deg); } }
+.mdb-claim-btn:not(:disabled):hover::before { opacity: .55; }
+
+/* Gradient border shell */
+.mdb-claim-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: 14px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #00e676 0%, #1de9b6 45%, #00b0ff 100%);
+  box-shadow: 0 0 24px rgba(0,230,118,.22), 0 6px 28px rgba(0,0,0,.55);
+  transition: box-shadow .25s, transform .15s;
+}
+.mdb-claim-btn:not(:disabled):hover .mdb-claim-inner {
+  box-shadow: 0 0 40px rgba(0,230,118,.45), 0 10px 40px rgba(0,0,0,.65);
+  transform: translateY(-2px);
+}
+.mdb-claim-btn:not(:disabled):active .mdb-claim-inner {
+  transform: translateY(1px);
+  box-shadow: 0 0 14px rgba(0,230,118,.3), 0 3px 14px rgba(0,0,0,.5);
+}
+
+/* Dark face */
+.mdb-claim-face {
+  border-radius: 13px;
+  background: linear-gradient(135deg, #00e676 0%, #00c853 50%, #1de9b6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: 17px 22px;
+  overflow: hidden;
+  position: relative;
+}
+/* shimmer sweep */
+.mdb-claim-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.06) 50%, transparent 65%);
+  transform: translateX(-100%);
+  transition: transform .55s;
+}
+.mdb-claim-btn:not(:disabled):hover .mdb-claim-face::after { transform: translateX(100%); }
+
+/* Icon circle */
+.mdb-claim-ico {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  animation: mdb-ico-float 2.8s ease-in-out infinite;
+}
+@keyframes mdb-ico-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* Text */
+.mdb-claim-text { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.mdb-claim-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem; letter-spacing: .14em;
+  color: rgba(0,40,15,0.7); text-transform: uppercase;
+}
+.mdb-claim-amount {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.72rem; letter-spacing: .04em;
+  color: #050f08;
+  -webkit-text-fill-color: #050f08;
+  font-weight: 700; line-height: 1.1;
+}
+.mdb-claim-amount-plain {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.52rem; letter-spacing: .06em;
+  color: rgba(0,40,15,0.65);
+}
+
+/* Pulse dot */
+.mdb-claim-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #003318; margin-left: auto; flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(0,51,24,.7);
+  animation: mdb-pulse-ring 1.8s ease-out infinite;
+}
+@keyframes mdb-pulse-ring {
+  0%  { box-shadow: 0 0 0 0 rgba(0,51,24,.7); }
+  70% { box-shadow: 0 0 0 8px rgba(0,51,24,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(0,51,24,0); }
+}
 
 /* Sub link */
 .mdb-sub-link {
@@ -1187,7 +1280,22 @@ canvas#oscCanvas {
         <!-- ── FOOTER ACTIONS ── -->
         <div class="mdb-footer">
           <button class="mdb-claim-btn" id="mdbClaimBtn" onclick="MDB.claim()" disabled>
-            {{ t.mdb_loading_rewards }}
+            <div class="mdb-claim-inner">
+              <div class="mdb-claim-face">
+                <div class="mdb-claim-ico">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003318" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/>
+                    <path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="mdb-claim-text">
+                  <span class="mdb-claim-label">CLAIM</span>
+                  <span class="mdb-claim-amount-plain" id="mdbClaimAmountText">{{ t.mdb_loading_rewards }}</span>
+                </div>
+                <div class="mdb-claim-pulse"></div>
+              </div>
+            </div>
           </button>
           <a class="mdb-sub-link" href="/mining">{{ t.mdb_manage_plans }}</a>
         </div>

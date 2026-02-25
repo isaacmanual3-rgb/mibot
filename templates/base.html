@@ -204,16 +204,6 @@
                 <span class="bnav-label">{{ t.bnav_tasks }}</span>
             </a>
 
-            <a href="{{ url_for('explore') }}" class="bnav-item {% if request.endpoint == 'explore' %}active{% endif %}" title="Explore">
-                <div class="bnav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M15 9l-4.5 1.5L9 15l4.5-1.5z" fill="currentColor" stroke="none"/>
-                    </svg>
-                </div>
-                <span class="bnav-label">{{ t.bnav_top }}</span>
-            </a>
-
             <a href="{{ url_for('wallet') }}" class="bnav-item {% if request.endpoint == 'wallet' %}active{% endif %}" title="Wallet">
                 <div class="bnav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">

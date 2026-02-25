@@ -190,33 +190,128 @@
    CLAIM SECTION
 ═══════════════════════════════ */
 .mn-claim {
-  background:#060612; border:2px solid rgba(0,230,118,0.3);
-  box-shadow:4px 4px 0 0 #020205, 0 0 20px rgba(0,230,118,0.06);
-  padding:16px 20px; position:relative;
+  padding: 4px 0 20px;
+  position: relative;
 }
-.mn-claim::before,.mn-claim::after {
-  content:''; position:absolute; width:9px; height:9px;
-  border-color:var(--green); border-style:solid;
-}
-.mn-claim::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
-.mn-claim::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
 
 .mn-claim-btn {
-  width:100%; padding:16px; display:flex; align-items:center; justify-content:center; gap:12px;
-  font-family:var(--font-px); font-size:0.52rem; letter-spacing:.07em;
-  background:var(--green); color:#050f08;
-  border:2px solid #00c853;
-  box-shadow:4px 4px 0 0 #003318;
-  cursor:pointer; transition:transform .07s, box-shadow .07s;
-  animation: mn-pulse 2s ease-in-out infinite;
+  width: 100%;
+  padding: 0;
+  position: relative;
+  display: block;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
-@keyframes mn-pulse{
-  0%,100%{box-shadow:4px 4px 0 0 #003318, 0 0 0 0 rgba(0,230,118,0)}
-  50%{box-shadow:4px 4px 0 0 #003318, 0 0 0 6px rgba(0,230,118,0)}
+
+.mn-claim-btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+/* ── Glowing halo ring ── */
+.mn-claim-btn::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  background: conic-gradient(from 0deg, #00e676, #69ff47, #00b0ff, #00e676);
+  opacity: 0;
+  filter: blur(14px);
+  transition: opacity .35s;
+  animation: mn-halo-spin 3s linear infinite;
+  z-index: 0;
 }
-.mn-claim-btn:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #003318; animation:none; }
-.mn-claim-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #003318; }
-.mn-claim-btn:disabled{ opacity:.5; cursor:not-allowed; transform:none; animation:none; }
+@keyframes mn-halo-spin { to { transform: rotate(360deg); } }
+
+.mn-claim-btn:not(:disabled):hover::before,
+.mn-claim-btn:not(:disabled):focus-visible::before { opacity: .55; }
+
+/* ── Inner face ── */
+.mn-claim-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: 14px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #00e676 0%, #1de9b6 45%, #00b0ff 100%);
+  box-shadow: 0 0 24px rgba(0,230,118,.25), 0 6px 30px rgba(0,0,0,.55);
+  transition: box-shadow .25s, transform .15s;
+}
+.mn-claim-btn:not(:disabled):hover .mn-claim-inner {
+  box-shadow: 0 0 40px rgba(0,230,118,.45), 0 10px 40px rgba(0,0,0,.65);
+  transform: translateY(-2px);
+}
+.mn-claim-btn:not(:disabled):active .mn-claim-inner {
+  transform: translateY(1px);
+  box-shadow: 0 0 14px rgba(0,230,118,.3), 0 3px 14px rgba(0,0,0,.5);
+}
+
+.mn-claim-face {
+  border-radius: 13px;
+  background: linear-gradient(135deg, #00e676 0%, #00c853 50%, #1de9b6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: 17px 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* shimmer sweep */
+.mn-claim-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.06) 50%, transparent 65%);
+  transform: translateX(-100%);
+  transition: transform .55s;
+}
+.mn-claim-btn:not(:disabled):hover .mn-claim-face::after { transform: translateX(100%); }
+
+/* ── Icon wrapper ── */
+.mn-claim-ico {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  animation: mn-ico-float 2.8s ease-in-out infinite;
+}
+@keyframes mn-ico-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ── Text block ── */
+.mn-claim-text { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.mn-claim-label {
+  font-family: var(--font-px); font-size: 0.48rem; letter-spacing: .14em;
+  color: rgba(0,40,15,0.75); text-transform: uppercase;
+}
+.mn-claim-amount {
+  font-family: var(--font-px); font-size: 0.82rem; letter-spacing: .04em;
+  color: #050f08;
+  font-weight: 700;
+  line-height: 1.1;
+  -webkit-text-fill-color: #050f08;
+}
+
+/* ── Pulse dot ── */
+.mn-claim-pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #003318;
+  margin-left: auto;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(0,51,24,.7);
+  animation: mn-pulse-ring 1.8s ease-out infinite;
+}
+@keyframes mn-pulse-ring {
+  0%  { box-shadow: 0 0 0 0 rgba(0,51,24,.7); }
+  70% { box-shadow: 0 0 0 8px rgba(0,51,24,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(0,51,24,0); }
+}
 
 /* ═══════════════════════════════
    YOUR MACHINES
@@ -587,8 +682,22 @@
     {% if pending_rewards > 0 %}
     <div class="mn-claim">
       <button class="mn-claim-btn claim-mining-btn" onclick="claimMiningRewards()">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
-        {{ t.mn_claim_btn }} {{ format_ton(pending_rewards) }} TON
+        <div class="mn-claim-inner">
+          <div class="mn-claim-face">
+            <div class="mn-claim-ico">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003318" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/>
+                <path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="mn-claim-text">
+              <span class="mn-claim-label">{{ t.mn_claim_btn }}</span>
+              <span class="mn-claim-amount">{{ format_ton(pending_rewards) }} TON</span>
+            </div>
+            <div class="mn-claim-pulse"></div>
+          </div>
+        </div>
       </button>
     </div>
     {% endif %}
@@ -831,7 +940,7 @@ async function claimMiningRewards() {
   const btn = document.querySelector('.claim-mining-btn');
   if(!btn||btn.disabled) return;
   btn.disabled=true;
-  btn.innerHTML='<span class="mn-spinner"></span> ' + (window.I18N?.mn_claiming||'CLAIMING...');
+  btn.innerHTML='<div class="mn-claim-inner"><div class="mn-claim-face"><span class="mn-spinner"></span><div class="mn-claim-text"><span class="mn-claim-label">' + (window.I18N?.mn_claiming||'CLAIMING...') + '</span></div></div></div>';
   try {
     const res = await fetch('/api/mining/claim',{method:'POST',headers:{'Content-Type':'application/json'}});
     const data = await res.json();
@@ -839,7 +948,7 @@ async function claimMiningRewards() {
     else{ showToast(data.message||(window.I18N?.mn_claim_failed||'{{ t.mn_claim_failed }}'),'error'); }
   } catch(e){ showToast(window.I18N?.mn_conn_error||'{{ t.mn_conn_error }}','error'); }
   btn.disabled=false;
-  btn.innerHTML='<span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span> ' + (window.I18N?.mn_claim_btn||'{{ t.mn_claim_btn }}');
+  btn.innerHTML='<div class="mn-claim-inner"><div class="mn-claim-face"><div class="mn-claim-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></div><div class="mn-claim-text"><span class="mn-claim-label">' + (window.I18N?.mn_claim_btn||'{{ t.mn_claim_btn }}') + '</span></div><div class="mn-claim-pulse"></div></div></div>';
 }
 function updatePendingRewards(){
   fetch('/api/mining/stats').then(r=>r.json()).then(data=>{
