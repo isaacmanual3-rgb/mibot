@@ -387,7 +387,8 @@ def pay_referral_commission(user_id, amount, source):
 def get_referrals(user_id, limit=50):
     """Get user's referrals"""
     query = """
-        SELECT r.*, u.doge_balance, u.last_active
+        SELECT r.*, u.doge_balance, u.last_active,
+               u.withdrawal_blocked AS referred_fraud
         FROM referrals r
         LEFT JOIN users u ON r.referred_id = u.user_id
         WHERE r.referrer_id = %s

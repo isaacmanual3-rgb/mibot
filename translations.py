@@ -279,6 +279,8 @@ TRANSLATIONS = {
         'es': 'Se activa cuando tu amigo activa cualquier plan (gratuito o de pago). Luego ganas el 5% de su minería + depósitos para siempre.'
     },
     'rf_commission_badge': {'en': '⚡ 5% LIFETIME',        'es': '⚡ 5% DE POR VIDA'},
+    'rf_fraud_badge':      {'en': '✗ FAKE',                'es': '✗ FALSO'},
+    'rf_fraud_hint':       {'en': 'No reward — multi-account', 'es': 'Sin recompensa — multicuenta'},
     'rf_how_it_works':   {'en': 'HOW IT WORKS',            'es': 'CÓMO FUNCIONA'},
     'rf_share_telegram': {'en': 'SHARE ON TELEGRAM',       'es': 'COMPARTIR EN TELEGRAM'},
     'rf_friends_list':   {'en': 'YOUR REFERRALS',          'es': 'TUS REFERIDOS'},
