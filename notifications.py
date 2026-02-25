@@ -296,24 +296,28 @@ _TEXTS = {
 },
 'generic_reply':{
   'es':(
-    "👋 <b>¡Hola, {name}!</b>\n\n"
-    "Para ver tu saldo, activar planes o retirar ganancias,\n"
-    "abre la app desde el botón de abajo. 👇"
+    "⛏️ <b>{name}, tu minero sigue trabajando.</b>\n\n"
+    "🟢 Hashrate activo · TON acumulándose en tiempo real\n\n"
+    "Revisa tus ganancias, canjea recompensas o sube de plan\n"
+    "directamente desde la app. 👇"
   ),
   'en':(
-    "👋 <b>Hey, {name}!</b>\n\n"
-    "To check your balance, activate plans, or withdraw earnings,\n"
-    "open the app using the button below. 👇"
+    "⛏️ <b>{name}, your miner is still running.</b>\n\n"
+    "🟢 Active hashrate · TON accumulating in real time\n\n"
+    "Check your earnings, claim rewards or upgrade your plan\n"
+    "directly from the app. 👇"
   ),
   'pt':(
-    "👋 <b>Olá, {name}!</b>\n\n"
-    "Para ver seu saldo, ativar planos ou sacar seus ganhos,\n"
-    "abra o app pelo botão abaixo. 👇"
+    "⛏️ <b>{name}, seu minerador continua rodando.</b>\n\n"
+    "🟢 Hashrate ativo · TON acumulando em tempo real\n\n"
+    "Veja seus ganhos, resgate recompensas ou suba de plano\n"
+    "direto pelo app. 👇"
   ),
   'fr':(
-    "👋 <b>Salut, {name}!</b>\n\n"
-    "Pour voir votre solde, activer des plans ou retirer vos gains,\n"
-    "ouvrez l'app via le bouton ci-dessous. 👇"
+    "⛏️ <b>{name}, votre mineur tourne toujours.</b>\n\n"
+    "🟢 Hashrate actif · TON s'accumule en temps réel\n\n"
+    "Consultez vos gains, réclamez vos récompenses ou montez en plan\n"
+    "directement depuis l'app. 👇"
   ),
 },
 }
