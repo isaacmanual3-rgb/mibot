@@ -28,9 +28,9 @@ from database import (
     update_balance, get_balance_history,
     get_checkin_status, claim_daily_checkin, get_checkin_history,
     add_referral, validate_referral, get_referrals, get_referral_stats,
+    pay_invite_purchase_reward,
     get_all_tasks, get_task, create_task, update_task, delete_task,
     is_task_completed, complete_task, get_user_tasks_status,
-    create_referral_plan_task,
     create_withdrawal, get_user_withdrawals, get_pending_withdrawals, update_withdrawal,
     get_all_promo_codes, get_promo_code, create_promo_code, redeem_promo_code,
     get_config, set_config, get_all_config,
@@ -348,7 +348,7 @@ def ensure_user(user_id):
     return user
 
 
-def _validate_referral_on_purchase(user_id, plan_id=None):
+def _validate_referral_on_purchase(user_id):
     """Validate a pending referral when the referred user purchases their first mining plan."""
     from database import execute_query
     user = get_user(user_id)
@@ -407,22 +407,6 @@ def _validate_referral_on_purchase(user_id, plan_id=None):
         validate_referral(str(referrer_id), str(user_id))
         logger.info(f"Referral validated on plan purchase: referrer={referrer_id} referred={user_id}")
         validated = True
-
-    # ── Crear tarea de bono de referido en el centro de tareas ──
-    # Se crea SIEMPRE que haya un referidor y se haya comprado un plan
-    if plan_id:
-        try:
-            plan = get_mining_plan(plan_id)
-            if plan:
-                task_result = create_referral_plan_task(
-                    referrer_id=str(referrer_id),
-                    referred_id=str(user_id),
-                    plan_name=plan.get('name', str(plan_id)),
-                    plan_price=plan.get('price', 0)
-                )
-                logger.info(f"Referral plan task created: referrer={referrer_id} plan={plan.get('name')} result={task_result}")
-        except Exception as _te:
-            logger.warning(f"create_referral_plan_task error: {_te}")
 
     # ── Notificación al referidor ──
     if validated and _NOTIF_OK:
@@ -1172,10 +1156,6 @@ def api_complete_task(user):
     result = complete_task(user['user_id'], task_id)
     if not result:
         return jsonify({'success': False, 'message': 'Could not complete task'})
-
-    # Referral bonus task: only the referrer can claim it
-    if result.get('locked'):
-        return jsonify({'success': False, 'message': result.get('error', 'Esta recompensa no es para ti')})
     
     return jsonify({
         'success': True,
@@ -1284,7 +1264,19 @@ def api_mining_purchase(user):
 
     # ── Validate referral on first plan purchase ──────────────────
     if translated.get('success'):
-        _validate_referral_on_purchase(user['user_id'], plan_id=plan_id)
+        _validate_referral_on_purchase(user['user_id'])
+
+        # ── Pay 20% invite reward to referrer (task-based) ───────
+        try:
+            user_obj = get_user(user['user_id'])
+            referrer_id = user_obj.get('referred_by') if user_obj else None
+            if referrer_id:
+                plan_obj = get_mining_plan(plan_id)
+                plan_price = float(plan_obj.get('price', 0)) if plan_obj else 0
+                if plan_price > 0:
+                    pay_invite_purchase_reward(referrer_id, user['user_id'], plan_price)
+        except Exception as _ipe:
+            logger.warning(f"invite_purchase_reward error: {_ipe}")
 
         # ── Notificación: plan activado ──
         if _NOTIF_OK:

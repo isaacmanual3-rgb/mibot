@@ -350,6 +350,89 @@ def validate_referral(referrer_id, referred_id):
     return True
 
 
+def ensure_invite_task_exists():
+    """Ensure the special 'invite_purchase' task exists in the tasks table."""
+    existing = execute_query(
+        "SELECT id FROM tasks WHERE task_id = %s", ('invite_purchase',), fetch_one=True
+    )
+    if not existing:
+        execute_query("""
+            INSERT INTO tasks (task_id, title, description, reward, icon, task_type,
+                               requires_channel, sort_order, active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            'invite_purchase',
+            '👥 Invite a Friend (20% Bonus)',
+            'Invite a friend and earn 20% of their first plan purchase as a bonus reward!',
+            0,          # reward is dynamic — set per completion
+            'user',
+            'social',
+            0,
+            0,
+            1
+        ))
+        logger.info("invite_purchase task created.")
+
+
+def pay_invite_purchase_reward(referrer_id, referred_user_id, plan_price):
+    """Pay the referrer 20% of the plan price when referred user buys their first plan.
+    Also marks the special invite_purchase task as completed for the referrer."""
+    reward_pct = float(get_config('invite_purchase_reward_pct', '20')) / 100.0
+    reward = round(float(plan_price) * reward_pct, 8)
+    if reward <= 0:
+        return
+
+    # Ensure the task exists
+    ensure_invite_task_exists()
+
+    # Avoid paying twice for the same referral pair
+    already_paid = execute_query(
+        "SELECT id FROM task_completions WHERE user_id = %s AND task_id = %s AND notes = %s LIMIT 1",
+        (str(referrer_id), 'invite_purchase', str(referred_user_id)), fetch_one=True
+    )
+    if already_paid:
+        return
+
+    # Record task completion (with referred_user_id in notes for dedup)
+    execute_query("""
+        INSERT INTO task_completions (user_id, task_id, reward_amount, notes)
+        VALUES (%s, %s, %s, %s)
+    """, (str(referrer_id), 'invite_purchase', reward, str(referred_user_id)))
+
+    # Update task completions count
+    execute_query(
+        "UPDATE tasks SET current_completions = current_completions + 1 WHERE task_id = %s",
+        ('invite_purchase',)
+    )
+
+    # Mark in user's completed_tasks JSON (to show as done in UI)
+    referrer = get_user(referrer_id)
+    if referrer:
+        completed = referrer.get('completed_tasks', []) or []
+        task_key = f'invite_purchase_{referred_user_id}'
+        if task_key not in completed:
+            completed.append(task_key)
+            update_user(referrer_id, completed_tasks=completed)
+
+    # Credit the 20% reward to referrer balance
+    update_balance(referrer_id, reward, 'invite_purchase_reward',
+                   f'20% reward from plan purchase of user {referred_user_id}')
+
+    # Track in referral_earnings
+    execute_query(
+        "UPDATE users SET referral_earnings = referral_earnings + %s WHERE user_id = %s",
+        (reward, str(referrer_id))
+    )
+
+    # Add to config stat tracker
+    try:
+        increment_stat('total_tasks_completed')
+    except Exception:
+        pass
+
+    logger.info(f"invite_purchase reward: +{reward:.8f} DOGE → referrer={referrer_id} (20% of {plan_price} from user {referred_user_id})")
+
+
 def pay_referral_commission(user_id, amount, source):
     """Pay 5% lifetime commission to the referrer whenever user earns from mining or deposits.
     Only pays if a validated referral exists (i.e. referred user already purchased a plan)."""
@@ -486,41 +569,6 @@ def delete_task(task_id):
     """Delete a task"""
     execute_query("DELETE FROM tasks WHERE task_id = %s", (task_id,))
 
-def create_referral_plan_task(referrer_id, referred_id, plan_name, plan_price):
-    """
-    Create a public reward task when a referred user purchases a mining plan.
-    Reward = plan_price / 5 (20%). Visible to everyone, claimable only by referrer.
-    """
-    import time
-    reward = round(float(plan_price) / 5, 8)
-
-    if reward <= 0:
-        return None
-
-    # Unique task_id per referrer + referred + plan (slugified plan name + timestamp)
-    plan_slug = plan_name.lower().replace(' ', '_').replace('-', '_')[:20]
-    ts = int(time.time())
-    task_id = f"ref_bonus_{referrer_id}_{referred_id}_{plan_slug}_{ts}"
-
-    referred_user = get_user(referred_id)
-    referred_name = (referred_user.get('first_name') or referred_user.get('username') or 'tu referido') if referred_user else 'tu referido'
-
-    title = f"🎁 Bono Referido — {plan_name}"
-    description = (
-        f"Tu referido {referred_name} compró el plan {plan_name} "
-        f"({float(plan_price):.2f} TON). ¡Reclama tu recompensa del 20%!"
-    )
-
-    execute_query("""
-        INSERT INTO tasks
-            (task_id, title, description, reward, icon, task_type,
-             requires_channel, active, max_completions, sort_order)
-        VALUES (%s, %s, %s, %s, 'gift', 'special', 0, 1, 1, 0)
-    """, (task_id, title, description, reward))
-
-    return get_task(task_id)
-
-
 def is_task_completed(user_id, task_id):
     """Check if user completed a task"""
     query = "SELECT id FROM task_completions WHERE user_id = %s AND task_id = %s"
@@ -535,14 +583,6 @@ def complete_task(user_id, task_id):
     task = get_task(task_id)
     if not task or not task.get('active'):
         return None
-
-    # ── Referral bonus tasks: only the correct referrer can claim ──
-    if str(task_id).startswith('ref_bonus_'):
-        parts = task_id.split('_')  # ref_bonus_{referrer_id}_{referred_id}_{plan}_{ts}
-        if len(parts) >= 3:
-            expected_referrer = parts[2]
-            if str(user_id) != str(expected_referrer):
-                return {'error': 'Esta recompensa no es para ti', 'locked': True}
 
     reward = float(task.get('reward', 0))
 
@@ -581,21 +621,32 @@ def get_user_tasks_status(user_id):
     completed = user.get('completed_tasks', []) or [] if user else []
     # Also check task_completions table as source of truth
     done_rows = execute_query(
-        "SELECT task_id FROM task_completions WHERE user_id = %s",
+        "SELECT task_id, SUM(reward_amount) as total_reward, COUNT(*) as times FROM task_completions WHERE user_id = %s GROUP BY task_id",
         (str(user_id),), fetch_all=True
     ) or []
-    done_ids = set(r['task_id'] for r in done_rows) | set(completed)
+    done_map = {r['task_id']: r for r in done_rows}
+    done_ids = set(done_map.keys()) | set(completed)
 
     for task in tasks:
-        task['completed'] = task['task_id'] in done_ids
-        # Referral bonus tasks: lock for users who are not the intended referrer
-        tid = task.get('task_id', '')
-        if tid.startswith('ref_bonus_'):
-            parts = tid.split('_')
-            if len(parts) >= 3:
-                expected_referrer = parts[2]
-                if str(user_id) != str(expected_referrer):
-                    task['locked'] = True
+        tid = task['task_id']
+        if tid == 'invite_purchase':
+            # Special: show how many times earned and total reward
+            comp_data = done_map.get('invite_purchase')
+            if comp_data:
+                task['completed'] = False  # always show as available (can earn more)
+                task['invite_times'] = int(comp_data['times'])
+                task['invite_total_reward'] = float(comp_data['total_reward'])
+                task['description'] = (
+                    f"Invite friends and earn 20% of each friend's first plan purchase! "
+                    f"✅ {int(comp_data['times'])} friend(s) rewarded so far · "
+                    f"Total earned: {float(comp_data['total_reward']):.4f} DOGE"
+                )
+            else:
+                task['completed'] = False
+                task['invite_times'] = 0
+                task['invite_total_reward'] = 0.0
+        else:
+            task['completed'] = tid in done_ids
 
     return tasks
 
@@ -1457,8 +1508,9 @@ def init_all_tables():
             user_id VARCHAR(50) NOT NULL,
             task_id VARCHAR(50) NOT NULL,
             reward_amount DECIMAL(10,8) NOT NULL,
+            notes VARCHAR(200) DEFAULT NULL,
             completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_completion (user_id, task_id),
+            INDEX idx_user_task (user_id, task_id),
             INDEX idx_user_id (user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     """)
@@ -1661,6 +1713,7 @@ def init_all_tables():
         ('referral_bonus',           '0.05'),
         ('referral_commission',      '0.10'),
         ('referral_commission_pct',  '5'),
+        ('invite_purchase_reward_pct', '20'),
         ('min_withdrawal',           '1.0'),
         ('withdrawal_fee',           '0.5'),
         ('withdrawal_mode',          'manual'),
@@ -1886,6 +1939,27 @@ def _ensure_fraud_columns():
 _ensure_fraud_columns()
 
 
+def _migrate_task_completions():
+    """Migrate task_completions: add notes column and drop unique constraint to allow multi-invite rewards."""
+    try:
+        execute_query("ALTER TABLE task_completions ADD COLUMN notes VARCHAR(200) DEFAULT NULL")
+    except Exception:
+        pass  # already exists
+    try:
+        # Drop old unique key so a user can earn invite_purchase reward multiple times (once per friend)
+        execute_query("ALTER TABLE task_completions DROP INDEX unique_completion")
+    except Exception:
+        pass  # already dropped or doesn't exist
+    try:
+        execute_query("ALTER TABLE task_completions ADD INDEX idx_user_task (user_id, task_id)")
+    except Exception:
+        pass
+
+_migrate_task_completions()
+
+
+
+
 def _migrate_existing_fraud_referrals():
     """
     Mark existing referrals as is_fraud=1 if referrer and referred share an IP.
@@ -1930,6 +2004,11 @@ def _migrate_existing_fraud_referrals():
 
 _migrate_existing_fraud_referrals()
 
+# Create the invite_purchase task if it doesn't exist yet
+try:
+    ensure_invite_task_exists()
+except Exception as _ite:
+    logger.warning(f"ensure_invite_task_exists error: {_ite}")
 
 def get_shared_ip_accounts(user_id, min_times_seen=2):
     """
