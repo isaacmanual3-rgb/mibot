@@ -1848,11 +1848,10 @@ def _migrate_existing_fraud_referrals():
         """, fetch_all=True)
 
         if not fraud_ids:
-            log.info("[ANTI-FRAUD] Migration: no fraud referrals found.")
+            logger.info("[ANTI-FRAUD] Migration: no fraud referrals found.")
             return
 
         ids = [str(row['id']) for row in fraud_ids]
-        placeholders = ','.join(['%s'] * len(ids))
 
         # Step 2: update each one individually to avoid MySQL subquery restriction
         updated = 0
@@ -1863,9 +1862,9 @@ def _migrate_existing_fraud_referrals():
             )
             updated += 1
 
-        log.warning(f"[ANTI-FRAUD] Migration: marked {updated} existing referrals as fraud.")
+        logger.warning(f"[ANTI-FRAUD] Migration: marked {updated} existing referrals as fraud.")
     except Exception as e:
-        log.warning(f"[ANTI-FRAUD] Migration error: {e}")
+        logger.warning(f"[ANTI-FRAUD] Migration error: {e}")
 
 _migrate_existing_fraud_referrals()
 
