@@ -1828,28 +1828,44 @@ def _migrate_existing_fraud_referrals():
     """
     Mark existing referrals as is_fraud=1 if referrer and referred share an IP.
     Safe to run on every startup — only updates unflagged rows.
+    Uses a two-step approach compatible with MySQL's UPDATE limitations.
     """
     try:
-        execute_query("""
-            UPDATE referrals r
-            SET r.is_fraud = 1
+        # Step 1: find all referral IDs where referrer and referred share any IP
+        fraud_ids = execute_query("""
+            SELECT r.id
+            FROM referrals r
             WHERE r.is_fraud = 0
+              AND r.validated = 1
               AND EXISTS (
                   SELECT 1
                   FROM user_ips ui1
-                  JOIN user_ips ui2
+                  INNER JOIN user_ips ui2
                     ON ui1.ip_address = ui2.ip_address
                   WHERE ui1.user_id = r.referrer_id
                     AND ui2.user_id = r.referred_id
-                    AND ui1.times_seen >= 2
-                    AND ui2.times_seen >= 2
               )
-        """)
-        import logging
-        logging.getLogger(__name__).info("[ANTI-FRAUD] Fraud referrals migration complete.")
+        """, fetch_all=True)
+
+        if not fraud_ids:
+            log.info("[ANTI-FRAUD] Migration: no fraud referrals found.")
+            return
+
+        ids = [str(row['id']) for row in fraud_ids]
+        placeholders = ','.join(['%s'] * len(ids))
+
+        # Step 2: update each one individually to avoid MySQL subquery restriction
+        updated = 0
+        for rid in ids:
+            execute_query(
+                "UPDATE referrals SET is_fraud = 1 WHERE id = %s",
+                (rid,)
+            )
+            updated += 1
+
+        log.warning(f"[ANTI-FRAUD] Migration: marked {updated} existing referrals as fraud.")
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"[ANTI-FRAUD] Migration error: {e}")
+        log.warning(f"[ANTI-FRAUD] Migration error: {e}")
 
 _migrate_existing_fraud_referrals()
 
@@ -1957,10 +1973,11 @@ def check_and_flag_multi_account(user_id, min_times_seen=2):
     return flagged
 
 
-def are_accounts_related(user_id_a, user_id_b, min_times_seen=2):
+def are_accounts_related(user_id_a, user_id_b, min_times_seen=1):
     """
     Return True if user_id_a and user_id_b share at least one IP.
     Used to skip referral bonuses between linked accounts.
+    Threshold=1 to catch even single-visit shared IPs.
     """
     row = execute_query("""
         SELECT 1
