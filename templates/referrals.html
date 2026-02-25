@@ -648,17 +648,17 @@
           <div class="rf-item-body">
             <span class="rf-item-name">{{ ref.referred_username or ref.referred_first_name or 'Anonymous' }}</span>
             <span class="rf-item-date">Joined {{ ref.created_at.strftime('%b %d') if ref.created_at else 'Recently' }}</span>
+            {% if ref.referred_fraud %}
+            <span style="font-family:var(--font-pixel); font-size:0.26rem; color:#ff3366; letter-spacing:0.04em; opacity:0.8; display:block; margin-top:3px;">{{ t.rf_fraud_hint }}</span>
+            {% endif %}
           </div>
           <div>
             {% if ref.validated %}
               {% if ref.referred_fraud %}
-              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                <span class="rf-badge fraud-badge">
-                  <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff3366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
-                  {{ t.rf_fraud_badge }}
-                </span>
-                <span style="font-family:var(--font-pixel); font-size:0.28rem; color:#ff3366; letter-spacing:0.06em; opacity:0.8;">{{ t.rf_fraud_hint }}</span>
-              </div>
+              <span class="rf-badge fraud-badge">
+                <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ff3366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+                {{ t.rf_fraud_badge }}
+              </span>
               {% else %}
               <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
                 <span class="rf-badge validated">
