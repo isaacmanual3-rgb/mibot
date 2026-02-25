@@ -1854,6 +1854,7 @@ def _migrate_existing_fraud_referrals():
 _migrate_existing_fraud_referrals()
 
 
+def get_shared_ip_accounts(user_id, min_times_seen=2):
     """
     Return list of OTHER user_ids that have shared at least one IP
     with this user (excluding single-hit proxies by requiring min_times_seen).
