@@ -74,7 +74,7 @@ app.permanent_session_lifetime = timedelta(days=7)
 def inject_lang():
     """Inject `t` (translations) and `current_lang` into every template."""
     lang = session.get('lang', 'en')
-    return dict(t=get_t(lang), current_lang=lang)
+    return dict(t=get_t(lang), current_lang=lang, bot_username=BOT_USERNAME)
 
 
 def _t(key, **kwargs):
@@ -2255,6 +2255,38 @@ _OFFICIAL_CHANNELS = [c.strip() for c in _OFFICIAL_CHANNELS_STR.split(',') if c.
 _SUPPORT_GROUP = os.environ.get('SUPPORT_GROUP', '')
 _WEBAPP_URL    = os.environ.get('WEBAPP_URL', '')
 
+# ─── Estado temporal para el flujo de soporte ─────────────
+# Formato: { user_id: {'step': 'category'|'message', 'category': str} }
+_support_state = {}
+# Para que admins puedan responder: { ticket_user_id: admin_reply_pending }
+# Se usa un prefijo en el texto del admin: /reply_<user_id> <mensaje>
+_SUPPORT_CATEGORIES = {
+    'es': [
+        ('💰 Retiro / Pago', 'retiro'),
+        ('⛏️ Minería / Plan', 'mineria'),
+        ('🎯 Tarea no acreditada', 'tarea'),
+        ('👥 Referido no contado', 'referido'),
+        ('🐛 Error / Bug', 'bug'),
+        ('❓ Otra consulta', 'otro'),
+    ],
+    'en': [
+        ('💰 Withdrawal / Payment', 'retiro'),
+        ('⛏️ Mining / Plan', 'mineria'),
+        ('🎯 Task not credited', 'tarea'),
+        ('👥 Referral not counted', 'referido'),
+        ('🐛 Error / Bug', 'bug'),
+        ('❓ Other question', 'otro'),
+    ],
+    'pt': [
+        ('💰 Saque / Pagamento', 'retiro'),
+        ('⛏️ Mineração / Plano', 'mineria'),
+        ('🎯 Tarefa não creditada', 'tarea'),
+        ('👥 Indicado não contado', 'referido'),
+        ('🐛 Erro / Bug', 'bug'),
+        ('❓ Outra consulta', 'outro'),
+    ],
+}
+
 
 def _bot_api(method, payload):
     """Llama a la Bot API de Telegram de forma síncrona."""
@@ -2358,6 +2390,9 @@ def _main_keyboard(user_id, lang='es'):
         ])
         if _SUPPORT_GROUP:
             rows[-1].append({"text": "💬 Soporte", "url": _SUPPORT_GROUP})
+    # Botón de soporte integrado en el bot
+    support_label = {"es": "🎧 Soporte / Reporte", "en": "🎧 Support / Report", "pt": "🎧 Suporte / Relatar"}.get(lang, "🎧 Support")
+    rows.append([{"text": support_label, "callback_data": "support_start"}])
     # Return None if no buttons — avoids Telegram rejecting empty keyboard
     return {"inline_keyboard": rows} if rows else None
 
@@ -2395,6 +2430,141 @@ def _join_needed_text(name, missing, lang='es'):
     return msgs.get(lang, msgs['es'])
 
 
+# ─── Sistema de Soporte ──────────────────────────────────
+
+def _support_category_keyboard(lang):
+    """Teclado inline con categorías de soporte."""
+    cats = _SUPPORT_CATEGORIES.get(lang, _SUPPORT_CATEGORIES['en'])
+    rows = []
+    for label, key in cats:
+        rows.append([{"text": label, "callback_data": f"support_cat_{key}"}])
+    back = {"es": "⬅️ Volver", "en": "⬅️ Back", "pt": "⬅️ Voltar"}.get(lang, "⬅️ Back")
+    rows.append([{"text": back, "callback_data": "back_main"}])
+    return {"inline_keyboard": rows}
+
+
+def _handle_support_start(msg):
+    """Usuario escribe /soporte o /support — muestra categorías."""
+    user = msg['from']
+    user_id = user['id']
+    lang = _detect_lang_from_update(user)
+    _support_state[user_id] = {'step': 'category', 'lang': lang}
+    texts = {
+        'es': "🎧 <b>Centro de Soporte</b>\n\n¿En qué podemos ayudarte? Selecciona una categoría:",
+        'en': "🎧 <b>Support Center</b>\n\nHow can we help you? Select a category:",
+        'pt': "🎧 <b>Central de Suporte</b>\n\nComo podemos ajudar? Selecione uma categoria:",
+    }
+    _bot_send(user_id, texts.get(lang, texts['en']), _support_category_keyboard(lang))
+
+
+def _handle_support_message(msg, user_id, category, lang):
+    """Usuario envía su mensaje de soporte — lo reenvía a todos los admins."""
+    import html as _h
+    text = msg.get('text', '').strip()
+    if not text:
+        return
+    user = msg['from']
+    username = user.get('username', '')
+    first_name = _h.escape(user.get('first_name', 'Usuario'))
+
+    cat_labels = {
+        'retiro': {'es':'💰 Retiro/Pago','en':'💰 Withdrawal','pt':'💰 Saque'},
+        'mineria': {'es':'⛏️ Minería','en':'⛏️ Mining','pt':'⛏️ Mineração'},
+        'tarea': {'es':'🎯 Tarea','en':'🎯 Task','pt':'🎯 Tarefa'},
+        'referido': {'es':'👥 Referido','en':'👥 Referral','pt':'👥 Indicado'},
+        'bug': {'es':'🐛 Bug','en':'🐛 Bug','pt':'🐛 Bug'},
+        'otro': {'es':'❓ Otro','en':'❓ Other','pt':'❓ Outro'},
+    }
+    cat_label = cat_labels.get(category, {}).get(lang, category)
+    uname_str = f"@{username}" if username else f"ID: {user_id}"
+
+    # Mensaje para admins
+    admin_msg = (
+        f"🆘 <b>Nuevo Ticket de Soporte</b>\n\n"
+        f"👤 Usuario: <b>{first_name}</b> ({uname_str})\n"
+        f"🆔 ID: <code>{user_id}</code>\n"
+        f"📂 Categoría: {cat_label}\n\n"
+        f"💬 <b>Mensaje:</b>\n{_h.escape(text)}\n\n"
+        f"↩️ Para responder: <code>/reply_{user_id} Tu respuesta aquí</code>"
+    )
+
+    # Enviar a todos los admins
+    sent = False
+    for admin_id in ADMIN_IDS:
+        try:
+            result = _bot_send(int(admin_id.strip()), admin_msg)
+            if result and result.get('ok'):
+                sent = True
+        except Exception as e:
+            logger.warning(f"No se pudo notificar al admin {admin_id}: {e}")
+
+    # Confirmar al usuario
+    confirms = {
+        'es': (
+            "✅ <b>¡Ticket enviado!</b>\n\n"
+            f"📂 Categoría: {cat_label}\n"
+            "⏳ Nuestro equipo revisará tu reporte y te responderá pronto.\n\n"
+            "Gracias por contactarnos 🙏"
+        ),
+        'en': (
+            "✅ <b>Ticket sent!</b>\n\n"
+            f"📂 Category: {cat_label}\n"
+            "⏳ Our team will review your report and reply soon.\n\n"
+            "Thanks for reaching out 🙏"
+        ),
+        'pt': (
+            "✅ <b>Ticket enviado!</b>\n\n"
+            f"📂 Categoria: {cat_label}\n"
+            "⏳ Nossa equipe revisará seu relatório e responderá em breve.\n\n"
+            "Obrigado por entrar em contato 🙏"
+        ),
+    }
+    back_kb = {"inline_keyboard": [[
+        {"text": {"es":"⬅️ Menú principal","en":"⬅️ Main menu","pt":"⬅️ Menu principal"}.get(lang,"⬅️ Menu"),
+         "callback_data": "back_main"}
+    ]]}
+    _bot_send(user_id, confirms.get(lang, confirms['en']), back_kb)
+
+    # Limpiar estado
+    _support_state.pop(user_id, None)
+
+
+def _handle_admin_reply(msg):
+    """Admin escribe /reply_<user_id> <mensaje> — reenvía al usuario."""
+    import html as _h
+    text = msg.get('text', '').strip()
+    # Formato: /reply_123456789 Tu respuesta aquí
+    if not text.startswith('/reply_'):
+        return False
+    parts = text[7:].split(' ', 1)
+    if len(parts) < 2:
+        _bot_send(msg['from']['id'], "⚠️ Formato: <code>/reply_USER_ID tu respuesta</code>")
+        return True
+    try:
+        target_user_id = int(parts[0])
+    except ValueError:
+        _bot_send(msg['from']['id'], "⚠️ ID de usuario inválido.")
+        return True
+
+    reply_text = parts[1].strip()
+    if not reply_text:
+        _bot_send(msg['from']['id'], "⚠️ El mensaje no puede estar vacío.")
+        return True
+
+    admin_name = _h.escape(msg['from'].get('first_name', 'Soporte'))
+    user_msg = (
+        f"💬 <b>Respuesta del equipo de soporte</b>\n\n"
+        f"{_h.escape(reply_text)}\n\n"
+        f"— <i>{admin_name}</i>"
+    )
+    result = _bot_send(target_user_id, user_msg)
+    if result and result.get('ok'):
+        _bot_send(msg['from']['id'], f"✅ Respuesta enviada al usuario <code>{target_user_id}</code>.")
+    else:
+        _bot_send(msg['from']['id'], f"❌ No se pudo enviar al usuario <code>{target_user_id}</code>. Quizás bloqueó el bot.")
+    return True
+
+
 # ─── Handlers del bot ────────────────────────────────────
 
 def _handle_start(msg):
@@ -2404,9 +2574,10 @@ def _handle_start(msg):
     username = user.get('username','')
     lang = _detect_lang_from_update(user)
 
-    # Parse referrer
+    # Parse referrer y parámetros especiales
     text = msg.get('text','')
     referrer_id = None
+    start_soporte = False
     parts = text.strip().split()
     if len(parts) > 1:
         arg = parts[1]
@@ -2417,6 +2588,8 @@ def _handle_start(msg):
                     referrer_id = pot
             except:
                 pass
+        elif arg in ('soporte', 'support', 'ayuda', 'help'):
+            start_soporte = True
 
     # DB: crear/actualizar usuario
     try:
@@ -2452,6 +2625,20 @@ def _handle_start(msg):
     except Exception as e:
         logger.error(f"Error construyendo teclado para {user_id}: {e}")
         keyboard = None
+
+    # Si viene desde el botón de soporte de la app → abrir soporte directamente
+    if start_soporte:
+        try:
+            _support_state[user_id] = {'step': 'category', 'lang': lang}
+            texts = {
+                'es': "🎧 <b>Centro de Soporte</b>\n\n¿En qué podemos ayudarte? Selecciona una categoría:",
+                'en': "🎧 <b>Support Center</b>\n\nHow can we help you? Select a category:",
+                'pt': "🎧 <b>Central de Suporte</b>\n\nComo podemos ajudar? Selecione uma categoria:",
+            }
+            _bot_send(user_id, texts.get(lang, texts['en']), _support_category_keyboard(lang))
+        except Exception as e:
+            logger.error(f"Error enviando soporte a {user_id}: {e}")
+        return
 
     try:
         _bot_send(user_id, _welcome_text(first_name, lang), keyboard)
@@ -2493,7 +2680,17 @@ def _handle_callback(cq):
     msg_id  = msg.get('message_id')
     chat_id = msg.get('chat',{}).get('id', user_id)
 
-    if data == 'verify_channels':
+    if data == 'support_start':
+        _bot_answer(cq_id)
+        _support_state[user_id] = {'step': 'category', 'lang': lang}
+        texts = {
+            'es': "🎧 <b>Centro de Soporte</b>\n\n¿En qué podemos ayudarte? Selecciona una categoría:",
+            'en': "🎧 <b>Support Center</b>\n\nHow can we help you? Select a category:",
+            'pt': "🎧 <b>Central de Suporte</b>\n\nComo podemos ajudar? Selecione uma categoria:",
+        }
+        _bot_edit(chat_id, msg_id, texts.get(lang, texts['en']), _support_category_keyboard(lang))
+
+    elif data == 'verify_channels':
         if _OFFICIAL_CHANNELS:
             ok, missing = _check_all_channels(user_id)
         else:
@@ -2572,7 +2769,33 @@ def _handle_callback(cq):
 
     elif data == 'back_main':
         _bot_answer(cq_id)
+        _support_state.pop(user_id, None)  # Cancelar flujo de soporte si activo
         _bot_edit(chat_id, msg_id, _welcome_text(first_name, lang), _main_keyboard(user_id, lang))
+
+    elif data.startswith('support_cat_'):
+        # Usuario seleccionó categoría de soporte
+        _bot_answer(cq_id)
+        category = data[len('support_cat_'):]
+        _support_state[user_id] = {'step': 'message', 'category': category, 'lang': lang}
+        cat_labels = {
+            'retiro': {'es':'💰 Retiro/Pago','en':'💰 Withdrawal','pt':'💰 Saque'},
+            'mineria': {'es':'⛏️ Minería','en':'⛏️ Mining','pt':'⛏️ Mineração'},
+            'tarea': {'es':'🎯 Tarea','en':'🎯 Task','pt':'🎯 Tarefa'},
+            'referido': {'es':'👥 Referido','en':'👥 Referral','pt':'👥 Indicado'},
+            'bug': {'es':'🐛 Bug/Error','en':'🐛 Bug/Error','pt':'🐛 Bug/Erro'},
+            'otro': {'es':'❓ Otra consulta','en':'❓ Other','pt':'❓ Outro'},
+        }
+        cat_label = cat_labels.get(category, {}).get(lang, category)
+        texts = {
+            'es': f"📝 <b>Categoría: {cat_label}</b>\n\nDescribe tu problema con el mayor detalle posible.\nIncluye capturas de pantalla si es necesario.\n\n✍️ Escribe tu mensaje a continuación:",
+            'en': f"📝 <b>Category: {cat_label}</b>\n\nDescribe your issue in as much detail as possible.\nInclude screenshots if needed.\n\n✍️ Type your message below:",
+            'pt': f"📝 <b>Categoria: {cat_label}</b>\n\nDescreva seu problema com o máximo de detalhes.\nInclua capturas de tela se necessário.\n\n✍️ Digite sua mensagem abaixo:",
+        }
+        cancel_kb = {"inline_keyboard": [[
+            {"text": {"es":"❌ Cancelar","en":"❌ Cancel","pt":"❌ Cancelar"}.get(lang,"❌ Cancel"),
+             "callback_data": "back_main"}
+        ]]}
+        _bot_edit(chat_id, msg_id, texts.get(lang, texts['en']), cancel_kb)
 
     else:
         _bot_answer(cq_id)
@@ -2593,14 +2816,25 @@ def _process_update(update):
         # Extraer solo el comando base ignorando @botname
         cmd = text_lower.split('@')[0].split()[0] if text_lower else ''
         try:
+            user_id_from = msg['from']['id']
             if cmd in ('/start', 'start'):
+                _support_state.pop(user_id_from, None)  # Cancelar soporte si estaba en flujo
                 _handle_start(msg)
-            elif cmd == '/help':
-                user = msg['from']
-                lang = _detect_lang_from_update(user)
-                _bot_send(user['id'], _welcome_text(user.get('first_name', ''), lang), _main_keyboard(user['id'], lang))
+            elif cmd in ('/soporte', '/support', '/help', 'soporte', 'support'):
+                _handle_support_start(msg)
+            elif cmd.startswith('/reply_') and str(user_id_from) in [a.strip() for a in ADMIN_IDS]:
+                # Admin respondiendo a un ticket
+                _handle_admin_reply(msg)
             elif text and not text.startswith('/'):
-                _handle_message(msg)
+                # Verificar si el usuario está en flujo de soporte
+                state = _support_state.get(user_id_from)
+                if state and state.get('step') == 'message':
+                    _handle_support_message(msg, user_id_from, state.get('category', 'otro'), state.get('lang', 'es'))
+                else:
+                    _handle_message(msg)
+            elif text and text.startswith('/') and cmd not in ('/start','start','/soporte','/support','/help'):
+                # Comando desconocido — ignorar silenciosamente
+                pass
         except Exception as e:
             logger.error(f"Error procesando mensaje '{text}': {e}", exc_info=True)
             try:
