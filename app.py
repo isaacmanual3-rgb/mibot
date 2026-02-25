@@ -409,17 +409,18 @@ def _validate_referral_on_purchase(user_id, plan_id=None):
         validated = True
 
     # ── Crear tarea de bono de referido en el centro de tareas ──
-    if validated and plan_id:
+    # Se crea SIEMPRE que haya un referidor y se haya comprado un plan
+    if plan_id:
         try:
             plan = get_mining_plan(plan_id)
             if plan:
-                create_referral_plan_task(
+                task_result = create_referral_plan_task(
                     referrer_id=str(referrer_id),
                     referred_id=str(user_id),
                     plan_name=plan.get('name', str(plan_id)),
                     plan_price=plan.get('price', 0)
                 )
-                logger.info(f"Referral plan task created: referrer={referrer_id} plan={plan.get('name')}")
+                logger.info(f"Referral plan task created: referrer={referrer_id} plan={plan.get('name')} result={task_result}")
         except Exception as _te:
             logger.warning(f"create_referral_plan_task error: {_te}")
 

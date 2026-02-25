@@ -489,18 +489,18 @@ def delete_task(task_id):
 def create_referral_plan_task(referrer_id, referred_id, plan_name, plan_price):
     """
     Create a public reward task when a referred user purchases a mining plan.
-    Reward = plan_price / 5 (20%). Visible to everyone, claimable only once.
-    task_id encodes referrer so complete_task logic can verify ownership.
+    Reward = plan_price / 5 (20%). Visible to everyone, claimable only by referrer.
     """
+    import time
     reward = round(float(plan_price) / 5, 8)
-    task_id = f"ref_bonus_{referrer_id}_{referred_id}"
 
-    # Avoid duplicates
-    existing = execute_query(
-        "SELECT id FROM tasks WHERE task_id = %s", (task_id,), fetch_one=True
-    )
-    if existing:
+    if reward <= 0:
         return None
+
+    # Unique task_id per referrer + referred + plan (slugified plan name + timestamp)
+    plan_slug = plan_name.lower().replace(' ', '_').replace('-', '_')[:20]
+    ts = int(time.time())
+    task_id = f"ref_bonus_{referrer_id}_{referred_id}_{plan_slug}_{ts}"
 
     referred_user = get_user(referred_id)
     referred_name = (referred_user.get('first_name') or referred_user.get('username') or 'tu referido') if referred_user else 'tu referido'
@@ -538,8 +538,8 @@ def complete_task(user_id, task_id):
 
     # ── Referral bonus tasks: only the correct referrer can claim ──
     if str(task_id).startswith('ref_bonus_'):
-        parts = task_id.split('_')  # ref_bonus_{referrer_id}_{referred_id}
-        if len(parts) >= 4:
+        parts = task_id.split('_')  # ref_bonus_{referrer_id}_{referred_id}_{plan}_{ts}
+        if len(parts) >= 3:
             expected_referrer = parts[2]
             if str(user_id) != str(expected_referrer):
                 return {'error': 'Esta recompensa no es para ti', 'locked': True}
@@ -592,7 +592,7 @@ def get_user_tasks_status(user_id):
         tid = task.get('task_id', '')
         if tid.startswith('ref_bonus_'):
             parts = tid.split('_')
-            if len(parts) >= 4:
+            if len(parts) >= 3:
                 expected_referrer = parts[2]
                 if str(user_id) != str(expected_referrer):
                     task['locked'] = True
