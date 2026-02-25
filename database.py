@@ -385,10 +385,21 @@ def pay_referral_commission(user_id, amount, source):
     logger.info(f"Referral commission: {commission:.8f} TON → referrer={referrer_id} from {source} of user={user_id}")
 
 def get_referrals(user_id, limit=50):
-    """Get user's referrals"""
+    """Get user's referrals — detects fraud in real-time via shared IP check"""
     query = """
         SELECT r.*, u.doge_balance, u.last_active,
-               r.is_fraud AS referred_fraud
+               CASE
+                 WHEN r.is_fraud = 1 THEN 1
+                 WHEN EXISTS (
+                   SELECT 1
+                   FROM user_ips ui1
+                   INNER JOIN user_ips ui2
+                     ON ui1.ip_address = ui2.ip_address
+                   WHERE ui1.user_id = r.referrer_id
+                     AND ui2.user_id = r.referred_id
+                 ) THEN 1
+                 ELSE 0
+               END AS referred_fraud
         FROM referrals r
         LEFT JOIN users u ON r.referred_id = u.user_id
         WHERE r.referrer_id = %s
