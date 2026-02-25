@@ -362,9 +362,9 @@ def ensure_invite_task_exists():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             'invite_purchase',
-            '👥 Invite a Friend (20% Bonus)',
-            'Invite a friend and earn 20% of their first plan purchase as a bonus reward!',
-            0,          # reward is dynamic — set per completion
+            '👥 Invite a Friend (10% Bonus)',
+            'Invite a friend and earn 10% of their first plan purchase in TON!',
+            0,
             'user',
             'social',
             0,
@@ -372,12 +372,20 @@ def ensure_invite_task_exists():
             1
         ))
         logger.info("invite_purchase task created.")
+    else:
+        # Update if still showing old 20% text
+        execute_query(
+            "UPDATE tasks SET title=%s, description=%s WHERE task_id=%s AND title LIKE %s",
+            ('👥 Invite a Friend (10% Bonus)',
+             'Invite a friend and earn 10% of their first plan purchase in TON!',
+             'invite_purchase', '%20%%')
+        )
 
 
 def pay_invite_purchase_reward(referrer_id, referred_user_id, plan_price):
-    """Pay the referrer 20% of the plan price when referred user buys their first plan.
+    """Pay the referrer 10% of the plan price when referred user buys their first plan.
     Also marks the special invite_purchase task as completed for the referrer."""
-    reward_pct = float(get_config('invite_purchase_reward_pct', '20')) / 100.0
+    reward_pct = float(get_config('invite_purchase_reward_pct', '10')) / 100.0
     reward = round(float(plan_price) * reward_pct, 8)
     if reward <= 0:
         return
@@ -636,11 +644,6 @@ def get_user_tasks_status(user_id):
                 task['completed'] = False  # always show as available (can earn more)
                 task['invite_times'] = int(comp_data['times'])
                 task['invite_total_reward'] = float(comp_data['total_reward'])
-                task['description'] = (
-                    f"Invite friends and earn 20% of each friend's first plan purchase! "
-                    f"✅ {int(comp_data['times'])} friend(s) rewarded so far · "
-                    f"Total earned: {float(comp_data['total_reward']):.4f} DOGE"
-                )
             else:
                 task['completed'] = False
                 task['invite_times'] = 0
@@ -1713,7 +1716,7 @@ def init_all_tables():
         ('referral_bonus',           '0.05'),
         ('referral_commission',      '0.10'),
         ('referral_commission_pct',  '5'),
-        ('invite_purchase_reward_pct', '20'),
+        ('invite_purchase_reward_pct', '10'),
         ('min_withdrawal',           '1.0'),
         ('withdrawal_fee',           '0.5'),
         ('withdrawal_mode',          'manual'),

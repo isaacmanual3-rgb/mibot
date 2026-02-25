@@ -245,6 +245,19 @@ TRANSLATIONS = {
     'tq_quest_done':  {'en': 'Quest completed! +{reward} TON', 'es': '¡Misión completada! +{reward} TON'},
     'tq_verify_fail': {'en': 'Verification failed',       'es': 'Verificación fallida'},
     'tq_task_fail':   {'en': 'Task failed',               'es': 'Error en la tarea'},
+
+    # ── INVITE PURCHASE TASK ───────────────────────────────────
+    'tq_invite_task_title': {
+        'en': '👥 Invite a Friend (10% Bonus)',
+        'es': '👥 Invita un Amigo (10% Bono)',
+    },
+    'tq_invite_task_desc': {
+        'en': 'Invite a friend and earn 10% of their first plan purchase in TON!',
+        'es': '¡Invita a un amigo y gana el 10% de su primera compra de plan en TON!',
+    },
+    'tq_invite_btn':   {'en': 'INVITE',   'es': 'INVITAR'},
+    'tq_invite_rewarded_one':   {'en': '✓ 1 friend rewarded',    'es': '✓ 1 amigo recompensado'},
+    'tq_invite_rewarded_many':  {'en': '✓ {n} friends rewarded', 'es': '✓ {n} amigos recompensados'},
     # Wallet withdrawal success messages
     'wl_wd_auto_sent':{'en': '✅ TON sent automatically!', 'es': '✅ ¡TON enviado automáticamente!'},
     'wl_wd_in_process':{'en': '⏳ Withdrawal registered and being processed', 'es': '⏳ Retiro registrado y en proceso'},
