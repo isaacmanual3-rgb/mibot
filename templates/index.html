@@ -1280,25 +1280,8 @@ canvas#oscCanvas {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 14a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" stroke="none"/><path d="M22 7V5a2 2 0 00-2-2H4a2 2 0 00-2 2v2"/></svg>
           {{ t.idx_btn_wallet }}
         </a>
-        <button onclick="openSupport()" class="px-btn px-btn-ghost px-btn-icon" style="border-color:#7b5ea7;color:#c39dff;width:100%;justify-content:center;margin-top:4px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          🎧 SOPORTE / SUPPORT
-        </button>
       </div>
     </div>
-
-    <script>
-    function openSupport() {
-      var botUsername = "{{ bot_username }}";
-      var tg = window.Telegram && window.Telegram.WebApp;
-      var url = "https://t.me/" + botUsername + "?start=soporte";
-      if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(url);
-      } else {
-        window.open(url, "_blank");
-      }
-    }
-    </script>
 
     <!-- HOW IT WORKS -->
     <div class="px-card">
