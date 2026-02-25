@@ -563,14 +563,14 @@
 .tq-reward-icon {
   font-family: var(--font-pixel);
   font-size: 0.7rem;
-  color: var(--gold);
-  text-shadow: 0 0 8px rgba(255,215,0,0.4);
+  color: var(--blue);
+  text-shadow: 0 0 8px rgba(64,196,255,0.4);
 }
 .tq-reward-val {
   font-family: var(--font-pixel);
   font-size: 0.52rem;
-  color: var(--gold);
-  text-shadow: 1px 1px 0 var(--gold-dark);
+  color: var(--blue);
+  text-shadow: 1px 1px 0 rgba(0,80,120,0.8);
 }
 
 /* Status badges */
@@ -897,15 +897,26 @@
 
           <!-- Info -->
           <div class="tq-task-body">
-            <div class="tq-task-title">{{ task.title }}</div>
-            <div class="tq-task-desc">{{ task.description }}</div>
-            {% if task.channel_username %}
-            <span class="tq-task-channel">@{{ task.channel_username }}</span>
-            {% endif %}
-            {% if task.task_id == 'invite_purchase' and task.invite_times and task.invite_times > 0 %}
-            <span class="tq-task-channel" style="color:var(--green);border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.07);">
-              ✓ {{ task.invite_times }} friend{{ 's' if task.invite_times > 1 else '' }} rewarded
-            </span>
+            {% if task.task_id == 'invite_purchase' %}
+              <div class="tq-task-title">{{ t.tq_invite_task_title }}</div>
+              {% if task.invite_times and task.invite_times > 0 %}
+                <div class="tq-task-desc">{{ t.tq_invite_task_desc }}</div>
+                <span class="tq-task-channel" style="color:var(--green);border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.07);">
+                  {% if task.invite_times == 1 %}
+                    {{ t.tq_invite_rewarded_one }} · +{{ "%.4f"|format(task.invite_total_reward) }} TON
+                  {% else %}
+                    {{ t.tq_invite_rewarded_many.replace('{n}', task.invite_times|string) }} · +{{ "%.4f"|format(task.invite_total_reward) }} TON
+                  {% endif %}
+                </span>
+              {% else %}
+                <div class="tq-task-desc">{{ t.tq_invite_task_desc }}</div>
+              {% endif %}
+            {% else %}
+              <div class="tq-task-title">{{ task.title }}</div>
+              <div class="tq-task-desc">{{ task.description }}</div>
+              {% if task.channel_username %}
+              <span class="tq-task-channel">@{{ task.channel_username }}</span>
+              {% endif %}
             {% endif %}
           </div>
 
@@ -913,15 +924,15 @@
           <div class="tq-task-right">
             {% if task.task_id == 'invite_purchase' %}
               <div class="tq-reward">
-                <span class="tq-reward-icon">Ð</span>
-                <span class="tq-reward-val">20%</span>
+                <span class="tq-reward-icon" style="color:#40c4ff;">◈</span>
+                <span class="tq-reward-val" style="color:#40c4ff;">10%</span>
               </div>
               <a href="/referrals" style="text-decoration:none;">
-                <button class="tq-btn-start">INVITE</button>
+                <button class="tq-btn-start">{{ t.tq_invite_btn }}</button>
               </a>
             {% else %}
             <div class="tq-reward">
-              <span class="tq-reward-icon">Ð</span>
+              <span class="tq-reward-icon" style="color:#40c4ff;">◈</span>
               <span class="tq-reward-val">+{{ format_ton(task.reward) }}</span>
             </div>
             {% if task.completed %}
@@ -1040,7 +1051,7 @@ async function verifyTask() {
         taskCard.querySelector('.tq-task-icon').classList.add('done');
         taskCard.querySelector('.tq-task-icon').innerHTML = '<i class="px-icon px-icon-check"></i>';
         taskCard.querySelector('.tq-task-right').innerHTML =
-          '<div class="tq-reward"><span class="tq-reward-icon">Ð</span><span class="tq-reward-val">+' + data.reward + '</span></div>' +
+          '<div class="tq-reward"><span class="tq-reward-icon" style="color:#40c4ff;">◈</span><span class="tq-reward-val">+' + data.reward + ' TON</span></div>' +
           '<span class="tq-badge tq-badge-done">' + (window.I18N?.tq_claimed || 'CLAIMED') + '</span>';
       }
       if (data.new_balance) updateBalance(data.new_balance);
