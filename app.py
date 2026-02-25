@@ -994,10 +994,19 @@ def referrals(user):
     """Referrals page"""
     refs = get_referrals(user['user_id'])
     stats = get_referral_stats(user['user_id'])
-    
+
     # Get referral bonus from config
     referral_bonus = float(get_config('referral_bonus', '0.05'))
-    
+
+    # ── Fraud detection in Python (more reliable than SQL correlated subquery) ──
+    if refs:
+        for ref in refs:
+            if not ref.get('referred_fraud'):
+                # Check if referrer and referred share any IP
+                ref['referred_fraud'] = are_accounts_related(
+                    str(user['user_id']), str(ref['referred_id'])
+                )
+
     # Calculate stats
     total_referrals = len(refs) if refs else 0
     validated_referrals = sum(1 for r in refs if r.get('validated')) if refs else 0
