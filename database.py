@@ -388,7 +388,7 @@ def get_referrals(user_id, limit=50):
     """Get user's referrals"""
     query = """
         SELECT r.*, u.doge_balance, u.last_active,
-               u.withdrawal_blocked AS referred_fraud
+               r.is_fraud AS referred_fraud
         FROM referrals r
         LEFT JOIN users u ON r.referred_id = u.user_id
         WHERE r.referrer_id = %s
@@ -1804,7 +1804,7 @@ def create_ton_deposit_pending(user_id, memo):
 # ============================================
 
 def _ensure_fraud_columns():
-    """Add fraud columns to users table if not present (run once at startup)."""
+    """Add fraud columns to users table and referrals table if not present (run once at startup)."""
     for col, definition in [
         ('withdrawal_blocked', 'TINYINT(1) DEFAULT 0'),
         ('fraud_reason',       'VARCHAR(255) DEFAULT NULL'),
@@ -1815,10 +1815,45 @@ def _ensure_fraud_columns():
         except Exception:
             pass  # column already exists
 
+    # Add is_fraud column to referrals table
+    try:
+        execute_query("ALTER TABLE referrals ADD COLUMN is_fraud TINYINT(1) DEFAULT 0")
+    except Exception:
+        pass  # already exists
+
 _ensure_fraud_columns()
 
 
-def get_shared_ip_accounts(user_id, min_times_seen=2):
+def _migrate_existing_fraud_referrals():
+    """
+    Mark existing referrals as is_fraud=1 if referrer and referred share an IP.
+    Safe to run on every startup — only updates unflagged rows.
+    """
+    try:
+        execute_query("""
+            UPDATE referrals r
+            SET r.is_fraud = 1
+            WHERE r.is_fraud = 0
+              AND EXISTS (
+                  SELECT 1
+                  FROM user_ips ui1
+                  JOIN user_ips ui2
+                    ON ui1.ip_address = ui2.ip_address
+                  WHERE ui1.user_id = r.referrer_id
+                    AND ui2.user_id = r.referred_id
+                    AND ui1.times_seen >= 2
+                    AND ui2.times_seen >= 2
+              )
+        """)
+        import logging
+        logging.getLogger(__name__).info("[ANTI-FRAUD] Fraud referrals migration complete.")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"[ANTI-FRAUD] Migration error: {e}")
+
+_migrate_existing_fraud_referrals()
+
+
     """
     Return list of OTHER user_ids that have shared at least one IP
     with this user (excluding single-hit proxies by requiring min_times_seen).

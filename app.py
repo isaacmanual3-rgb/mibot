@@ -370,9 +370,9 @@ def _validate_referral_on_purchase(user_id):
         # but do NOT give the bonus (validate_referral handles the balance credit,
         # so we skip calling it and only register the record without bonus)
         execute_query("""
-            INSERT INTO referrals (referrer_id, referred_id, referred_username, referred_first_name, validated, validated_at)
-            VALUES (%s, %s, %s, %s, 1, NOW())
-            ON DUPLICATE KEY UPDATE validated=1, validated_at=NOW()
+            INSERT INTO referrals (referrer_id, referred_id, referred_username, referred_first_name, validated, validated_at, is_fraud)
+            VALUES (%s, %s, %s, %s, 1, NOW(), 1)
+            ON DUPLICATE KEY UPDATE validated=1, validated_at=NOW(), is_fraud=1
         """, (str(referrer_id), str(user_id),
               user.get('username', ''), referred_name))
 
