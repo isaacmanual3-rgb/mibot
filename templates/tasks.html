@@ -899,17 +899,11 @@
           <div class="tq-task-body">
             {% if task.task_id == 'invite_purchase' %}
               <div class="tq-task-title">{{ t.tq_invite_task_title }}</div>
+              <div class="tq-task-desc">{{ t.tq_invite_task_desc }}</div>
               {% if task.invite_times and task.invite_times > 0 %}
-                <div class="tq-task-desc">{{ t.tq_invite_task_desc }}</div>
                 <span class="tq-task-channel" style="color:var(--green);border-color:rgba(0,230,118,0.3);background:rgba(0,230,118,0.07);">
-                  {% if task.invite_times == 1 %}
-                    {{ t.tq_invite_rewarded_one }} · +{{ "%.4f"|format(task.invite_total_reward) }} TON
-                  {% else %}
-                    {{ t.tq_invite_rewarded_many.replace('{n}', task.invite_times|string) }} · +{{ "%.4f"|format(task.invite_total_reward) }} TON
-                  {% endif %}
+                  ✓ {{ task.invite_times }}x · +{{ "%.4f"|format(task.invite_total_reward) }} TON
                 </span>
-              {% else %}
-                <div class="tq-task-desc">{{ t.tq_invite_task_desc }}</div>
               {% endif %}
             {% else %}
               <div class="tq-task-title">{{ task.title }}</div>
