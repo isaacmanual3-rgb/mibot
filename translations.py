@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-#  TRANSLATIONS  —  DogePixel / MiBot
+#  TRANSLATIONS  —  CraftGems / MiBot
 #  Supported languages: en (English)  |  es (Spanish)
 # ─────────────────────────────────────────────────────────────
 
@@ -296,6 +296,12 @@ TRANSLATIONS = {
     'rf_fraud_hint':       {'en': 'No reward — multi-account', 'es': 'Sin recompensa — multicuenta'},
     'rf_how_it_works':   {'en': 'HOW IT WORKS',            'es': 'CÓMO FUNCIONA'},
     'rf_share_telegram': {'en': 'SHARE ON TELEGRAM',       'es': 'COMPARTIR EN TELEGRAM'},
+    'rf_share_msg':      {
+        'en': '💎 Join CraftGems and earn free TON! Complete missions, mine resources and withdraw real TON.\n\n👇 Enter here:',
+        'es': '💎 ¡Únete a CraftGems y gana TON gratis! Completa misiones, mina recursos y retira TON real.\n\n👇 Entra aquí:',
+        'pt': '💎 Entre no CraftGems e ganhe TON grátis! Complete missões, mine recursos e retire TON real.\n\n👇 Entre aqui:',
+        'fr': '💎 Rejoins CraftGems et gagne du TON gratuit ! Complète des missions, mine des ressources et retire du TON réel.\n\n👇 Entre ici :',
+    },
     'rf_friends_list':   {'en': 'YOUR REFERRALS',          'es': 'TUS REFERIDOS'},
     'rf_no_friends':     {'en': 'NO REFERRALS YET',        'es': 'AÚN SIN REFERIDOS'},
     'rf_invite_first':   {'en': 'Invite your first friend to start earning!', 'es': '¡Invita a tu primer amigo para empezar a ganar!'},

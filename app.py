@@ -1,5 +1,5 @@
 """
-app.py - Doge Pixel Flask Application
+app.py - CraftGems Flask Application
 Completely Rebuilt - Pixel Retro Design - DOGE Only
 """
 
@@ -116,11 +116,11 @@ def set_lang(code):
 # Configuration
 ADMIN_IDS = os.environ.get('ADMIN_IDS', '5515244003').split(',')
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
-BOT_USERNAME = os.environ.get('BOT_USERNAME', 'Dogepixelbot')
+BOT_USERNAME = os.environ.get('BOT_USERNAME', 'CraftGemsbot')
 APP_NAME     = os.environ.get('APP_NAME', 'app')   # Mini App short name
-APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","Dogepixelbot")}/app')
+APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","CraftGemsbot")}/app')
 _BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
-OFFICIAL_CHANNEL = os.environ.get('OFFICIAL_CHANNEL', '@Doge Pixel')
+OFFICIAL_CHANNEL = os.environ.get('OFFICIAL_CHANNEL', '@CraftGems')
 
 # ============================================
 # ICON SYSTEM
@@ -2564,8 +2564,14 @@ def _handle_callback(cq):
             'fr': f"📤 <b>Votre Lien de Parrainage</b>\n\n🔗 <code>{ref_link}</code>\n\n💰 Gagnez <b>1 TON</b> pour chaque ami qui complète sa première tâche.\n📊 Plus, <b>5% de commission</b> du minage de vos filleuls.",
         }
         share_text = {"es":"📤 Compartir link","en":"📤 Share link","pt":"📤 Compartilhar","fr":"📤 Partager"}
+        share_msg = {
+            "es": f"💎 ¡Únete a CraftGems y gana TON gratis! Completa misiones, mina recursos y retira TON real.\n\n👇 Entra aquí: {ref_link}",
+            "en": f"💎 Join CraftGems and earn free TON! Complete missions, mine resources and withdraw real TON.\n\n👇 Enter here: {ref_link}",
+            "pt": f"💎 Entre no CraftGems e ganhe TON grátis! Complete missões, mine recursos e retire TON real.\n\n👇 Entre aqui: {ref_link}",
+            "fr": f"💎 Rejoins CraftGems et gagne du TON gratuit ! Complète des missions, mine des ressources et retire du TON réel.\n\n👇 Entre ici : {ref_link}",
+        }
         kb = {"inline_keyboard":[
-            [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": f"Únete a Doge Pixel y gana tokens! {ref_link}"}],
+            [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": share_msg.get(lang, share_msg['en'])}],
             [{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}],
         ]}
         _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), kb)
@@ -2713,7 +2719,7 @@ def bot_status():
 
     html_out = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<title>Bot Status — Doge Pixel</title>
+<title>Bot Status — CraftGems</title>
 <style>
   body{{font-family:monospace;background:#0d1117;color:#e6edf3;padding:2rem;}}
   h1{{color:#58a6ff;}} h2{{color:#79c0ff;border-bottom:1px solid #30363d;padding-bottom:.3rem;}}
@@ -2724,7 +2730,7 @@ def bot_status():
   a.btn.red{{background:#b62324;}} a.btn.blue{{background:#1f6feb;}}
   table{{width:100%;border-collapse:collapse;}} td,th{{padding:.4rem .8rem;border:1px solid #30363d;text-align:left;}}
 </style></head><body>
-<h1>🤖 Doge Pixel Bot — Diagnóstico</h1>
+<h1>🤖 CraftGems Bot — Diagnóstico</h1>
 
 <div class="card">
   <h2>1. Bot Token</h2>
