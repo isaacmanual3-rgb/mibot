@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Referrals - Doge Pixel{% endblock %}
+{% block title %}Referrals - CraftGems{% endblock %}
 
 {% block content %}
 <style>
@@ -716,7 +716,7 @@ function copyInviteLink() { copyLink('inviteLink','copyBtn'); }
 
 function shareTelegram() {
   const link = document.getElementById('inviteLink').value;
-  const text = '🐕 ¡Únete a Doge Pixel y gana TON gratis! Completa misiones, haz check-in diario y retira TON real. \n\n👇 Entra aquí:';
+  const text = {{ t.rf_share_msg | tojson }};
   // For Mini App links, use openTelegramLink with share URL
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
   if (window.Telegram && window.Telegram.WebApp) {
