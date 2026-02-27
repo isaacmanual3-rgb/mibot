@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Doge Pixel - Wallet{% endblock %}
+{% block title %}CraftGems - Wallet{% endblock %}
 
 {% block content %}
 <style>
@@ -684,7 +684,7 @@
       <div class="wl-fee-summary" style="margin-bottom:18px">
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">{{ t.wl_you_receive }}</span>
-          <span class="wl-fee-row-val" id="ton-wd-preview-TON">{{ format_ton(ton_withdrawal_min) }} TON</span>
+          <span class="wl-fee-row-val" id="ton-wd-preview-doge">{{ format_ton(ton_withdrawal_min) }} TON</span>
         </div>
         <div class="wl-fee-row">
           <span class="wl-fee-row-label">Comisión ({{ ton_withdrawal_fee_pct }}%)</span>
@@ -927,7 +927,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
       var msg = '';
       if (data.auto_sent) {
         msg  = (window.I18N?.wl_wd_auto_sent || '✅ ¡TON enviado automáticamente!') + '\n\n';
-        msg += data.doge_amount.toFixed(2) + ' DOGE → ' + data.ton_amount.toFixed(4) + ' TON\n';
+        msg += data.doge_amount.toFixed(2) + ' TON → ' + data.ton_amount.toFixed(4) + ' TON\n';
         msg += (window.I18N?.wl_wd_to || 'To:') + ' ' + addr;
         if (data.tx_hash) {
           msg += '\nTX: ' + data.tx_hash;
@@ -1043,7 +1043,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
           clearInterval(pollTimer);
           showDepStep('success');
           var msg = '✅ ' + d.ton_amount.toFixed(4) + ' TON ' + (window.I18N?.wl_dep_received || 'recibidos') + '\n';
-          msg += '+ ' + d.doge_credited.toFixed(2) + ' DOGE ' + (window.I18N?.wl_dep_credited_to || 'acreditados a tu cuenta');
+          msg += '+ ' + d.doge_credited.toFixed(2) + ' TON ' + (window.I18N?.wl_dep_credited_to || 'acreditados a tu cuenta');
           el('ton-success-msg').textContent = msg;
         }
       } catch(e) { /* ignorar, seguir intentando */ }
