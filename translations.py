@@ -19,6 +19,7 @@ TRANSLATIONS = {
     # ── BOTTOM NAV ─────────────────────────────────────────────
     'bnav_home':   {'en': 'HOME',   'es': 'INICIO'},
     'bnav_mine':   {'en': 'MINE',   'es': 'MINAR'},
+    'bnav_rush':   {'en': 'RUSH',   'es': 'RUSH'},
     'bnav_invite': {'en': 'INVITE', 'es': 'INVITAR'},
     'bnav_tasks':  {'en': 'TASKS',  'es': 'TAREAS'},
     'bnav_top':    {'en': 'TOP',    'es': 'TOP'},

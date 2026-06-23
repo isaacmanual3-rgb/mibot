@@ -207,6 +207,17 @@ app.jinja_env.globals['format_doge'] = lambda amount: format_doge(amount)
 app.jinja_env.globals['format_ton'] = lambda amount: format_ton(amount)
 
 # ============================================
+# CRYSTAL RUSH (juego de minería activo)
+# ============================================
+from crystal_rush import crystal_rush_bp, init_crystal_rush
+app.register_blueprint(crystal_rush_bp)
+try:
+    init_crystal_rush()
+    logger.info("Crystal Rush inicializado")
+except Exception as _cr_err:
+    logger.error(f"Error inicializando Crystal Rush: {_cr_err}")
+
+# ============================================
 # TELEGRAM VERIFICATION
 # ============================================
 
