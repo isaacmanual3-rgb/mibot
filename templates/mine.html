@@ -1,0 +1,659 @@
+{% extends "base.html" %}
+
+{% block title %}Crystal Rush ⛏️{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap');
+
+.cr-shell{
+  --bg:#08080f; --surface:#0d0d1a; --surface2:#111122; --surface3:#070710;
+  --gold:#ffd700; --gold2:#ffb300; --gold-dark:#5a3a00;
+  --green:#00e676; --blue:#40c4ff; --red:#ff4d6a; --orange:#ff9800;
+  --purple:#ce93d8; --cyan:#80deea; --border:#1e1e34;
+  --text:#e0e2f0; --text2:#9090b8; --muted:#4a4a6e;
+  --fpx:'Press Start 2P',monospace; --fb:'Inter',sans-serif;
+  font-family:var(--fb); color:var(--text);
+  background:var(--bg); min-height:100vh; position:relative; overflow-x:hidden;
+}
+.cr-shell *,.cr-shell *::before,.cr-shell *::after{box-sizing:border-box}
+.cr-shell::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,.011) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.011) 1px,transparent 1px);background-size:24px 24px}
+.cr-shell::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px)}
+
+/* TICKER */
+.cr-ticker{position:relative;z-index:20;background:var(--gold);height:26px;
+  display:flex;align-items:center;overflow:hidden;border-bottom:3px solid var(--gold-dark)}
+.cr-ticker span{display:inline-block;white-space:nowrap;font-family:var(--fpx);
+  font-size:.42rem;color:#0a0800;letter-spacing:.08em;animation:cr-tick 30s linear infinite}
+@keyframes cr-tick{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+
+.cr-page{position:relative;z-index:5;max-width:480px;margin:0 auto;padding:10px 10px 90px}
+
+/* HERO TITLE */
+.cr-hero{text-align:center;padding:6px 0 10px}
+.cr-hero h1{font-family:var(--fpx);font-size:1rem;color:var(--gold);margin:0;
+  letter-spacing:.04em;text-shadow:0 2px 0 var(--gold-dark),0 0 16px rgba(255,215,0,.35)}
+.cr-hero p{font-size:.7rem;color:var(--text2);margin:5px 0 0;letter-spacing:.02em}
+
+/* STATS BAR */
+.cr-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.cr-stat{background:var(--surface);border:2px solid var(--border);border-radius:8px;
+  padding:7px 4px;text-align:center;position:relative;overflow:hidden}
+.cr-stat .k{font-family:var(--fpx);font-size:.34rem;color:var(--muted);
+  letter-spacing:.06em;display:block;margin-bottom:4px}
+.cr-stat .v{font-family:var(--fpx);font-size:.6rem;color:var(--text);display:block;line-height:1.2}
+.cr-stat.gem .v{color:var(--gold)}
+.cr-stat.lvl .v{color:var(--cyan)}
+.cr-hpwrap{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:4px}
+.cr-hpbar{height:100%;background:linear-gradient(90deg,var(--green),#9ccc65);
+  width:100%;transition:width .25s ease}
+.cr-hpbar.low{background:linear-gradient(90deg,var(--orange),var(--red))}
+
+/* BOARD */
+.cr-boardwrap{position:relative;background:var(--surface3);
+  border:3px solid var(--border);border-radius:12px;padding:8px;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.6)}
+.cr-boardwrap.fever{border-color:var(--orange);
+  animation:cr-fever 0.5s ease-in-out infinite alternate}
+@keyframes cr-fever{from{box-shadow:inset 0 0 30px rgba(0,0,0,.6),0 0 6px rgba(255,152,0,.4)}
+  to{box-shadow:inset 0 0 30px rgba(0,0,0,.6),0 0 22px rgba(255,152,0,.9)}}
+.cr-board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;touch-action:manipulation}
+.cr-cell{aspect-ratio:1;border-radius:4px;position:relative;cursor:pointer;
+  background:linear-gradient(145deg,#2a2a3e,#171726);
+  border:1px solid #3a3a52;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;font-size:clamp(11px,3.6vw,17px);
+  user-select:none;-webkit-user-select:none;transition:transform .05s steps(2)}
+.cr-cell:active{transform:scale(.9)}
+.cr-cell.hit{animation:cr-shake var(--anim,120ms) steps(3)}
+@keyframes cr-shake{0%{transform:translate(0,0)}30%{transform:translate(-2px,1px)}
+  60%{transform:translate(2px,-1px)}100%{transform:translate(0,0)}}
+.cr-cell.c1{background:linear-gradient(145deg,#2a2a3e,#171726);box-shadow:inset 6px 0 8px -6px #000,inset -6px 0 8px -6px #000}
+.cr-cell.c2{background:linear-gradient(145deg,#262636,#13131f);box-shadow:inset 0 0 12px -2px #000}
+.cr-cell.c3{background:linear-gradient(145deg,#1f1f2e,#0d0d16);box-shadow:inset 0 0 16px #000}
+.cr-cell.c1::after,.cr-cell.c2::after,.cr-cell.c3::after{content:'';position:absolute;inset:2px;
+  background:radial-gradient(circle at 30% 30%,transparent 40%,rgba(0,0,0,.4) 100%);
+  pointer-events:none;border-radius:3px}
+.cr-cell.broken{background:radial-gradient(circle,#0a0a12,#050509);
+  border-color:#15151f;cursor:default;box-shadow:inset 0 0 14px #000}
+.cr-cell.broken:active{transform:none}
+.cr-cell.aim{outline:2px dashed var(--orange);outline-offset:-1px}
+
+/* particle */
+.cr-particle{position:absolute;font-size:14px;pointer-events:none;z-index:30;
+  animation:cr-fly .8s ease-out forwards}
+@keyframes cr-fly{0%{opacity:1;transform:translate(0,0) scale(1.1)}
+  100%{opacity:0;transform:translate(var(--dx,0),-46px) scale(.6)}}
+.cr-pop{position:absolute;font-family:var(--fpx);font-size:.5rem;color:var(--gold);
+  pointer-events:none;z-index:31;text-shadow:0 1px 2px #000;animation:cr-pop .9s ease-out forwards}
+.cr-pop.x2{color:var(--orange)}
+@keyframes cr-pop{0%{opacity:0;transform:translateY(0)}20%{opacity:1}
+  100%{opacity:0;transform:translateY(-30px)}}
+
+/* FEVER BANNER */
+.cr-feverban{position:relative;z-index:6;text-align:center;margin:8px 0 0;height:18px}
+.cr-feverban b{font-family:var(--fpx);font-size:.5rem;color:var(--orange);
+  letter-spacing:.08em;text-shadow:0 0 10px rgba(255,152,0,.7);display:none}
+.cr-boardwrap.fever ~ .cr-feverban b,.cr-feverban.on b{display:inline-block;animation:cr-blink .6s steps(2) infinite}
+@keyframes cr-blink{50%{opacity:.4}}
+
+/* ACTION BAR */
+.cr-actions{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:7px;margin-top:12px}
+.cr-btn{font-family:var(--fpx);font-size:.5rem;letter-spacing:.04em;border:none;cursor:pointer;
+  border-radius:8px;padding:12px 6px;color:#0a0800;background:var(--gold);
+  border-bottom:3px solid var(--gold-dark);transition:transform .06s,filter .15s;
+  display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.3}
+.cr-btn:active{transform:translateY(2px);border-bottom-width:1px}
+.cr-btn .ico{font-size:1rem;line-height:1}
+.cr-btn.ghost{background:var(--surface);color:var(--text);border:2px solid var(--border);border-bottom:3px solid var(--border)}
+.cr-btn.dyn{background:var(--orange);border-bottom-color:#8a4b00}
+.cr-btn.dyn.active{filter:brightness(1.25);animation:cr-blink .5s steps(2) infinite}
+.cr-btn:disabled{opacity:.45;filter:grayscale(.5);cursor:not-allowed}
+.cr-btn .sub{font-size:.42rem;opacity:.8}
+.cr-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:7px}
+.cr-mini{font-family:var(--fpx);font-size:.44rem;border:2px solid var(--border);
+  background:var(--surface);color:var(--text2);border-radius:7px;padding:9px 4px;
+  cursor:pointer;text-align:center;letter-spacing:.04em}
+.cr-mini:active{transform:translateY(1px)}
+.cr-mini.repair{border-color:var(--red);color:var(--red);display:none}
+.cr-mini.repair.show{display:block}
+
+/* MODALS */
+.cr-modal{position:fixed;inset:0;z-index:200;background:rgba(2,2,8,.82);
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.cr-modal.open{display:flex}
+.cr-sheet{width:100%;max-width:480px;background:var(--surface);
+  border-top:3px solid var(--gold);border-radius:18px 18px 0 0;padding:16px 14px 24px;
+  max-height:82vh;overflow-y:auto;animation:cr-up .25s ease}
+@keyframes cr-up{from{transform:translateY(40px);opacity:.4}to{transform:translateY(0);opacity:1}}
+.cr-sheet h3{font-family:var(--fpx);font-size:.7rem;color:var(--gold);margin:0 0 14px;
+  text-align:center;letter-spacing:.04em}
+.cr-x{position:absolute;top:0;right:6px;background:none;border:none;color:var(--text2);
+  font-size:1.4rem;cursor:pointer;line-height:1;padding:4px 8px}
+.cr-sheet{position:relative}
+
+/* upgrade rows */
+.cr-up{display:flex;align-items:center;gap:10px;background:var(--surface2);
+  border:2px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px}
+.cr-up .ic{font-size:1.3rem;width:30px;text-align:center}
+.cr-up .info{flex:1;min-width:0}
+.cr-up .nm{font-family:var(--fpx);font-size:.5rem;color:var(--text);margin-bottom:5px}
+.cr-up .ds{font-size:.62rem;color:var(--text2);line-height:1.3}
+.cr-pips{display:flex;gap:3px;margin-top:6px}
+.cr-pip{width:14px;height:6px;border-radius:2px;background:var(--surface3);border:1px solid var(--border)}
+.cr-pip.on{background:var(--gold);border-color:var(--gold2)}
+.cr-up .buy{font-family:var(--fpx);font-size:.46rem;background:var(--gold);color:#0a0800;
+  border:none;border-bottom:2px solid var(--gold-dark);border-radius:6px;padding:9px 8px;
+  cursor:pointer;white-space:nowrap;min-width:70px}
+.cr-up .buy:active{transform:translateY(1px)}
+.cr-up .buy:disabled{opacity:.4;cursor:not-allowed}
+.cr-up .buy.max{background:var(--surface3);color:var(--muted);border-bottom-color:var(--border)}
+
+/* convert */
+.cr-cv-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.cr-cv-box{background:var(--surface2);border:2px solid var(--border);border-radius:9px;padding:10px;text-align:center}
+.cr-cv-box .l{font-family:var(--fpx);font-size:.36rem;color:var(--muted);margin-bottom:5px}
+.cr-cv-box .n{font-family:var(--fpx);font-size:.56rem;color:var(--gold)}
+.cr-input{width:100%;background:var(--surface3);border:2px solid var(--border);border-radius:8px;
+  padding:13px;color:var(--text);font-family:var(--fpx);font-size:.6rem;text-align:center;margin-bottom:8px}
+.cr-input:focus{outline:none;border-color:var(--gold)}
+.cr-quick{display:flex;gap:6px;margin-bottom:12px}
+.cr-quick button{flex:1;font-family:var(--fpx);font-size:.44rem;background:var(--surface2);
+  border:2px solid var(--border);color:var(--text2);border-radius:6px;padding:8px 2px;cursor:pointer}
+.cr-quick button:active{transform:translateY(1px)}
+.cr-cvout{text-align:center;font-size:.72rem;color:var(--text2);margin-bottom:12px}
+.cr-cvout b{color:var(--green);font-family:var(--fpx);font-size:.62rem}
+.cr-fullbtn{width:100%;font-family:var(--fpx);font-size:.58rem;background:var(--green);
+  color:#02160a;border:none;border-bottom:3px solid #00863f;border-radius:9px;padding:14px;cursor:pointer;letter-spacing:.04em}
+.cr-fullbtn:active{transform:translateY(2px)}
+.cr-fullbtn:disabled{opacity:.45;cursor:not-allowed}
+.cr-fullbtn.gold{background:var(--gold);color:#0a0800;border-bottom-color:var(--gold-dark)}
+
+/* minerals guide */
+.cr-mtab{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--border)}
+.cr-mtab .e{font-size:1.2rem;width:26px;text-align:center}
+.cr-mtab .mn{flex:1;font-size:.72rem;color:var(--text)}
+.cr-mtab .vg{font-family:var(--fpx);font-size:.46rem;color:var(--gold)}
+.cr-mtab .pb{font-size:.6rem;color:var(--muted);width:42px;text-align:right}
+
+/* GAME OVER overlay */
+.cr-over{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;border-radius:12px;
+  background:rgba(4,4,10,.92);backdrop-filter:blur(2px);padding:20px;text-align:center}
+.cr-over.show{display:flex}
+.cr-over .big{font-family:var(--fpx);font-size:.9rem;color:var(--red);text-shadow:0 0 14px rgba(255,77,106,.6)}
+.cr-over .sm{font-size:.74rem;color:var(--text2);line-height:1.5}
+
+/* disabled state */
+.cr-disabled{text-align:center;padding:60px 20px;color:var(--text2)}
+.cr-disabled .ic{font-size:2.4rem;margin-bottom:14px}
+.cr-disabled h2{font-family:var(--fpx);font-size:.8rem;color:var(--gold);margin:0 0 10px}
+
+.cr-toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);z-index:300;
+  background:var(--surface);border:2px solid var(--gold);border-radius:10px;padding:11px 18px;
+  font-family:var(--fpx);font-size:.5rem;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,.6);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;max-width:90vw}
+.cr-toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.cr-toast.err{border-color:var(--red)}
+.cr-toast.ok{border-color:var(--green)}
+</style>
+
+<div class="cr-shell">
+  <div class="cr-ticker"><span id="crTicker"></span></div>
+
+  {% if not enabled %}
+  <div class="cr-page">
+    <div class="cr-disabled">
+      <div class="ic">⛏️</div>
+      <h2 id="crDisTitle"></h2>
+      <p id="crDisSub"></p>
+    </div>
+  </div>
+  {% else %}
+  <div class="cr-page">
+
+    <div class="cr-hero">
+      <h1>CRYSTAL RUSH</h1>
+      <p id="crSubtitle"></p>
+    </div>
+
+    <div class="cr-stats">
+      <div class="cr-stat lvl"><span class="k" id="kLvl"></span><span class="v" id="vLvl">1</span></div>
+      <div class="cr-stat gem"><span class="k">GEM</span><span class="v" id="vGem">0</span></div>
+      <div class="cr-stat"><span class="k" id="kPick"></span><span class="v" id="vPick">100</span>
+        <div class="cr-hpwrap"><div class="cr-hpbar" id="pickBar"></div></div></div>
+      <div class="cr-stat"><span class="k" id="kBag"></span><span class="v" id="vBag">0/30</span></div>
+    </div>
+
+    <div class="cr-boardwrap" id="boardWrap">
+      <div class="cr-board" id="board"></div>
+      <div class="cr-over" id="gameOver">
+        <div class="big" id="goBig"></div>
+        <div class="sm" id="goSm"></div>
+        <button class="cr-fullbtn gold" id="goRestart"></button>
+      </div>
+    </div>
+    <div class="cr-feverban" id="feverBan"><b id="feverTxt"></b></div>
+
+    <div class="cr-actions">
+      <button class="cr-btn" id="btnSell"><span class="ico">💰</span><span id="lblSell"></span></button>
+      <button class="cr-btn dyn" id="btnDyn"><span class="ico">🧨</span><span id="lblDyn"></span></button>
+      <button class="cr-btn ghost" id="btnConvert"><span class="ico">💎</span><span id="lblConv"></span></button>
+    </div>
+    <div class="cr-row2">
+      <button class="cr-mini" id="btnUpg"></button>
+      <button class="cr-mini" id="btnGuide"></button>
+      <button class="cr-mini repair" id="btnRepair"></button>
+    </div>
+
+  </div>
+  {% endif %}
+</div>
+
+<!-- UPGRADES MODAL -->
+<div class="cr-modal" id="mUpg">
+  <div class="cr-sheet">
+    <button class="cr-x" data-close="mUpg">×</button>
+    <h3 id="hUpg"></h3>
+    <div id="upgList"></div>
+  </div>
+</div>
+
+<!-- CONVERT MODAL -->
+<div class="cr-modal" id="mConv">
+  <div class="cr-sheet">
+    <button class="cr-x" data-close="mConv">×</button>
+    <h3 id="hConv"></h3>
+    <div class="cr-cv-info">
+      <div class="cr-cv-box"><div class="l">GEM</div><div class="n" id="cvGem">0</div></div>
+      <div class="cr-cv-box"><div class="l" id="cvLimitL"></div><div class="n" id="cvLimit">0</div></div>
+    </div>
+    <input class="cr-input" id="cvInput" type="number" inputmode="numeric" min="0" placeholder="0">
+    <div class="cr-quick">
+      <button data-pct="25">25%</button><button data-pct="50">50%</button>
+      <button data-pct="100" id="cvMaxBtn"></button>
+    </div>
+    <div class="cr-cvout"><span id="cvOutL"></span> <b id="cvOut">0.0000 TON</b></div>
+    <button class="cr-fullbtn" id="cvBtn"></button>
+  </div>
+</div>
+
+<!-- MINERALS GUIDE MODAL -->
+<div class="cr-modal" id="mGuide">
+  <div class="cr-sheet">
+    <button class="cr-x" data-close="mGuide">×</button>
+    <h3 id="hGuide"></h3>
+    <div id="guideList"></div>
+  </div>
+</div>
+
+<div class="cr-toast" id="crToast"></div>
+
+<script>
+(function(){
+  const LANG = "{{ current_lang }}" === "es" ? "es" : "en";
+  const T = {
+    es:{ ticker:"⛏️ CRYSTAL RUSH ⛏️    EXCAVA · RECOLECTA · VENDE · CONVIERTE A TON    ¡ENCUENTRA DIAMANTES! 👑    ¡COMBO FEVER x2! 🔥",
+      subtitle:"Toca los bloques · llena la mochila · vende por GEM",
+      lvl:"NIVEL", pick:"PICO", bag:"MOCHILA",
+      sell:"VENDER", dyn:"DINAMITA", conv:"CONVERTIR", upg:"⚙ MEJORAS", guide:"📖 GUÍA", repair:"🔧 REPARAR",
+      hUpg:"MEJORAS DEL PICO", hConv:"CONVERTIR GEM → TON", hGuide:"MINERALES",
+      up_speed:"Velocidad", up_damage:"Daño", up_luck:"Suerte", up_bag:"Mochila",
+      d_speed:"Animación más rápida al golpear", d_damage:"+1 de daño por golpe", d_luck:"+2% minerales raros", d_bag:"+5 espacios en la mochila",
+      buy:"GEM", max:"MÁX", lvlw:"Nv",
+      cvLimit:"LÍMITE HOY", cvMax:"TODO", cvOutL:"Recibirás:", cvBtn:"CONVERTIR A TON",
+      probH:"Prob", gemH:"GEM",
+      goBig:"¡PICO ROTO!", goSm:"Perdiste lo no vendido.<br>Repara antes de que llegue a 0.", goRestart:"NUEVA PARTIDA",
+      disTitle:"MINA CERRADA", disSub:"El juego está temporalmente deshabilitado. Vuelve pronto.",
+      t_sold:"Vendido +{g} GEM", t_nosell:"Mochila vacía", t_full:"¡Mochila llena! Vende para seguir",
+      t_broken:"¡Pico roto!", t_aim:"Toca un bloque para volar 3×3", t_nodyn:"Sin dinamita",
+      t_bought:"Mejora comprada ✓", t_maxed:"Nivel máximo", t_norep:"Pico al máximo",
+      t_repaired:"Pico reparado 🔧", t_conv:"+{t} TON", t_limit:"Límite diario alcanzado",
+      t_insuf:"GEM insuficiente", t_err:"Error de conexión", t_dynbuy:"Dinamita comprada 🧨",
+      t_amt:"Ingresa una cantidad válida", t_descend:"¡Nivel {n}! Más profundo ⬇" },
+    en:{ ticker:"⛏️ CRYSTAL RUSH ⛏️    DIG · COLLECT · SELL · CONVERT TO TON    FIND DIAMONDS! 👑    COMBO FEVER x2! 🔥",
+      subtitle:"Tap blocks · fill your bag · sell for GEM",
+      lvl:"LEVEL", pick:"PICK", bag:"BAG",
+      sell:"SELL", dyn:"DYNAMITE", conv:"CONVERT", upg:"⚙ UPGRADES", guide:"📖 GUIDE", repair:"🔧 REPAIR",
+      hUpg:"PICKAXE UPGRADES", hConv:"CONVERT GEM → TON", hGuide:"MINERALS",
+      up_speed:"Speed", up_damage:"Damage", up_luck:"Luck", up_bag:"Backpack",
+      d_speed:"Faster swing animation", d_damage:"+1 damage per hit", d_luck:"+2% rare minerals", d_bag:"+5 backpack slots",
+      buy:"GEM", max:"MAX", lvlw:"Lv",
+      cvLimit:"TODAY LIMIT", cvMax:"ALL", cvOutL:"You get:", cvBtn:"CONVERT TO TON",
+      probH:"Prob", gemH:"GEM",
+      goBig:"PICKAXE BROKEN!", goSm:"You lost unsold minerals.<br>Repair before it hits 0.", goRestart:"NEW RUN",
+      disTitle:"MINE CLOSED", disSub:"The game is temporarily disabled. Check back soon.",
+      t_sold:"Sold +{g} GEM", t_nosell:"Empty bag", t_full:"Bag full! Sell to keep mining",
+      t_broken:"Pickaxe broken!", t_aim:"Tap a block to blast 3×3", t_nodyn:"No dynamite",
+      t_bought:"Upgrade bought ✓", t_maxed:"Max level", t_norep:"Pickaxe full",
+      t_repaired:"Pickaxe repaired 🔧", t_conv:"+{t} TON", t_limit:"Daily limit reached",
+      t_insuf:"Not enough GEM", t_err:"Connection error", t_dynbuy:"Dynamite bought 🧨",
+      t_amt:"Enter a valid amount", t_descend:"Level {n}! Deeper ⬇" }
+  }[LANG];
+
+  {% if not enabled %}
+  document.getElementById('crTicker').textContent = T.ticker;
+  document.getElementById('crDisTitle').textContent = T.disTitle;
+  document.getElementById('crDisSub').textContent = T.disSub;
+  return;
+  {% endif %}
+
+  // ---- bootstrap data from server ----
+  const BOOT = {{ state | tojson }};
+  const MINERALS = {{ minerals | tojson }};
+  const UPSPEC = {{ upgrades | tojson }};
+  const REPAIR_COST = {{ repair_cost }};
+  const DYN_COST = {{ dynamite_cost }};
+  const RATE = {{ gem_rate }};
+  const COLS = 8, ROWS = 12;
+
+  let S = BOOT;            // current public state
+  let aiming = false;      // dynamite aim mode
+  let busy = false;        // request lock
+  let todayConverted = 0, dailyLimit = {{ daily_limit }};
+  const cellEls = new Array(COLS*ROWS);
+
+  // ---- static labels ----
+  const $ = id => document.getElementById(id);
+  $('crTicker').textContent = T.ticker;
+  $('crSubtitle').textContent = T.subtitle;
+  $('kLvl').textContent = T.lvl; $('kPick').textContent = T.pick; $('kBag').textContent = T.bag;
+  $('lblSell').textContent = T.sell; $('lblDyn').textContent = T.dyn; $('lblConv').textContent = T.conv;
+  $('btnUpg').textContent = T.upg; $('btnGuide').textContent = T.guide;
+  $('btnRepair').textContent = T.repair + " (" + REPAIR_COST + ")";
+  $('hUpg').textContent = T.hUpg; $('hConv').textContent = T.hConv; $('hGuide').textContent = T.hGuide;
+  $('cvLimitL').textContent = T.cvLimit; $('cvMaxBtn').textContent = T.cvMax;
+  $('cvOutL').textContent = T.cvOutL; $('cvBtn').textContent = T.cvBtn;
+  $('goBig').textContent = T.goBig; $('goSm').innerHTML = T.goSm; $('goRestart').textContent = T.goRestart;
+
+  // ---- toast ----
+  let toastT;
+  function toast(msg, kind){
+    const el = $('crToast'); el.textContent = msg;
+    el.className = 'cr-toast show ' + (kind||'');
+    clearTimeout(toastT); toastT = setTimeout(()=>el.className='cr-toast',1900);
+  }
+
+  // ---- minerals guide ----
+  (function(){
+    let h = '';
+    MINERALS.forEach(m=>{
+      h += '<div class="cr-mtab"><span class="e">'+m.emoji+'</span>'+
+           '<span class="mn">'+mname(m.key)+'</span>'+
+           '<span class="vg">'+(m.gem>0?('+'+m.gem):'—')+'</span>'+
+           '<span class="pb">'+m.prob+'%</span></div>';
+    });
+    $('guideList').innerHTML = h;
+  })();
+  function mname(k){
+    const N={rock:{es:'Roca',en:'Rock'},dirt:{es:'Tierra',en:'Dirt'},coal:{es:'Carbón',en:'Coal'},
+      iron:{es:'Hierro',en:'Iron'},gold:{es:'Oro',en:'Gold'},crystal:{es:'Cristal',en:'Crystal'},
+      epic:{es:'Gema Épica',en:'Epic Gem'},diamond:{es:'Diamante',en:'Diamond'}};
+    return (N[k]||{})[LANG]||k;
+  }
+
+  // ---- render stat bar ----
+  function paintStats(){
+    $('vLvl').textContent = S.level||1;
+    $('vGem').textContent = fmtGem(S.gem_balance);
+    $('vPick').textContent = S.pickaxe_hp;
+    $('vBag').textContent = S.inv_count + '/' + S.inv_max;
+    const pct = Math.max(0, Math.min(100, S.pickaxe_hp));
+    const bar = $('pickBar'); bar.style.width = pct + '%';
+    bar.classList.toggle('low', pct <= 30);
+    $('btnRepair').classList.toggle('show', S.pickaxe_hp < S.pickaxe_max);
+    $('lblDyn').textContent = T.dyn + (S.dynamite>0 ? ' ('+S.dynamite+')' : '');
+    feverPaint();
+  }
+  function fmtGem(v){ v=Math.floor(v); return v>=1000? (v/1000).toFixed(v>=100000?0:1)+'k' : ''+v; }
+
+  // ---- fever ----
+  let feverTimer;
+  function feverPaint(){
+    const left = (S.combo_until||0) - Math.floor(Date.now()/1000);
+    const on = left > 0;
+    $('boardWrap').classList.toggle('fever', on);
+    $('feverBan').classList.toggle('on', on);
+    if(on){ $('feverTxt').textContent = '🔥 COMBO FEVER x2  ·  '+left+'s'; }
+    clearTimeout(feverTimer);
+    if(on) feverTimer = setTimeout(feverPaint, 500);
+  }
+
+  // ---- board build / update ----
+  function buildBoard(cells){
+    const b = $('board'); b.innerHTML='';
+    for(let i=0;i<COLS*ROWS;i++){
+      const d = document.createElement('div');
+      d.className='cr-cell'; d.dataset.i=i;
+      d.dataset.x=i%COLS; d.dataset.y=Math.floor(i/COLS);
+      cellEls[i]=d; b.appendChild(d);
+    }
+    if(cells) applyCells(cells, true);
+    bindBoard();
+  }
+  function crackClass(h){ return h<=0?'':(h===1?'c1':(h===2?'c2':'c3')); }
+  function applyCells(cells, initial){
+    cells.forEach(c=>{
+      const el = cellEls[c.i]; if(!el) return;
+      if(c.b){
+        if(!el.classList.contains('broken')){
+          el.className='cr-cell broken';
+          el.textContent = c.e||'';
+          if(!initial && c.e) burst(el, c.e);
+        }
+      }else{
+        el.className='cr-cell '+crackClass(c.h);
+      }
+    });
+  }
+
+  function bindBoard(){
+    $('board').addEventListener('click', onTap);
+  }
+  function onTap(e){
+    const el = e.target.closest('.cr-cell'); if(!el) return;
+    if(el.classList.contains('broken')) return;
+    if(busy) return;
+    const x=+el.dataset.x, y=+el.dataset.y;
+    if(aiming){ aiming=false; $('btnDyn').classList.remove('active'); return doDynamite(x,y,el); }
+    // optimistic hit animation
+    const ms = Math.max(40, 120*(1-0.15*(S.up_speed||0)));
+    el.style.setProperty('--anim', ms+'ms');
+    el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
+    doTap(x,y,el);
+  }
+
+  // ---- particles ----
+  function burst(el, emoji){
+    const wrap = $('boardWrap');
+    const r = el.getBoundingClientRect(), pr = wrap.getBoundingClientRect();
+    const cx = r.left - pr.left + r.width/2, cy = r.top - pr.top + r.height/2;
+    for(let i=0;i<4;i++){
+      const p=document.createElement('span'); p.className='cr-particle'; p.textContent=emoji;
+      p.style.left=cx+'px'; p.style.top=cy+'px';
+      p.style.setProperty('--dx',((Math.random()*40-20))+'px');
+      wrap.appendChild(p); setTimeout(()=>p.remove(),820);
+    }
+  }
+  function popGem(el, gem, x2){
+    if(!gem) return;
+    const wrap=$('boardWrap');
+    const r=el.getBoundingClientRect(), pr=wrap.getBoundingClientRect();
+    const p=document.createElement('span'); p.className='cr-pop'+(x2?' x2':'');
+    p.textContent='+'+(x2?gem*2:gem); p.style.left=(r.left-pr.left+r.width/2-8)+'px';
+    p.style.top=(r.top-pr.top)+'px'; wrap.appendChild(p); setTimeout(()=>p.remove(),900);
+  }
+
+  // ---- network ----
+  async function api(path, body){
+    const r = await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},
+      credentials:'include',body:JSON.stringify(body||{})});
+    return r.json();
+  }
+
+  async function start(){
+    try{
+      const d = await api('/api/mine/start');
+      if(!d.success){ if(d.error==='disabled') location.reload(); return; }
+      S = d.state; paintStats(); buildBoard(d.cells); refreshConvert();
+    }catch(e){ toast(T.t_err,'err'); }
+  }
+
+  async function doTap(x,y,el){
+    busy=true;
+    try{
+      const d = await api('/api/mine/tap',{x,y});
+      busy=false;
+      if(!d.success){ if(d.error==='no_session') start(); return; }
+      S = d.state; paintStats();
+      if(d.full){ applyCells(d.cells); toast(T.t_full); return; }
+      if(d.mineral){ popGem(el, d.mineral.gem, d.mineral.x2); }
+      if(d.level_cleared){ buildBoard(d.cells); toast(T.t_descend.replace('{n}',S.level),'ok'); return; }
+      applyCells(d.cells);
+      if(d.pickaxe_broken){ gameOver(); }
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  }
+
+  async function doDynamite(x,y,el){
+    busy=true;
+    try{
+      const d = await api('/api/mine/dynamite',{x,y});
+      busy=false;
+      if(!d.success){ toast(d.error==='no_dynamite'?T.t_nodyn:T.t_err,'err'); return; }
+      S=d.state; paintStats(); applyCells(d.cells);
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  }
+
+  $('btnSell').addEventListener('click', async ()=>{
+    if(busy) return; busy=true;
+    try{
+      const d = await api('/api/mine/sell'); busy=false;
+      if(!d.success){ if(d.error==='no_session') start(); return; }
+      S=d.state; paintStats(); refreshConvert();
+      toast(d.sold>0 ? T.t_sold.replace('{g}', Math.floor(d.gem_gained)) : T.t_nosell, d.sold>0?'ok':'');
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  });
+
+  $('btnDyn').addEventListener('click', ()=>{
+    if(S.dynamite<=0){ // ofrecer compra rápida
+      buyDynamite(); return;
+    }
+    aiming = !aiming;
+    $('btnDyn').classList.toggle('active', aiming);
+    if(aiming) toast(T.t_aim);
+  });
+  async function buyDynamite(){
+    if(busy) return; busy=true;
+    try{
+      const d = await api('/api/mine/buy-dynamite'); busy=false;
+      if(!d.success){ toast(d.error==='insufficient'?T.t_insuf:(d.error==='max_dynamite'?T.t_maxed:T.t_err),'err'); return; }
+      S=d.state; paintStats(); refreshConvert(); toast(T.t_dynbuy,'ok');
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  }
+
+  $('btnRepair').addEventListener('click', async ()=>{
+    if(busy) return; busy=true;
+    try{
+      const d = await api('/api/mine/repair'); busy=false;
+      if(!d.success){ toast(d.error==='insufficient'?T.t_insuf:(d.error==='full_hp'?T.t_norep:T.t_err),'err'); return; }
+      S=d.state; paintStats(); refreshConvert(); toast(T.t_repaired,'ok');
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  });
+
+  $('goRestart').addEventListener('click', ()=>{ $('gameOver').classList.remove('show'); start(); });
+  function gameOver(){ toast(T.t_broken,'err'); $('gameOver').classList.add('show'); }
+
+  // ---- upgrades modal ----
+  function renderUpg(){
+    const keys=['speed','damage','luck','bag'];
+    let h='';
+    keys.forEach(k=>{
+      const lvl = S['up_'+k]||0, spec=UPSPEC[k], maxed=lvl>=spec.max;
+      const cost = maxed?0:spec.costs[lvl];
+      const ic={speed:'⚡',damage:'⛏️',luck:'🍀',bag:'🎒'}[k];
+      let pips='';
+      for(let i=0;i<spec.max;i++) pips+='<span class="cr-pip'+(i<lvl?' on':'')+'"></span>';
+      h += '<div class="cr-up"><span class="ic">'+ic+'</span>'+
+        '<div class="info"><div class="nm">'+T['up_'+k]+' <span style="color:var(--text2)">'+T.lvlw+lvl+'</span></div>'+
+        '<div class="ds">'+T['d_'+k]+'</div><div class="cr-pips">'+pips+'</div></div>'+
+        (maxed
+          ? '<button class="buy max" disabled>'+T.max+'</button>'
+          : '<button class="buy" data-up="'+k+'" data-cost="'+cost+'">'+cost+'<br>'+T.buy+'</button>')+
+        '</div>';
+    });
+    $('upgList').innerHTML=h;
+    $('upgList').querySelectorAll('[data-up]').forEach(b=>{
+      b.disabled = S.gem_balance < (+b.dataset.cost);
+      b.addEventListener('click', ()=>buyUpg(b.dataset.up));
+    });
+  }
+  async function buyUpg(key){
+    if(busy) return; busy=true;
+    try{
+      const d = await api('/api/mine/upgrade',{key}); busy=false;
+      if(!d.success){ toast(d.error==='insufficient'?T.t_insuf:(d.error==='maxed'?T.t_maxed:T.t_err),'err'); return; }
+      S=d.state; paintStats(); renderUpg(); refreshConvert(); toast(T.t_bought,'ok');
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  }
+
+  // ---- convert modal ----
+  function refreshConvert(){
+    $('cvGem').textContent = fmtGem(S.gem_balance);
+    const remaining = Math.max(0, dailyLimit - todayConverted);
+    $('cvLimit').textContent = fmtGem(remaining);
+    recalcConvert();
+  }
+  function recalcConvert(){
+    const v = parseFloat($('cvInput').value)||0;
+    const ton = (v*RATE);
+    $('cvOut').textContent = ton.toFixed(4)+' TON';
+    $('cvBtn').disabled = !(v>0 && v<=S.gem_balance);
+  }
+  $('cvInput').addEventListener('input', recalcConvert);
+  document.querySelectorAll('.cr-quick [data-pct]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const remaining = Math.max(0, dailyLimit - todayConverted);
+      const cap = Math.min(Math.floor(S.gem_balance), Math.floor(remaining));
+      $('cvInput').value = Math.floor(cap * (+b.dataset.pct)/100);
+      recalcConvert();
+    });
+  });
+  $('cvBtn').addEventListener('click', async ()=>{
+    const amount = Math.floor(parseFloat($('cvInput').value)||0);
+    if(amount<=0){ toast(T.t_amt,'err'); return; }
+    if(busy) return; busy=true;
+    try{
+      const d = await api('/api/mine/convert',{amount}); busy=false;
+      if(!d.success){
+        toast(d.error==='daily_limit'?T.t_limit:(d.error==='insufficient'?T.t_insuf:T.t_err),'err');
+        if(d.error==='daily_limit' && typeof d.remaining==='number'){ todayConverted=dailyLimit-d.remaining; refreshConvert(); }
+        return;
+      }
+      S=d.state; todayConverted += d.gem_spent; paintStats(); refreshConvert();
+      $('cvInput').value=''; recalcConvert();
+      toast(T.t_conv.replace('{t}', d.ton.toFixed(4)),'ok');
+    }catch(e){ busy=false; toast(T.t_err,'err'); }
+  });
+
+  // ---- modal open/close ----
+  function open(id){ $(id).classList.add('open'); }
+  function close(id){ $(id).classList.remove('open'); }
+  $('btnUpg').addEventListener('click', ()=>{ renderUpg(); open('mUpg'); });
+  $('btnGuide').addEventListener('click', ()=>open('mGuide'));
+  $('btnConvert').addEventListener('click', ()=>{ syncConvert(); });
+  async function syncConvert(){
+    try{ const d=await api('/api/mine/stats'); if(d.success){ S=d.state; todayConverted=d.state.today_converted||0; dailyLimit=d.state.daily_limit||dailyLimit; paintStats(); } }catch(e){}
+    refreshConvert(); open('mConv');
+  }
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>close(b.dataset.close)));
+  document.querySelectorAll('.cr-modal').forEach(m=>m.addEventListener('click', e=>{ if(e.target===m) close(m.id); }));
+
+  // ---- init ----
+  paintStats(); refreshConvert();
+  if(BOOT.has_session){ start(); }   // resume -> fetch fresh grid
+  else { start(); }                  // create new run
+})();
+</script>
+{% endblock %}
