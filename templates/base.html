@@ -201,18 +201,6 @@
                 <span class="bnav-label">{{ t.bnav_mine }}</span>
             </a>
 
-            <a href="{{ url_for('crystal_rush.mine_page') }}" class="bnav-item {% if request.endpoint == 'crystal_rush.mine_page' %}active{% endif %}" title="Crystal Rush">
-                <div class="bnav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="round">
-                        <path d="M6 3h12l3 6-9 12L3 9z"/>
-                        <path d="M3 9h18"/>
-                        <path d="M9 3L6 9l6 12"/>
-                        <path d="M15 3l3 6-6 12"/>
-                    </svg>
-                </div>
-                <span class="bnav-label">{{ t.bnav_rush }}</span>
-            </a>
-
             <a href="{{ url_for('referrals') }}" class="bnav-item {% if request.endpoint == 'referrals' %}active{% endif %}" title="Invite">
                 <div class="bnav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
