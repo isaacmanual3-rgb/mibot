@@ -40,6 +40,11 @@
         <span class="cr-stat-val">{{ "%.4f"|format((conv.ton or 0)|float) }}</span>
         <span class="cr-stat-lbl">TON PAGADO</span>
     </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#d9a6ff">♻️</span>
+        <span class="cr-stat-val">{{ stats.max_prestige or 0 }}</span>
+        <span class="cr-stat-lbl">PRESTIGIO MÁX</span>
+    </div>
 </div>
 
 <!-- ── CONFIG ────────────────────────────────────────────── -->
@@ -72,6 +77,33 @@
                        value="{{ cfg.mine_dynamite_cost }}" step="1" min="0">
             </div>
         </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Regeneración de energía (seg por +1)</label>
+                <input type="number" class="form-input" name="mine_energy_regen_sec"
+                       value="{{ cfg.mine_energy_regen_sec }}" step="1" min="2">
+                <span class="form-hint">Menor = recarga más rápido. Por defecto 18s.</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Profundidad para 1er prestigio</label>
+                <input type="number" class="form-input" name="mine_prestige_req"
+                       value="{{ cfg.mine_prestige_req }}" step="1" min="1">
+                <span class="form-hint">Cada renacimiento sube el requisito +10.</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Cofre del tesoro · GEM mín</label>
+                <input type="number" class="form-input" name="mine_treasure_min"
+                       value="{{ cfg.mine_treasure_min }}" step="10" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cofre del tesoro · GEM máx</label>
+                <input type="number" class="form-input" name="mine_treasure_max"
+                       value="{{ cfg.mine_treasure_max }}" step="10" min="0">
+                <span class="form-hint">Escala con la profundidad y el prestigio.</span>
+            </div>
+        </div>
         <div class="form-row" style="align-items:center">
             <div class="form-group">
                 <label class="form-label">Estado del juego</label>
@@ -99,6 +131,7 @@
                     <th>GEM ACTUAL</th>
                     <th>GEM TOTAL</th>
                     <th>MINERALES</th>
+                    <th>PRESTIGIO</th>
                     <th>NIVEL MÁX</th>
                 </tr>
             </thead>
@@ -114,10 +147,11 @@
                     <td class="mono" style="color:#ffd700">{{ "{:,.0f}".format((p.gem_balance or 0)|float) }}</td>
                     <td class="mono highlight-green">{{ "{:,.0f}".format((p.gem_total_earned or 0)|float) }}</td>
                     <td class="mono">{{ "{:,}".format(p.total_minerals or 0) }}</td>
+                    <td>{% if p.prestige and p.prestige > 0 %}<span class="lvl-badge" style="background:rgba(217,166,255,.18);color:#d9a6ff">♻️ {{ p.prestige }}</span>{% else %}<span style="color:var(--text-muted)">—</span>{% endif %}</td>
                     <td><span class="lvl-badge">{{ p.deepest_level or 0 }}</span></td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px">Aún no hay mineros</td></tr>
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px">Aún no hay mineros</td></tr>
                 {% endfor %}
             </tbody>
         </table>
