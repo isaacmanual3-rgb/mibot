@@ -1,0 +1,696 @@
+{% extends "base.html" %}
+{% block title %}CRYSTAL RUSH ⛏️{% endblock %}
+
+{% block content %}
+<div class="cr-wrap" id="cr-root">
+
+  <!-- ░░ TICKER ░░ -->
+  <div class="cr-ticker"><div class="cr-ticker-track" id="cr-ticker">
+    ◆ CRYSTAL RUSH ◆ PICA · VENDE · MEJORA · RENACE ◆ ENCADENA COMBOS PARA EL x5 FEVER ◆ BUSCA COFRES 🎁 ◆ CONVIERTE GEM EN TON ◆
+  </div></div>
+
+  <!-- ░░ HUD SUPERIOR ░░ -->
+  <div class="cr-hud">
+    <div class="cr-hud-top">
+      <div class="cr-chip cr-tier" id="cr-tier"><span id="cr-tier-emoji">🪵</span><span id="cr-tier-name">Madera</span></div>
+      <div class="cr-chip cr-prestige" id="cr-prestige-chip" style="display:none">♻️ <span id="cr-prestige-n">0</span></div>
+      <div class="cr-gem"><span class="cr-gem-ico">◆</span><span id="cr-gem">0</span></div>
+    </div>
+
+    <div class="cr-bar-row">
+      <span class="cr-bar-ico">⭐</span>
+      <div class="cr-bar cr-xp"><div class="cr-bar-fill" id="cr-xp-fill"></div>
+        <span class="cr-bar-txt" id="cr-xp-txt">Lv 1</span></div>
+    </div>
+    <div class="cr-bar-row">
+      <span class="cr-bar-ico">⚡</span>
+      <div class="cr-bar cr-energy"><div class="cr-bar-fill" id="cr-energy-fill"></div>
+        <span class="cr-bar-txt" id="cr-energy-txt">120/120</span></div>
+      <span class="cr-regen" id="cr-regen"></span>
+    </div>
+  </div>
+
+  <!-- ░░ STATS ░░ -->
+  <div class="cr-stats">
+    <div class="cr-stat">
+      <span class="cr-stat-k">PROF.</span>
+      <span class="cr-stat-v" id="cr-level">1</span>
+      <div class="cr-mini"><div class="cr-mini-fill" id="cr-level-fill"></div></div>
+    </div>
+    <div class="cr-stat">
+      <span class="cr-stat-k">MOCHILA</span>
+      <span class="cr-stat-v" id="cr-bag">0/30</span>
+      <div class="cr-mini"><div class="cr-mini-fill cr-bag-fill" id="cr-bag-fill"></div></div>
+    </div>
+    <div class="cr-stat">
+      <span class="cr-stat-k">PICO</span>
+      <span class="cr-stat-v" id="cr-pick">100</span>
+      <div class="cr-mini"><div class="cr-mini-fill cr-pick-fill" id="cr-pick-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ░░ COMBO ░░ -->
+  <div class="cr-combo" id="cr-combo">
+    <div class="cr-combo-head">
+      <span class="cr-combo-mult" id="cr-combo-mult">x1</span>
+      <span class="cr-combo-label" id="cr-combo-label">COMBO</span>
+      <span class="cr-combo-count" id="cr-combo-count">0</span>
+    </div>
+    <div class="cr-combo-bar"><div class="cr-combo-fill" id="cr-combo-fill"></div></div>
+  </div>
+
+  <!-- ░░ TABLERO ░░ -->
+  <div class="cr-board-wrap">
+    <div class="cr-board" id="cr-board"></div>
+    <div class="cr-board-overlay" id="cr-dyn-hint" style="display:none">💥 TOCA DÓNDE EXPLOTAR</div>
+  </div>
+
+  <!-- ░░ BARRA DE ACCIÓN ░░ -->
+  <div class="cr-actions">
+    <button class="cr-btn cr-sell" id="cr-sell-btn">
+      <span class="cr-btn-ico">💰</span>
+      <span class="cr-btn-main">VENDER</span>
+      <span class="cr-btn-sub" id="cr-sell-sub">0 items</span>
+    </button>
+    <button class="cr-btn cr-dyn" id="cr-dyn-btn">
+      <span class="cr-btn-ico">🧨</span>
+      <span class="cr-btn-main">DINAMITA</span>
+      <span class="cr-btn-sub" id="cr-dyn-sub">x0</span>
+    </button>
+    <button class="cr-btn cr-conv" id="cr-conv-btn">
+      <span class="cr-btn-ico">◈</span>
+      <span class="cr-btn-main">TON</span>
+      <span class="cr-btn-sub">canjear</span>
+    </button>
+  </div>
+
+  <!-- ░░ TABS ░░ -->
+  <div class="cr-tabs">
+    <button class="cr-tab" data-sheet="shop">🛒<span>Tienda</span></button>
+    <button class="cr-tab" data-sheet="upg">⚒️<span>Mejoras</span></button>
+    <button class="cr-tab" data-sheet="missions">🎯<span>Misiones<i class="cr-dot" id="cr-dot-missions"></i></span></button>
+    <button class="cr-tab" data-sheet="ach">🏅<span>Logros<i class="cr-dot" id="cr-dot-ach"></i></span></button>
+    <button class="cr-tab" data-sheet="rank">👑<span>Ranking</span></button>
+  </div>
+
+  <p class="cr-foot">Toca los bloques para minar. Recoge minerales, véndelos por GEM y conviértelos en TON.</p>
+</div>
+
+<!-- ░░ BOTTOM SHEET ░░ -->
+<div class="cr-sheet-bg" id="cr-sheet-bg"></div>
+<div class="cr-sheet" id="cr-sheet">
+  <div class="cr-sheet-head">
+    <span id="cr-sheet-title">—</span>
+    <button id="cr-sheet-close">✕</button>
+  </div>
+  <div class="cr-sheet-body" id="cr-sheet-body"></div>
+</div>
+
+<!-- ░░ FX OVERLAYS ░░ -->
+<div class="cr-reveal" id="cr-reveal"><div class="cr-reveal-in"><span id="cr-reveal-emoji">💎</span><b id="cr-reveal-txt">¡CRISTAL!</b></div></div>
+<div class="cr-toast-wrap" id="cr-toast-wrap"></div>
+
+<div class="cr-celebrate" id="cr-celebrate">
+  <div class="cr-celebrate-card">
+    <div class="cr-celebrate-emoji" id="cr-cel-emoji">🎉</div>
+    <div class="cr-celebrate-title" id="cr-cel-title">¡NIVEL!</div>
+    <div class="cr-celebrate-sub" id="cr-cel-sub"></div>
+    <button class="cr-celebrate-btn" id="cr-cel-btn">CONTINUAR</button>
+  </div>
+</div>
+
+<div class="cr-gameover" id="cr-gameover">
+  <div class="cr-gameover-card">
+    <div class="cr-go-emoji">⛏️💔</div>
+    <div class="cr-go-title">¡PICO ROTO!</div>
+    <div class="cr-go-sub">Tu pico se hizo añicos y perdiste la carga sin vender. Empieza una nueva expedición.</div>
+    <div class="cr-go-stats" id="cr-go-stats"></div>
+    <button class="cr-go-btn" id="cr-go-btn">NUEVA EXPEDICIÓN</button>
+  </div>
+</div>
+
+<div class="cr-disabled" id="cr-disabled" {% if enabled %}style="display:none"{% endif %}>
+  <div class="cr-disabled-card">🚧<br>CRYSTAL RUSH está en mantenimiento.<br>Vuelve pronto, minero.</div>
+</div>
+
+<style>
+/* ════════ CRYSTAL RUSH v2 ════════ */
+.cr-wrap{max-width:520px;margin:0 auto;padding:0 10px 8px;font-family:var(--font-pixel)}
+.cr-wrap *{box-sizing:border-box}
+
+/* Ticker */
+.cr-ticker{overflow:hidden;background:linear-gradient(90deg,var(--gold2),var(--gold));border:2px solid #000;
+  margin:6px 0 10px;box-shadow:0 0 0 2px var(--gold-dark),3px 3px 0 #000}
+.cr-ticker-track{display:inline-block;white-space:nowrap;color:#1a1200;font-size:.42rem;letter-spacing:.08em;
+  padding:5px 0;animation:cr-marq 22s linear infinite}
+@keyframes cr-marq{from{transform:translateX(8%)}to{transform:translateX(-100%)}}
+
+/* HUD */
+.cr-hud{background:var(--surface);border:2px solid var(--border);padding:9px 10px;margin-bottom:8px;
+  box-shadow:3px 3px 0 #000}
+.cr-hud-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.cr-chip{font-size:.42rem;padding:4px 7px;border:2px solid #000;background:#15152a;color:var(--text);
+  display:flex;align-items:center;gap:4px;white-space:nowrap}
+.cr-tier{box-shadow:inset 0 0 0 1px #2a2a4a}
+.cr-tier #cr-tier-emoji{font-size:.7rem}
+.cr-prestige{background:#2a1840;color:#d9a6ff;border-color:#5a2a8a}
+.cr-gem{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--gold);
+  text-shadow:2px 2px 0 #000}
+.cr-gem-ico{color:var(--gold2)}
+.cr-bar-row{display:flex;align-items:center;gap:7px;margin-top:5px}
+.cr-bar-ico{font-size:.62rem;width:14px;text-align:center}
+.cr-bar{position:relative;flex:1;height:13px;background:#07070f;border:2px solid #000;overflow:hidden}
+.cr-bar-fill{position:absolute;inset:0;width:0;transition:width .25s ease}
+.cr-xp .cr-bar-fill{background:linear-gradient(90deg,#7b5cff,#b388ff)}
+.cr-energy .cr-bar-fill{background:linear-gradient(90deg,#00b3ff,#5fe6ff)}
+.cr-bar-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:.38rem;color:#fff;text-shadow:1px 1px 0 #000;letter-spacing:.05em}
+.cr-regen{font-size:.38rem;color:var(--blue);min-width:30px;text-align:right}
+
+/* Stats */
+.cr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
+.cr-stat{background:var(--surface);border:2px solid var(--border);padding:7px 6px;box-shadow:2px 2px 0 #000;text-align:center}
+.cr-stat-k{font-size:.36rem;color:var(--muted);display:block;letter-spacing:.06em}
+.cr-stat-v{font-size:.62rem;color:#fff;display:block;margin:3px 0 4px;text-shadow:1px 1px 0 #000}
+.cr-mini{height:6px;background:#07070f;border:1px solid #000;overflow:hidden}
+.cr-mini-fill{height:100%;width:0;background:var(--gold);transition:width .25s}
+.cr-bag-fill{background:#ffae42}
+.cr-pick-fill{background:var(--green)}
+
+/* Combo */
+.cr-combo{background:var(--surface);border:2px solid var(--border);padding:6px 9px;margin-bottom:8px;
+  box-shadow:2px 2px 0 #000;opacity:.55;transition:.18s}
+.cr-combo.cr-on{opacity:1;border-color:var(--gold)}
+.cr-combo.cr-fever{border-color:#ff5d2a;background:linear-gradient(90deg,#2a0f08,#1a0a14);
+  animation:cr-fever 0.5s steps(2) infinite}
+@keyframes cr-fever{0%{box-shadow:2px 2px 0 #000,0 0 12px #ff5d2a}100%{box-shadow:2px 2px 0 #000,0 0 4px #ff5d2a}}
+.cr-combo-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cr-combo-mult{font-size:.72rem;color:var(--gold);text-shadow:2px 2px 0 #000}
+.cr-combo.cr-fever .cr-combo-mult{color:#ff8a5c}
+.cr-combo-label{font-size:.42rem;color:var(--text2);letter-spacing:.1em}
+.cr-combo-count{margin-left:auto;font-size:.5rem;color:#fff}
+.cr-combo-bar{height:8px;background:#07070f;border:1px solid #000;overflow:hidden}
+.cr-combo-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold2),var(--gold));transition:width .15s}
+.cr-combo.cr-fever .cr-combo-fill{background:linear-gradient(90deg,#ff5d2a,#ffb142)}
+
+/* Board */
+.cr-board-wrap{position:relative;margin-bottom:9px}
+.cr-board{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;background:#050509;
+  border:3px solid #000;padding:5px;box-shadow:inset 0 0 22px #000,3px 3px 0 #000}
+.cr-cell{position:relative;aspect-ratio:1/1;background:linear-gradient(145deg,#3a3450,#272138);
+  border:1px solid #161226;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;user-select:none;transition:transform .04s;overflow:hidden}
+.cr-cell:active{transform:scale(.9)}
+.cr-cell::after{content:"";position:absolute;inset:0;background-image:
+  radial-gradient(circle at 30% 30%, rgba(255,255,255,.07) 1px, transparent 2px);background-size:6px 6px}
+.cr-cell.cr-c1{background:linear-gradient(145deg,#352f48,#231d32);
+  box-shadow:inset 3px 3px 0 rgba(0,0,0,.25)}
+.cr-cell.cr-c2{background:linear-gradient(145deg,#2c2740,#1d1829)}
+.cr-cell.cr-c3{background:linear-gradient(145deg,#241f36,#16121f);
+  box-shadow:inset 0 0 6px #000,inset 2px 2px 0 rgba(255,80,80,.15)}
+.cr-cell.cr-c3::before{content:"";position:absolute;inset:0;background:
+  linear-gradient(45deg,transparent 46%,rgba(0,0,0,.5) 47%,transparent 49%),
+  linear-gradient(-30deg,transparent 60%,rgba(0,0,0,.5) 61%,transparent 63%)}
+.cr-cell.cr-bedrock{background:linear-gradient(145deg,#1a1a22,#0c0c12);border-color:#000;
+  box-shadow:inset 0 0 0 2px #2a2a38,inset 0 0 8px #000}
+.cr-cell.cr-bedrock::after{background-image:radial-gradient(circle at 50% 50%, #333 1px, transparent 2px);
+  background-size:7px 7px;opacity:.6}
+.cr-cell.cr-broken{background:#0a0a12;border-color:#0a0a12;cursor:default;box-shadow:inset 0 0 10px #000}
+.cr-cell.cr-broken:active{transform:none}
+.cr-cell.cr-broken::after{display:none}
+.cr-cell .cr-em{position:relative;z-index:2;filter:drop-shadow(1px 1px 0 #000);animation:cr-pop .25s ease}
+@keyframes cr-pop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.cr-cell.cr-hit{animation:cr-shake .12s steps(2)}
+@keyframes cr-shake{0%{transform:translate(0)}25%{transform:translate(-2px,1px)}75%{transform:translate(2px,-1px)}100%{transform:translate(0)}}
+.cr-cell.cr-crit-fx{box-shadow:0 0 14px #ffd24a,inset 0 0 10px #fff !important}
+.cr-board-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,93,42,.12);border:3px dashed #ff5d2a;color:#ff8a5c;font-size:.5rem;pointer-events:none;
+  animation:cr-fever .6s steps(2) infinite}
+.cr-shake-screen{animation:cr-screen .22s steps(3)}
+@keyframes cr-screen{0%{transform:translate(0)}30%{transform:translate(-4px,2px)}60%{transform:translate(4px,-2px)}100%{transform:translate(0)}}
+
+/* floating numbers */
+.cr-float{position:fixed;z-index:60;font-family:var(--font-pixel);font-size:.55rem;pointer-events:none;
+  text-shadow:2px 2px 0 #000;animation:cr-rise .7s ease-out forwards}
+@keyframes cr-rise{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-42px) scale(1.1)}}
+
+/* Actions */
+.cr-actions{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:7px;margin-bottom:9px}
+.cr-btn{border:2px solid #000;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:2px;box-shadow:3px 3px 0 #000;transition:transform .05s;font-family:var(--font-pixel)}
+.cr-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000}
+.cr-btn:disabled{opacity:.4;box-shadow:1px 1px 0 #000;cursor:not-allowed}
+.cr-btn-ico{font-size:.85rem}
+.cr-btn-main{font-size:.46rem;color:#fff;text-shadow:1px 1px 0 #000}
+.cr-btn-sub{font-size:.34rem;color:rgba(255,255,255,.7)}
+.cr-sell{background:linear-gradient(180deg,#00c853,#00913c)}
+.cr-dyn{background:linear-gradient(180deg,#ff7043,#d84315)}
+.cr-conv{background:linear-gradient(180deg,#29b6f6,#0277bd)}
+.cr-dyn.cr-armed{animation:cr-fever .5s steps(2) infinite}
+
+/* Tabs */
+.cr-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:8px}
+.cr-tab{background:var(--surface);border:2px solid var(--border);padding:6px 2px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.85rem;box-shadow:2px 2px 0 #000;
+  font-family:var(--font-pixel)}
+.cr-tab span{font-size:.32rem;color:var(--text2);letter-spacing:.03em;position:relative}
+.cr-tab:active{transform:translate(1px,1px)}
+.cr-dot{position:absolute;top:-3px;right:-7px;width:6px;height:6px;background:var(--gold);border-radius:50%;display:none;
+  box-shadow:0 0 5px var(--gold)}
+.cr-dot.cr-show{display:block;animation:cr-blink .8s steps(2) infinite}
+@keyframes cr-blink{50%{opacity:.3}}
+.cr-foot{font-size:.36rem;color:var(--muted);text-align:center;line-height:1.7;font-family:var(--font-pixel);margin:6px 0}
+
+/* Sheet */
+.cr-sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:80;opacity:0;pointer-events:none;transition:.18s}
+.cr-sheet-bg.cr-open{opacity:1;pointer-events:auto}
+.cr-sheet{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:520px;margin:0 auto;
+  background:var(--surface);border:3px solid var(--gold);border-bottom:0;
+  max-height:78vh;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .22s ease;
+  box-shadow:0 -8px 40px rgba(0,0,0,.7)}
+.cr-sheet.cr-open{transform:translateY(0)}
+.cr-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  border-bottom:2px solid var(--border);font-size:.6rem;color:var(--gold);text-shadow:1px 1px 0 #000}
+#cr-sheet-close{background:none;border:0;color:var(--text2);font-size:1rem;cursor:pointer}
+.cr-sheet-body{padding:12px 14px 22px;overflow-y:auto}
+
+/* Sheet content */
+.cr-row{display:flex;align-items:center;gap:10px;background:#13132a;border:2px solid #000;padding:9px 10px;
+  margin-bottom:8px;box-shadow:2px 2px 0 #000}
+.cr-row-ico{font-size:1.1rem;width:24px;text-align:center}
+.cr-row-mid{flex:1;min-width:0}
+.cr-row-name{font-size:.46rem;color:#fff;margin-bottom:3px}
+.cr-row-desc{font-size:.34rem;color:var(--text2);line-height:1.6}
+.cr-pips{display:flex;gap:3px;margin-top:5px}
+.cr-pip{width:12px;height:6px;background:#07070f;border:1px solid #000}
+.cr-pip.cr-on{background:var(--gold)}
+.cr-row-btn{border:2px solid #000;background:linear-gradient(180deg,var(--gold),var(--gold2));color:#1a1200;
+  font-size:.4rem;padding:7px 8px;cursor:pointer;box-shadow:2px 2px 0 #000;font-family:var(--font-pixel);white-space:nowrap}
+.cr-row-btn:active{transform:translate(1px,1px)}
+.cr-row-btn:disabled{opacity:.45;background:#444;color:#999;cursor:not-allowed}
+.cr-row-btn.cr-claim{background:linear-gradient(180deg,#00e676,#00a152);color:#04210f}
+.cr-row-btn.cr-maxed{background:#2a2a44;color:var(--text2);border-color:#000}
+
+.cr-prog{height:8px;background:#07070f;border:1px solid #000;overflow:hidden;margin-top:6px}
+.cr-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));width:0}
+.cr-prog-txt{font-size:.34rem;color:var(--text2);margin-top:3px;display:flex;justify-content:space-between}
+
+.cr-ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cr-ach{background:#13132a;border:2px solid #000;padding:9px 5px;text-align:center;box-shadow:2px 2px 0 #000;
+  position:relative;opacity:.5}
+.cr-ach.cr-done{opacity:1;border-color:var(--gold)}
+.cr-ach-em{font-size:1.3rem;filter:grayscale(1)}
+.cr-ach.cr-done .cr-ach-em{filter:none}
+.cr-ach-name{font-size:.34rem;color:#fff;margin:5px 0 2px;line-height:1.4}
+.cr-ach-rw{font-size:.32rem;color:var(--gold)}
+.cr-ach-claim{margin-top:5px;width:100%;border:2px solid #000;background:linear-gradient(180deg,#00e676,#00a152);
+  color:#04210f;font-size:.32rem;padding:4px;cursor:pointer;font-family:var(--font-pixel)}
+.cr-ach-tick{position:absolute;top:3px;right:4px;font-size:.5rem;color:var(--green)}
+
+.cr-lb-tabs{display:flex;gap:6px;margin-bottom:10px}
+.cr-lb-tab{flex:1;background:#13132a;border:2px solid #000;color:var(--text2);font-size:.4rem;padding:7px;
+  cursor:pointer;font-family:var(--font-pixel)}
+.cr-lb-tab.cr-on{background:var(--gold);color:#1a1200}
+.cr-lb-row{display:flex;align-items:center;gap:9px;padding:7px 9px;border-bottom:1px solid var(--border)}
+.cr-lb-row.cr-me{background:rgba(255,215,0,.08);border:2px solid var(--gold)}
+.cr-lb-rank{font-size:.5rem;color:var(--gold);width:26px;text-align:center}
+.cr-lb-name{flex:1;font-size:.42rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-lb-val{font-size:.42rem;color:var(--green)}
+.cr-lb-pr{font-size:.3rem;color:#d9a6ff;margin-left:4px}
+
+.cr-prestige-card{background:linear-gradient(135deg,#2a1840,#1a0e2a);border:2px solid #7a3ada;padding:12px;
+  margin-bottom:10px;box-shadow:2px 2px 0 #000}
+.cr-prestige-card h4{font-size:.5rem;color:#d9a6ff;margin:0 0 7px}
+.cr-prestige-card p{font-size:.36rem;color:var(--text2);line-height:1.7;margin:0 0 9px}
+.cr-prestige-card .cr-row-btn{width:100%;background:linear-gradient(180deg,#b388ff,#7a3ada);color:#fff}
+
+.cr-conv-in{width:100%;background:#07070f;border:2px solid #000;color:var(--gold);font-size:.7rem;
+  text-align:center;padding:11px;font-family:var(--font-pixel);margin-bottom:9px}
+.cr-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.cr-quick button{background:#13132a;border:2px solid #000;color:#fff;font-size:.4rem;padding:7px;cursor:pointer;
+  font-family:var(--font-pixel)}
+.cr-conv-out{text-align:center;font-size:.46rem;color:var(--blue);margin-bottom:6px}
+.cr-conv-lim{text-align:center;font-size:.34rem;color:var(--text2);margin-bottom:10px}
+
+/* Reveal banner */
+.cr-reveal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;pointer-events:none}
+.cr-reveal.cr-show{display:flex}
+.cr-reveal-in{text-align:center;animation:cr-reveal .9s ease}
+.cr-reveal-in span{font-size:4rem;display:block;filter:drop-shadow(0 0 14px var(--gold))}
+.cr-reveal-in b{font-size:.9rem;color:var(--gold);text-shadow:3px 3px 0 #000;letter-spacing:.06em}
+@keyframes cr-reveal{0%{transform:scale(0) rotate(-12deg);opacity:0}40%{transform:scale(1.25) rotate(4deg);opacity:1}70%{transform:scale(1)}100%{opacity:0;transform:scale(1.1)}}
+
+/* Toasts */
+.cr-toast-wrap{position:fixed;top:64px;left:0;right:0;z-index:75;display:flex;flex-direction:column;
+  align-items:center;gap:6px;pointer-events:none}
+.cr-toast{background:#15152a;border:2px solid var(--gold);color:#fff;font-size:.42rem;padding:8px 14px;
+  box-shadow:3px 3px 0 #000;animation:cr-toast 2.4s ease forwards;font-family:var(--font-pixel)}
+.cr-toast.cr-bad{border-color:var(--red);color:#ffb3c0}
+.cr-toast.cr-good{border-color:var(--green)}
+@keyframes cr-toast{0%{opacity:0;transform:translateY(-14px)}12%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+
+/* Celebrate / gameover / disabled */
+.cr-celebrate,.cr-gameover,.cr-disabled{position:fixed;inset:0;z-index:90;display:none;align-items:center;
+  justify-content:center;background:rgba(4,4,12,.86);padding:20px}
+.cr-celebrate.cr-show,.cr-gameover.cr-show,.cr-disabled.cr-show{display:flex}
+.cr-celebrate-card,.cr-gameover-card,.cr-disabled-card{background:var(--surface);border:3px solid var(--gold);
+  padding:22px 18px;text-align:center;max-width:340px;box-shadow:0 0 40px rgba(255,215,0,.25);
+  animation:cr-cardin .3s ease}
+@keyframes cr-cardin{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.cr-celebrate-emoji{font-size:3.2rem;animation:cr-pop .5s ease}
+.cr-celebrate-title{font-size:.85rem;color:var(--gold);text-shadow:2px 2px 0 #000;margin:8px 0}
+.cr-celebrate-sub{font-size:.42rem;color:var(--text2);line-height:1.8;margin-bottom:14px}
+.cr-celebrate-btn,.cr-go-btn{border:2px solid #000;background:linear-gradient(180deg,var(--gold),var(--gold2));
+  color:#1a1200;font-size:.5rem;padding:11px 22px;cursor:pointer;box-shadow:3px 3px 0 #000;font-family:var(--font-pixel)}
+.cr-gameover-card{border-color:var(--red)}
+.cr-go-emoji{font-size:2.8rem}
+.cr-go-title{font-size:.8rem;color:var(--red);text-shadow:2px 2px 0 #000;margin:8px 0}
+.cr-go-sub{font-size:.4rem;color:var(--text2);line-height:1.8;margin-bottom:10px}
+.cr-go-stats{font-size:.4rem;color:var(--gold);margin-bottom:14px;line-height:1.9}
+.cr-go-btn{background:linear-gradient(180deg,#ff5d6a,#c4283a);color:#fff}
+.cr-disabled-card{font-size:.5rem;color:var(--text);line-height:2.2}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BOOT = {
+  state: {{ state|tojson }},
+  minerals: {{ minerals|tojson }},
+  upgrades: {{ upgrades|tojson }},
+  order: {{ upgrade_order|tojson }},
+  pickTiers: {{ pick_tiers|tojson }},
+  missions: {{ missions|tojson }},
+  achievements: {{ achievements|tojson }},
+  repairCost: {{ repair_cost }},
+  dynamiteCost: {{ dynamite_cost }},
+  dynamiteEnergy: {{ dynamite_energy }},
+  gemRate: {{ gem_rate }},
+  dailyLimit: {{ daily_limit }},
+  enabled: {{ 'true' if enabled else 'false' }}
+};
+
+(function(){
+  if(!BOOT.enabled){ return; }
+  const COLS=8, ROWS=12;
+  const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  const $ = id => document.getElementById(id);
+  const api = async (path, body) => {
+    try{
+      const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body||{})});
+      return await r.json();
+    }catch(e){ return {success:false, error:'net'}; }
+  };
+  const getJSON = async (path) => { try{ const r=await fetch(path); return await r.json(); }catch(e){ return {success:false}; } };
+  function haptic(type){ try{ if(!tg||!tg.HapticFeedback)return;
+    if(type==='heavy'||type==='light'||type==='medium'||type==='rigid'||type==='soft') tg.HapticFeedback.impactOccurred(type);
+    else tg.HapticFeedback.notificationOccurred(type); }catch(e){} }
+
+  let S = BOOT.state;
+  let MISSIONS = BOOT.missions;
+  let ACH = BOOT.achievements;
+  let cells = [];          // client cells {i,b,h,e,g,s}
+  let armed = false;       // dynamite mode
+  let busy = false;
+  let energyBase = {e:S.energy, max:S.energy_max, regen:S.energy_regen, t:Date.now()};
+  const fmt = n => Math.floor(n).toLocaleString('es');
+
+  // ---------- toasts / fx ----------
+  function toast(msg, kind){ const w=$('cr-toast-wrap'); const d=document.createElement('div');
+    d.className='cr-toast '+(kind||''); d.textContent=msg; w.appendChild(d); setTimeout(()=>d.remove(),2400); }
+  function floatNum(x,y,txt,color){ const el=$('cr-board'); const r=el.getBoundingClientRect();
+    const cw=r.width/COLS, ch=r.height/ROWS; const f=document.createElement('div'); f.className='cr-float';
+    f.textContent=txt; f.style.color=color||'#ffd700'; f.style.left=(r.left+cw*(x+0.5))+'px';
+    f.style.top=(r.top+ch*(y+0.3))+'px'; document.body.appendChild(f); setTimeout(()=>f.remove(),700); }
+  function screenShake(){ const r=$('cr-root'); r.classList.add('cr-shake-screen'); setTimeout(()=>r.classList.remove('cr-shake-screen'),220); }
+  function reveal(emoji,txt){ $('cr-reveal-emoji').textContent=emoji; $('cr-reveal-txt').textContent=txt;
+    const r=$('cr-reveal'); r.classList.add('cr-show'); setTimeout(()=>r.classList.remove('cr-show'),900); }
+  function celebrate(emoji,title,sub){ $('cr-cel-emoji').textContent=emoji; $('cr-cel-title').textContent=title;
+    $('cr-cel-sub').textContent=sub||''; $('cr-celebrate').classList.add('cr-show'); }
+
+  // ---------- render ----------
+  function buildBoard(){ const b=$('cr-board'); b.innerHTML='';
+    for(let i=0;i<COLS*ROWS;i++){ const d=document.createElement('div'); d.className='cr-cell'; d.dataset.i=i;
+      d.addEventListener('click',()=>onCell(i)); b.appendChild(d); } }
+  function paintCell(i){ const d=$('cr-board').children[i]; if(!d)return; const c=cells[i]||{b:0,h:0};
+    d.className='cr-cell';
+    if(c.b){ d.classList.add('cr-broken'); d.innerHTML = c.e ? '<span class="cr-em">'+c.e+'</span>':''; return; }
+    if(c.s===2){ d.classList.add('cr-bedrock'); }
+    const h=c.h||0; if(h>=3) d.classList.add('cr-c3'); else if(h===2) d.classList.add('cr-c2'); else if(h===1) d.classList.add('cr-c1');
+    d.innerHTML=''; }
+  function paintAll(){ for(let i=0;i<cells.length;i++) paintCell(i); }
+
+  function tier(){ const t=S.pick_tier||{emoji:'🪵',name:'Madera'}; $('cr-tier-emoji').textContent=t.emoji; $('cr-tier-name').textContent=t.name; }
+  function render(){
+    $('cr-gem').textContent=fmt(S.gem_balance);
+    tier();
+    const pc=$('cr-prestige-chip'); if(S.prestige>0){ pc.style.display='flex'; $('cr-prestige-n').textContent=S.prestige; } else pc.style.display='none';
+    // xp
+    const xpPct = Math.min(100, S.xp/Math.max(1,S.xp_needed)*100);
+    $('cr-xp-fill').style.width=xpPct+'%'; $('cr-xp-txt').textContent='Lv '+S.miner_level;
+    // energy handled by ticker, but sync base
+    energyBase={e:S.energy, max:S.energy_max, regen:S.energy_regen, t:Date.now()};
+    tickEnergy();
+    // stats
+    $('cr-level').textContent=S.level||1;
+    $('cr-level-fill').style.width=Math.min(100,(S.level/S.max_level*100))+'%';
+    $('cr-bag').textContent=S.inv_count+'/'+S.inv_max;
+    $('cr-bag-fill').style.width=Math.min(100,(S.inv_count/Math.max(1,S.inv_max)*100))+'%';
+    $('cr-pick').textContent=S.pickaxe_hp;
+    $('cr-pick-fill').style.width=(S.pickaxe_hp/S.pickaxe_max*100)+'%';
+    const pf=$('cr-pick-fill'); pf.style.background = S.pickaxe_hp<25 ? 'var(--red)' : (S.pickaxe_hp<55?'var(--gold)':'var(--green)');
+    // combo
+    renderCombo();
+    // actions
+    $('cr-sell-sub').textContent=S.inv_count+' items';
+    $('cr-sell-btn').disabled = S.inv_count<=0;
+    $('cr-dyn-sub').textContent='x'+S.dynamite;
+    $('cr-dyn-btn').disabled = S.dynamite<=0;
+    // dots
+    $('cr-dot-missions').classList.toggle('cr-show', MISSIONS.some(m=>m.done&&!m.claimed));
+    $('cr-dot-ach').classList.toggle('cr-show', ACH.some(a=>a.done&&!a.claimed));
+  }
+  function renderCombo(){ const box=$('cr-combo'); const c=S.combo_count||0;
+    $('cr-combo-count').textContent=c;
+    $('cr-combo-mult').textContent='x'+(S.combo_mult||1);
+    box.classList.toggle('cr-on', c>0);
+    box.classList.toggle('cr-fever', (S.combo_mult||1)>=3);
+    $('cr-combo-label').textContent=(S.combo_mult>=5?'¡MAX FEVER!':(S.combo_mult>=3?'FEVER':'COMBO'));
+    let pct=0; if(S.combo_next){ const prevThr = c>=20?20:(c>=10?10:(c>=5?5:0)); pct=Math.min(100,(c-prevThr)/(S.combo_next-prevThr)*100); }
+    else pct=100;
+    $('cr-combo-fill').style.width=pct+'%';
+  }
+  function tickEnergy(){ const dt=(Date.now()-energyBase.t)/1000; let e=energyBase.e;
+    if(e<energyBase.max){ e=Math.min(energyBase.max, e+Math.floor(dt/energyBase.regen)); }
+    $('cr-energy-fill').style.width=(e/energyBase.max*100)+'%';
+    $('cr-energy-txt').textContent=e+'/'+energyBase.max;
+    S.energy=e;
+    if(e<energyBase.max){ const rem=energyBase.regen-(Math.floor(dt)%energyBase.regen); $('cr-regen').textContent='+1 en '+rem+'s'; }
+    else $('cr-regen').textContent='LLENA';
+  }
+  setInterval(tickEnergy,1000);
+
+  // ---------- gameplay ----------
+  async function start(){ const r=await api('/api/mine/start'); if(r.success){ S=r.state; cells=r.cells; paintAll(); render(); } }
+
+  async function onCell(i){
+    if(busy) return;
+    const c=cells[i]; if(c&&c.b) return;
+    const x=i%COLS, y=Math.floor(i/COLS);
+    if(armed){ disarm(); return doDynamite(x,y); }
+    if(S.energy<1){ toast('Sin energía ⚡ espera la recarga', 'bad'); haptic('error'); return; }
+    // optimistic crack
+    const d=$('cr-board').children[i]; if(d){ d.classList.add('cr-hit'); setTimeout(()=>d.classList.remove('cr-hit'),120);
+      const h=(c?c.h:0)+1; d.classList.remove('cr-c1','cr-c2','cr-c3'); d.classList.add(h>=3?'cr-c3':(h===2?'cr-c2':'cr-c1')); }
+    busy=true;
+    const r=await api('/api/mine/tap',{x,y});
+    busy=false;
+    if(!r.success){ if(r.error==='no_energy'){ if(r.state)S=r.state; render(); toast('Sin energía ⚡','bad'); }
+      else if(r.error==='no_session'){ await start(); } return; }
+    cells=r.cells||cells; S=r.state;
+    // fx
+    if(r.crit){ haptic('heavy'); screenShake(); const dd=$('cr-board').children[i]; if(dd){dd.classList.add('cr-crit-fx');setTimeout(()=>dd.classList.remove('cr-crit-fx'),200);} floatNum(x,y,'¡CRÍTICO!','#ffd24a'); }
+    else haptic('light');
+    if(r.mineral){ const m=r.mineral; floatNum(x,y,(m.mult>1?('+'+fmt(m.gem)+' x'+m.mult):('+'+fmt(m.gem))), m.mult>1?'#ff8a5c':'#ffd700');
+      if(m.key==='diamond') reveal('👑','¡DIAMANTE!');
+      else if(m.key==='epic') reveal('🌟','¡ÉPICO!');
+      else if(m.key==='crystal') reveal('💎','¡CRISTAL!');
+    }
+    if(r.special==='treasure'){ haptic('success'); screenShake(); reveal('🎁','¡TESORO! +'+fmt(r.treasure_gem)+' GEM'); floatNum(x,y,'+'+fmt(r.treasure_gem),'#ffd700'); }
+    if(r.special==='bomb'){ haptic('heavy'); screenShake(); floatNum(x,y,'¡BOOM!','#ff5d2a'); }
+    if(r.full){ toast('Mochila llena — ¡vende! 🎒','bad'); haptic('warning'); }
+    if(r.levelups>0){ toast('⭐ ¡Subiste a Lv '+S.miner_level+'! +'+fmt(r.level_bonus)+' GEM · energía llena','good'); haptic('success'); }
+    paintAll(); render();
+    if(r.level_cleared){ haptic('success'); celebrate('⛏️','¡PROFUNDIDAD '+S.level+'!','Bloques más duros, minerales más valiosos. ¡Sigue cavando!'); }
+    if(r.pickaxe_broken){ gameOver(); }
+    maybeRefreshTabs();
+  }
+
+  async function doDynamite(x,y){ if(S.dynamite<=0){ toast('Sin dinamita 🧨','bad'); return; }
+    if(S.energy<BOOT.dynamiteEnergy){ toast('Necesitas '+BOOT.dynamiteEnergy+' ⚡','bad'); return; }
+    busy=true; const r=await api('/api/mine/dynamite',{x,y}); busy=false;
+    if(!r.success){ toast('No se pudo','bad'); return; }
+    cells=r.cells; S=r.state; haptic('heavy'); screenShake();
+    if(r.treasure_gem>0) reveal('🎁','¡TESORO! +'+fmt(r.treasure_gem));
+    paintAll(); render();
+  }
+  function arm(){ if(S.dynamite<=0){ toast('Sin dinamita 🧨 — cómprala en la Tienda','bad'); return; }
+    armed=true; $('cr-dyn-btn').classList.add('cr-armed'); $('cr-dyn-hint').style.display='flex'; }
+  function disarm(){ armed=false; $('cr-dyn-btn').classList.remove('cr-armed'); $('cr-dyn-hint').style.display='none'; }
+
+  async function sell(){ if(S.inv_count<=0)return; busy=true; const r=await api('/api/mine/sell'); busy=false;
+    if(r.success){ S=r.state; if(r.gem_gained>0){ toast('💰 +'+fmt(r.gem_gained)+' GEM ('+r.sold+' items)','good'); haptic('success'); }
+      render(); maybeRefreshTabs(); } }
+
+  function gameOver(){ $('cr-go-stats').innerHTML='Profundidad máx: '+S.deepest+'<br>Minerales: '+fmt(S.total_minerals)+'<br>Nivel minero: '+S.miner_level;
+    $('cr-gameover').classList.add('cr-show'); haptic('error'); }
+
+  // ---------- sheets ----------
+  const SHEET_TITLES={shop:'🛒 TIENDA',upg:'⚒️ MEJORAS',missions:'🎯 MISIONES DIARIAS',ach:'🏅 LOGROS',rank:'👑 RANKING GLOBAL'};
+  let curSheet=null;
+  function openSheet(name){ curSheet=name; $('cr-sheet-title').textContent=SHEET_TITLES[name];
+    renderSheet(name); $('cr-sheet').classList.add('cr-open'); $('cr-sheet-bg').classList.add('cr-open'); }
+  function closeSheet(){ $('cr-sheet').classList.remove('cr-open'); $('cr-sheet-bg').classList.remove('cr-open'); curSheet=null; }
+  function maybeRefreshTabs(){ if(curSheet&&curSheet!=='rank') renderSheet(curSheet); }
+
+  function renderSheet(name){ const b=$('cr-sheet-body');
+    if(name==='upg') return renderUpg(b);
+    if(name==='shop') return renderShop(b);
+    if(name==='missions') return renderMissions(b);
+    if(name==='ach') return renderAch(b);
+    if(name==='rank') return renderRank(b);
+  }
+  function pips(level,max){ let h='<div class="cr-pips">'; for(let i=0;i<max;i++) h+='<div class="cr-pip'+(i<level?' cr-on':'')+'"></div>'; return h+'</div>'; }
+  function renderUpg(b){ let h=''; BOOT.order.forEach(k=>{ const u=BOOT.upgrades[k]; const lvl=S['up_'+k]||0;
+    const maxed=lvl>=u.max; const cost=maxed?null:u.costs[lvl]; const can=!maxed&&S.gem_balance>=cost;
+    h+='<div class="cr-row"><div class="cr-row-ico">'+u.icon+'</div><div class="cr-row-mid">'+
+      '<div class="cr-row-name">'+u.name+' <span style="color:var(--text2)">Lv '+lvl+'/'+u.max+'</span></div>'+
+      '<div class="cr-row-desc">'+u.desc+'</div>'+pips(lvl,u.max)+'</div>'+
+      (maxed?'<button class="cr-row-btn cr-maxed" disabled>MÁX</button>':
+        '<button class="cr-row-btn" data-upg="'+k+'" '+(can?'':'disabled')+'>◆ '+fmt(cost)+'</button>')+'</div>'; });
+    b.innerHTML=h; b.querySelectorAll('[data-upg]').forEach(btn=>btn.onclick=()=>buyUpg(btn.dataset.upg)); }
+  async function buyUpg(k){ const r=await api('/api/mine/upgrade',{key:k}); if(r.success){ S=r.state; haptic('success');
+      toast(BOOT.upgrades[k].name+' → Lv '+r.new_level,'good'); render(); renderUpg($('cr-sheet-body')); }
+    else if(r.error==='insufficient') toast('GEM insuficiente','bad'); else if(r.error==='maxed') toast('Nivel máximo','bad'); }
+
+  function renderShop(b){ let h='';
+    // prestige card if eligible
+    if(S.deepest>=S.prestige_req){
+      h+='<div class="cr-prestige-card"><h4>♻️ RENACIMIENTO DISPONIBLE</h4>'+
+        '<p>Reinicia tus mejoras y profundidad a cambio de un <b style="color:#d9a6ff">multiplicador permanente +15% GEM</b> (actual x'+S.prestige_mult+'). Conservas tus GEM, TON y logros. Bono: +'+fmt(1000*(S.prestige+1))+' GEM.</p>'+
+        '<button class="cr-row-btn" id="cr-prestige-do">♻️ RENACER (x'+(S.prestige_mult)+' → x'+(Math.round((S.prestige_mult+0.15)*100)/100)+')</button></div>';
+    } else {
+      h+='<div class="cr-row" style="opacity:.7"><div class="cr-row-ico">♻️</div><div class="cr-row-mid">'+
+        '<div class="cr-row-name">Renacimiento</div><div class="cr-row-desc">Llega a profundidad '+S.prestige_req+' para renacer (vas en '+S.deepest+'). Multiplicador permanente +15% GEM.</div></div></div>';
+    }
+    // repair
+    const needRepair=S.pickaxe_hp<S.pickaxe_max;
+    h+='<div class="cr-row"><div class="cr-row-ico">🔧</div><div class="cr-row-mid">'+
+      '<div class="cr-row-name">Reparar pico</div><div class="cr-row-desc">Restaura el pico a '+S.pickaxe_max+' HP. Actual: '+S.pickaxe_hp+'.</div></div>'+
+      '<button class="cr-row-btn" id="cr-repair" '+((needRepair&&S.gem_balance>=BOOT.repairCost)?'':'disabled')+'>◆ '+fmt(BOOT.repairCost)+'</button></div>';
+    // dynamite
+    h+='<div class="cr-row"><div class="cr-row-ico">🧨</div><div class="cr-row-mid">'+
+      '<div class="cr-row-name">Dinamita <span style="color:var(--text2)">x'+S.dynamite+'/'+S.dynamite_max+'</span></div>'+
+      '<div class="cr-row-desc">Explosión 3×3. Cuesta '+BOOT.dynamiteEnergy+' ⚡ al usarla.</div></div>'+
+      '<button class="cr-row-btn" id="cr-buydyn" '+((S.dynamite<S.dynamite_max&&S.gem_balance>=BOOT.dynamiteCost)?'':'disabled')+'>◆ '+fmt(BOOT.dynamiteCost)+'</button></div>';
+    // minerals guide
+    h+='<div style="font-size:.42rem;color:var(--gold);margin:12px 0 7px">💎 GUÍA DE MINERALES</div>';
+    BOOT.minerals.forEach(m=>{ if(m.gem<=0)return; h+='<div class="cr-row" style="padding:6px 10px"><div class="cr-row-ico">'+m.emoji+'</div>'+
+      '<div class="cr-row-mid"><div class="cr-row-name" style="text-transform:capitalize">'+m.key+'</div>'+
+      '<div class="cr-row-desc">'+m.prob+'% base · '+m.hp+' golpes</div></div>'+
+      '<div style="font-size:.46rem;color:var(--gold)">◆ '+fmt(m.gem)+'</div></div>'; });
+    b.innerHTML=h;
+    if($('cr-repair'))$('cr-repair').onclick=repair;
+    if($('cr-buydyn'))$('cr-buydyn').onclick=buyDyn;
+    if($('cr-prestige-do'))$('cr-prestige-do').onclick=doPrestige;
+  }
+  async function repair(){ const r=await api('/api/mine/repair'); if(r.success){S=r.state;haptic('success');toast('🔧 Pico reparado','good');render();renderShop($('cr-sheet-body'));} else toast('No se pudo','bad'); }
+  async function buyDyn(){ const r=await api('/api/mine/buy-dynamite'); if(r.success){S=r.state;haptic('success');toast('🧨 +1 dinamita','good');render();renderShop($('cr-sheet-body'));} else toast(r.error==='max_dynamite'?'Máx dinamita':'GEM insuficiente','bad'); }
+  async function doPrestige(){ if(!confirm('¿Renacer? Se reinician tus mejoras y profundidad. Ganas +15% GEM permanente y un bono.')) return;
+    const r=await api('/api/mine/prestige'); if(r.success){ S=r.state; cells=[]; buildBoard(); closeSheet();
+      celebrate('♻️','¡RENACIMIENTO '+r.new_prestige+'!','Multiplicador GEM ahora x'+S.prestige_mult+'. Bono +'+fmt(r.bonus)+' GEM. ¡A cavar de nuevo!'); render();
+      await start(); } else if(r.error==='req_not_met') toast('Aún no cumples el requisito','bad'); }
+
+  function renderMissions(b){ let h='<p style="font-size:.36rem;color:var(--text2);margin:0 0 10px;line-height:1.7">Se renuevan cada día. Completa y reclama tu recompensa.</p>';
+    MISSIONS.forEach(m=>{ const pct=Math.min(100,m.prog/m.target*100);
+      h+='<div class="cr-row" style="flex-direction:column;align-items:stretch"><div style="display:flex;gap:10px;align-items:center">'+
+        '<div class="cr-row-ico">🎯</div><div class="cr-row-mid"><div class="cr-row-name">'+m.text+'</div>'+
+        '<div class="cr-row-desc">Recompensa: ◆ '+fmt(m.reward)+'</div></div>'+
+        (m.claimed?'<button class="cr-row-btn cr-maxed" disabled>✓</button>':
+          (m.done?'<button class="cr-row-btn cr-claim" data-mid="'+m.id+'">RECLAMAR</button>':
+            '<button class="cr-row-btn" disabled>'+fmt(m.prog)+'/'+fmt(m.target)+'</button>'))+
+        '</div><div class="cr-prog"><div class="cr-prog-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="cr-prog-txt"><span>'+fmt(m.prog)+'/'+fmt(m.target)+'</span><span>'+Math.floor(pct)+'%</span></div></div>'; });
+    b.innerHTML=h; b.querySelectorAll('[data-mid]').forEach(btn=>btn.onclick=()=>claimMission(btn.dataset.mid)); }
+  async function claimMission(id){ const r=await api('/api/mine/claim-mission',{id}); if(r.success){ S=r.state; MISSIONS=r.missions;
+      haptic('success'); reveal('🎯','+'+fmt(r.reward)+' GEM'); render(); renderMissions($('cr-sheet-body')); } else toast('No disponible','bad'); }
+
+  function renderAch(b){ let h='<div class="cr-ach-grid">';
+    ACH.forEach(a=>{ h+='<div class="cr-ach'+(a.done?' cr-done':'')+'">'+(a.claimed?'<span class="cr-ach-tick">✓</span>':'')+
+      '<div class="cr-ach-em">'+a.emoji+'</div><div class="cr-ach-name">'+a.label+'</div>'+
+      '<div class="cr-ach-rw">◆ '+fmt(a.reward)+'</div>'+
+      (a.done&&!a.claimed?'<button class="cr-ach-claim" data-aid="'+a.id+'">RECLAMAR</button>':'')+'</div>'; });
+    h+='</div>'; b.innerHTML=h; b.querySelectorAll('[data-aid]').forEach(btn=>btn.onclick=()=>claimAch(btn.dataset.aid)); }
+  async function claimAch(id){ const r=await api('/api/mine/claim-ach',{id}); if(r.success){ S=r.state; ACH=r.achievements;
+      haptic('success'); reveal('🏅','+'+fmt(r.reward)+' GEM'); render(); renderAch($('cr-sheet-body')); } else toast('No disponible','bad'); }
+
+  let lbData=null, lbTab='rich';
+  async function renderRank(b){ b.innerHTML='<p style="text-align:center;color:var(--text2);font-size:.42rem;padding:20px">Cargando ranking…</p>';
+    if(!lbData){ const r=await getJSON('/api/mine/leaderboard'); if(r.success) lbData=r; else { b.innerHTML='<p style="text-align:center;color:var(--red);font-size:.42rem">No se pudo cargar</p>'; return; } }
+    drawRank(b); }
+  function drawRank(b){ const rows=lbTab==='rich'?lbData.rich:lbData.deep;
+    let h='<div class="cr-lb-tabs"><button class="cr-lb-tab'+(lbTab==='rich'?' cr-on':'')+'" data-lb="rich">💰 GEM TOTAL</button>'+
+      '<button class="cr-lb-tab'+(lbTab==='deep'?' cr-on':'')+'" data-lb="deep">⛏️ PROFUNDIDAD</button></div>';
+    if(!rows.length) h+='<p style="text-align:center;color:var(--text2);font-size:.42rem;padding:14px">Aún no hay datos</p>';
+    rows.forEach(r=>{ const medal=r.rank===1?'🥇':(r.rank===2?'🥈':(r.rank===3?'🥉':'#'+r.rank));
+      const val=lbTab==='rich'?('◆ '+fmt(r.value)):('Prof. '+Math.floor(r.value));
+      h+='<div class="cr-lb-row'+(r.me?' cr-me':'')+'"><div class="cr-lb-rank">'+medal+'</div>'+
+        '<div class="cr-lb-name">'+r.name+(r.prestige>0?'<span class="cr-lb-pr">♻️'+r.prestige+'</span>':'')+'</div>'+
+        '<div class="cr-lb-val">'+val+'</div></div>'; });
+    b.innerHTML=h; b.querySelectorAll('[data-lb]').forEach(btn=>btn.onclick=()=>{lbTab=btn.dataset.lb;drawRank(b);}); }
+
+  // ---------- convert ----------
+  function openConvert(){ curSheet='conv'; $('cr-sheet-title').textContent='◈ CANJEAR GEM → TON';
+    const rem=Math.max(0, BOOT.dailyLimit-(S.today_converted||0));
+    const b=$('cr-sheet-body');
+    b.innerHTML='<input class="cr-conv-in" id="cr-conv-amt" type="number" inputmode="numeric" placeholder="0" min="0">'+
+      '<div class="cr-quick"><button data-q="0.25">25%</button><button data-q="0.5">50%</button><button data-q="0.75">75%</button><button data-q="1">MÁX</button></div>'+
+      '<div class="cr-conv-out" id="cr-conv-out">≈ 0 TON</div>'+
+      '<div class="cr-conv-lim">Saldo: ◆ '+fmt(S.gem_balance)+' · Tasa: '+BOOT.gemRate+' · Límite hoy: '+fmt(rem)+' GEM</div>'+
+      '<button class="cr-row-btn" id="cr-conv-do" style="width:100%;padding:11px">CONVERTIR A TON</button>';
+    const amt=$('cr-conv-amt'), out=$('cr-conv-out');
+    const upd=()=>{ const v=parseFloat(amt.value)||0; out.textContent='≈ '+(v*BOOT.gemRate).toFixed(4)+' TON'; };
+    amt.addEventListener('input',upd);
+    b.querySelectorAll('[data-q]').forEach(btn=>btn.onclick=()=>{ const cap=Math.min(S.gem_balance, rem);
+      amt.value=Math.floor(cap*parseFloat(btn.dataset.q)); upd(); });
+    $('cr-conv-do').onclick=async()=>{ const v=Math.floor(parseFloat(amt.value)||0); if(v<=0){toast('Cantidad inválida','bad');return;}
+      const r=await api('/api/mine/convert',{amount:v});
+      if(r.success){ S=r.state; haptic('success'); reveal('◈','+'+r.ton.toFixed(4)+' TON'); toast('Convertido a TON ✓','good'); closeSheet(); }
+      else if(r.error==='daily_limit') toast('Límite diario alcanzado','bad');
+      else if(r.error==='insufficient') toast('GEM insuficiente','bad'); else toast('No se pudo','bad'); };
+    $('cr-sheet').classList.add('cr-open'); $('cr-sheet-bg').classList.add('cr-open'); }
+
+  // ---------- wire ----------
+  $('cr-sell-btn').onclick=sell;
+  $('cr-dyn-btn').onclick=()=>{ if(armed) disarm(); else arm(); };
+  $('cr-conv-btn').onclick=openConvert;
+  $('cr-sheet-close').onclick=closeSheet;
+  $('cr-sheet-bg').onclick=closeSheet;
+  document.querySelectorAll('.cr-tab').forEach(t=>t.onclick=()=>openSheet(t.dataset.sheet));
+  $('cr-cel-btn').onclick=()=>$('cr-celebrate').classList.remove('cr-show');
+  $('cr-go-btn').onclick=async()=>{ $('cr-gameover').classList.remove('cr-show'); await start(); };
+
+  // periodic light sync (energy/missions/achievements)
+  setInterval(async()=>{ if(busy||curSheet==='rank')return; const r=await getJSON('/api/mine/stats');
+    if(r.success){ const keepCells=cells; S=Object.assign(S,r.state); MISSIONS=r.missions||MISSIONS; ACH=r.achievements||ACH;
+      render(); if(curSheet&&curSheet!=='rank'&&curSheet!=='conv') renderSheet(curSheet); cells=keepCells; } }, 15000);
+
+  // ---------- boot ----------
+  buildBoard();
+  if(S.has_session){ getJSON('/api/mine/stats'); start(); }
+  else { paintAll(); render(); start(); }
+  render();
+})();
+</script>
+{% endblock %}

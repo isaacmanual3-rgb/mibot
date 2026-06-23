@@ -1,0 +1,298 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin - Crystal Rush{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h1>◆ CRYSTAL RUSH</h1>
+    <a href="/mine" target="_blank" class="btn btn-outline">▶ ABRIR JUEGO</a>
+</div>
+
+<!-- ── STATS ─────────────────────────────────────────────── -->
+<div class="cr-stats-grid">
+    <div class="cr-stat">
+        <span class="cr-stat-ico">◉</span>
+        <span class="cr-stat-val">{{ stats.players or 0 }}</span>
+        <span class="cr-stat-lbl">MINEROS</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#ffd700">◆</span>
+        <span class="cr-stat-val">{{ "{:,.0f}".format((stats.gem_earned or 0)|float) }}</span>
+        <span class="cr-stat-lbl">GEM GENERADAS</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico">⛏</span>
+        <span class="cr-stat-val">{{ "{:,}".format(stats.runs or 0) }}</span>
+        <span class="cr-stat-lbl">PARTIDAS</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#42a5f5">▼</span>
+        <span class="cr-stat-val">{{ stats.deepest or 0 }}</span>
+        <span class="cr-stat-lbl">NIVEL MÁX</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#66bb6a">⇄</span>
+        <span class="cr-stat-val">{{ conv.n or 0 }}</span>
+        <span class="cr-stat-lbl">CONVERSIONES</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#0098EA">◈</span>
+        <span class="cr-stat-val">{{ "%.4f"|format((conv.ton or 0)|float) }}</span>
+        <span class="cr-stat-lbl">TON PAGADO</span>
+    </div>
+    <div class="cr-stat">
+        <span class="cr-stat-ico" style="color:#d9a6ff">♻️</span>
+        <span class="cr-stat-val">{{ stats.max_prestige or 0 }}</span>
+        <span class="cr-stat-lbl">PRESTIGIO MÁX</span>
+    </div>
+</div>
+
+<!-- ── CONFIG ────────────────────────────────────────────── -->
+<div class="admin-card">
+    <h3 class="card-section-title">⚙ CONFIGURACIÓN</h3>
+    <form method="POST" action="/admin/mine/config">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Tasa GEM → TON</label>
+                <input type="number" class="form-input" name="mine_gem_to_ton_rate"
+                       value="{{ cfg.mine_gem_to_ton_rate }}" step="0.0000001" min="0">
+                <span class="form-hint">1 GEM = X TON · ej: 0.0001</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Límite diario de conversión (GEM)</label>
+                <input type="number" class="form-input" name="mine_daily_convert_limit"
+                       value="{{ cfg.mine_daily_convert_limit }}" step="1" min="0">
+                <span class="form-hint">Máx. GEM convertible por usuario/día</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Costo de reparación de pico (GEM)</label>
+                <input type="number" class="form-input" name="mine_pickaxe_repair_cost"
+                       value="{{ cfg.mine_pickaxe_repair_cost }}" step="1" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Costo de dinamita (GEM)</label>
+                <input type="number" class="form-input" name="mine_dynamite_cost"
+                       value="{{ cfg.mine_dynamite_cost }}" step="1" min="0">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Regeneración de energía (seg por +1)</label>
+                <input type="number" class="form-input" name="mine_energy_regen_sec"
+                       value="{{ cfg.mine_energy_regen_sec }}" step="1" min="2">
+                <span class="form-hint">Menor = recarga más rápido. Por defecto 18s.</span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Profundidad para 1er prestigio</label>
+                <input type="number" class="form-input" name="mine_prestige_req"
+                       value="{{ cfg.mine_prestige_req }}" step="1" min="1">
+                <span class="form-hint">Cada renacimiento sube el requisito +10.</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Cofre del tesoro · GEM mín</label>
+                <input type="number" class="form-input" name="mine_treasure_min"
+                       value="{{ cfg.mine_treasure_min }}" step="10" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cofre del tesoro · GEM máx</label>
+                <input type="number" class="form-input" name="mine_treasure_max"
+                       value="{{ cfg.mine_treasure_max }}" step="10" min="0">
+                <span class="form-hint">Escala con la profundidad y el prestigio.</span>
+            </div>
+        </div>
+        <div class="form-row" style="align-items:center">
+            <div class="form-group">
+                <label class="form-label">Estado del juego</label>
+                <label class="cr-toggle">
+                    <input type="checkbox" name="mine_enabled" {% if cfg.mine_enabled == '1' %}checked{% endif %}>
+                    <span>Juego habilitado para usuarios</span>
+                </label>
+            </div>
+            <div class="form-group" style="align-self:flex-end">
+                <button type="submit" class="btn btn-primary">💾 GUARDAR CONFIG</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ── TOP PLAYERS ───────────────────────────────────────── -->
+<div class="admin-card">
+    <h3 class="card-section-title">🏆 TOP 25 MINEROS</h3>
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>USUARIO</th>
+                    <th>GEM ACTUAL</th>
+                    <th>GEM TOTAL</th>
+                    <th>MINERALES</th>
+                    <th>PRESTIGIO</th>
+                    <th>NIVEL MÁX</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in top %}
+                <tr>
+                    <td><span class="id-badge">{{ loop.index }}</span></td>
+                    <td>
+                        <strong>{{ p.first_name or 'Anon' }}</strong>
+                        {% if p.username %}<span style="color:var(--text-muted);font-size:0.8rem"> @{{ p.username }}</span>{% endif %}
+                        <div style="color:var(--text-muted);font-size:0.72rem">{{ p.user_id }}</div>
+                    </td>
+                    <td class="mono" style="color:#ffd700">{{ "{:,.0f}".format((p.gem_balance or 0)|float) }}</td>
+                    <td class="mono highlight-green">{{ "{:,.0f}".format((p.gem_total_earned or 0)|float) }}</td>
+                    <td class="mono">{{ "{:,}".format(p.total_minerals or 0) }}</td>
+                    <td>{% if p.prestige and p.prestige > 0 %}<span class="lvl-badge" style="background:rgba(217,166,255,.18);color:#d9a6ff">♻️ {{ p.prestige }}</span>{% else %}<span style="color:var(--text-muted)">—</span>{% endif %}</td>
+                    <td><span class="lvl-badge">{{ p.deepest_level or 0 }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px">Aún no hay mineros</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── RECENT CONVERSIONS ────────────────────────────────── -->
+<div class="admin-card">
+    <h3 class="card-section-title">⇄ ÚLTIMAS CONVERSIONES</h3>
+    <div style="overflow-x:auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>USUARIO</th>
+                    <th>GEM</th>
+                    <th>TON</th>
+                    <th>TASA</th>
+                    <th>FECHA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in recent %}
+                <tr>
+                    <td><span class="id-badge">{{ c.id }}</span></td>
+                    <td>
+                        <strong>{{ c.first_name or 'Anon' }}</strong>
+                        <div style="color:var(--text-muted);font-size:0.72rem">{{ c.user_id }}</div>
+                    </td>
+                    <td class="mono" style="color:#ffd700">{{ "{:,.0f}".format((c.gem_amount or 0)|float) }}</td>
+                    <td class="mono highlight-green">{{ "%.9f"|format((c.ton_amount or 0)|float) }}</td>
+                    <td class="mono" style="color:var(--text-muted)">{{ "%.6f"|format((c.rate or 0)|float) }}</td>
+                    <td style="font-size:0.8rem;color:var(--text-secondary)">{{ c.converted_at }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px">Sin conversiones todavía</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.cr-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.cr-stat {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+}
+.cr-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue-primary), transparent);
+    opacity: 0.6;
+}
+.cr-stat-ico { font-size: 1.1rem; color: var(--blue-primary); }
+.cr-stat-val {
+    font-family: var(--font-pixel);
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+.cr-stat-lbl {
+    font-family: var(--font-pixel);
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.admin-table { width:100%; border-collapse:collapse; }
+.admin-table th {
+    font-family: var(--font-pixel);
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+}
+.admin-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+.admin-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.id-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+}
+.lvl-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    padding: 3px 8px;
+    background: rgba(66,165,245,.18);
+    color: #42a5f5;
+}
+.mono { font-family: monospace; font-size:0.85rem; }
+.highlight-green { color:#4caf50; }
+
+.card-section-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--blue-primary);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-label { font-family:var(--font-pixel); font-size:0.58rem; color:var(--text-muted); text-transform:uppercase; }
+.form-input {
+    background:#111; border:1px solid #333; color:#fff;
+    padding:8px 10px; font-size:0.9rem; width:100%;
+}
+.form-input:focus { outline:none; border-color:var(--blue-primary); }
+.form-hint { font-size:0.72rem; color:var(--text-muted); }
+.cr-toggle {
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+    font-size:0.85rem; color:var(--text-secondary); padding-top:4px;
+}
+
+@media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
