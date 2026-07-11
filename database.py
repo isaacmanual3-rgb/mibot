@@ -231,9 +231,9 @@ def get_checkin_status(user_id):
             streak = 0  # Streak broken
 
     # Calculate rewards
-    base_reward = float(get_config('daily_base_reward', '0.01'))
-    streak_bonus = float(get_config('daily_streak_bonus', '0.002'))
-    max_bonus = float(get_config('daily_max_streak_bonus', '0.05'))
+    base_reward = float(get_config('daily_base_reward', '0'))
+    streak_bonus = float(get_config('daily_streak_bonus', '0'))
+    max_bonus = float(get_config('daily_max_streak_bonus', '0'))
 
     bonus = min(streak * streak_bonus, max_bonus)
     total_reward = base_reward + bonus
@@ -327,7 +327,7 @@ def add_referral(referrer_id, referred_id, referred_username=None, referred_firs
 
 def validate_referral(referrer_id, referred_id):
     """Validate a referral and pay bonus"""
-    bonus = float(get_config('referral_bonus', '0.05'))
+    bonus = float(get_config('referral_bonus', '0'))
 
     # Update referral
     execute_query("""
@@ -384,15 +384,14 @@ def ensure_invite_task_exists():
 
 
 def pay_invite_purchase_reward(referrer_id, referred_user_id, plan_price):
-    """Pay the referrer 10% of the plan price when referred user buys their first plan.
-    Also marks the special invite_purchase task as completed for the referrer."""
-    reward_pct = float(get_config('invite_purchase_reward_pct', '10')) / 100.0
+    """Paga al referidor un % del precio del plan cuando su referido compra su primer plan.
+    El % se configura desde el panel (invite_purchase_reward_pct). Si es 0, no paga nada.
+    NOTA: ya no crea ninguna tarea visible; la tarjeta 'Invite & Earn' fue eliminada.
+    """
+    reward_pct = float(get_config('invite_purchase_reward_pct', '0')) / 100.0
     reward = round(float(plan_price) * reward_pct, 8)
     if reward <= 0:
         return
-
-    # Ensure the task exists
-    ensure_invite_task_exists()
 
     # Avoid paying twice for the same referral pair
     already_paid = execute_query(
@@ -402,30 +401,15 @@ def pay_invite_purchase_reward(referrer_id, referred_user_id, plan_price):
     if already_paid:
         return
 
-    # Record task completion (with referred_user_id in notes for dedup)
+    # Record the reward payment (keeps invite_purchase key only for dedup, no visible task)
     execute_query("""
         INSERT INTO task_completions (user_id, task_id, reward_amount, notes)
         VALUES (%s, %s, %s, %s)
     """, (str(referrer_id), 'invite_purchase', reward, str(referred_user_id)))
 
-    # Update task completions count
-    execute_query(
-        "UPDATE tasks SET current_completions = current_completions + 1 WHERE task_id = %s",
-        ('invite_purchase',)
-    )
-
-    # Mark in user's completed_tasks JSON (to show as done in UI)
-    referrer = get_user(referrer_id)
-    if referrer:
-        completed = referrer.get('completed_tasks', []) or []
-        task_key = f'invite_purchase_{referred_user_id}'
-        if task_key not in completed:
-            completed.append(task_key)
-            update_user(referrer_id, completed_tasks=completed)
-
-    # Credit the 20% reward to referrer balance
+    # Credit reward to referrer balance
     update_balance(referrer_id, reward, 'invite_purchase_reward',
-                   f'20% reward from plan purchase of user {referred_user_id}')
+                   f'Reward from plan purchase of user {referred_user_id}')
 
     # Track in referral_earnings
     execute_query(
@@ -433,13 +417,12 @@ def pay_invite_purchase_reward(referrer_id, referred_user_id, plan_price):
         (reward, str(referrer_id))
     )
 
-    # Add to config stat tracker
     try:
         increment_stat('total_tasks_completed')
     except Exception:
         pass
 
-    logger.info(f"invite_purchase reward: +{reward:.8f} DOGE → referrer={referrer_id} (20% of {plan_price} from user {referred_user_id})")
+    logger.info(f"invite_purchase reward: +{reward:.8f} → referrer={referrer_id} ({plan_price} plan from user {referred_user_id})")
 
 
 def pay_referral_commission(user_id, amount, source):
@@ -462,7 +445,7 @@ def pay_referral_commission(user_id, amount, source):
     if not ref_row or not ref_row.get('validated'):
         return
 
-    commission_pct = float(get_config('referral_commission_pct', '5')) / 100.0
+    commission_pct = float(get_config('referral_commission_pct', '0')) / 100.0
     commission = round(float(amount) * commission_pct, 8)
     if commission <= 0:
         return
@@ -638,19 +621,7 @@ def get_user_tasks_status(user_id):
 
     for task in tasks:
         tid = task['task_id']
-        if tid == 'invite_purchase':
-            # Special: show how many times earned and total reward
-            comp_data = done_map.get('invite_purchase')
-            if comp_data:
-                task['completed'] = False  # always show as available (can earn more)
-                task['invite_times'] = int(comp_data['times'])
-                task['invite_total_reward'] = float(comp_data['total_reward'])
-            else:
-                task['completed'] = False
-                task['invite_times'] = 0
-                task['invite_total_reward'] = 0.0
-        else:
-            task['completed'] = tid in done_ids
+        task['completed'] = tid in done_ids
 
     return tasks
 
@@ -1704,13 +1675,13 @@ def init_all_tables():
 
     # ── Default config values ──────────────────────────────────
     config_defaults = [
-        ('daily_base_reward',        '0.01'),
-        ('daily_streak_bonus',       '0.002'),
-        ('daily_max_streak_bonus',   '0.05'),
-        ('referral_bonus',           '0.05'),
-        ('referral_commission',      '0.10'),
-        ('referral_commission_pct',  '5'),
-        ('invite_purchase_reward_pct', '10'),
+        ('daily_base_reward',        '0'),
+        ('daily_streak_bonus',       '0'),
+        ('daily_max_streak_bonus',   '0'),
+        ('referral_bonus',           '0'),
+        ('referral_commission',      '0'),
+        ('referral_commission_pct',  '0'),
+        ('invite_purchase_reward_pct', '0'),
         ('min_withdrawal',           '1.0'),
         ('withdrawal_fee',           '0.5'),
         ('withdrawal_mode',          'manual'),
@@ -1758,13 +1729,15 @@ def init_all_tables():
         # Elite:   20 TON, 70% → earns 14 TON  → 0.019444/hr
         # Master:  50 TON, 85% → earns 42.5 TON → 0.059028/hr
         # Legend: 100 TON,100% → earns 100 TON  → 0.138889/hr
+        # NOTA: hourly_rate (ganancia) inicia en 0 — configúralo desde el panel admin.
+        # price define el tier/costo; el rendimiento lo estableces manualmente.
         default_plans = [
-            ('Starter',  'starter',  0.0,   0.00027800, 30, 'Plan gratuito · Gana 20% en 30 días · Solo una activación'),
-            ('Basic',    'basic',    1.0,   0.00041700, 30, 'Gana 30% en 30 días · Renovable cada mes'),
-            ('Pro',      'pro',      5.0,   0.00347200, 30, 'Gana 50% en 30 días · Renovable cada mes'),
-            ('Elite',    'elite',    20.0,  0.01944400, 30, 'Gana 70% en 30 días · Renovable cada mes'),
-            ('Master',   'master',   50.0,  0.05902800, 30, 'Gana 85% en 30 días · Renovable cada mes'),
-            ('Legend',   'legendary',100.0, 0.13888900, 30, 'Gana 100% en 30 días · Máximo rendimiento'),
+            ('Starter',  'starter',  0.0,   0.0, 30, 'Plan gratuito · Configura el rendimiento desde el panel · Solo una activación'),
+            ('Basic',    'basic',    1.0,   0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
+            ('Pro',      'pro',      5.0,   0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
+            ('Elite',    'elite',    20.0,  0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
+            ('Master',   'master',   50.0,  0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
+            ('Legend',   'legendary',100.0, 0.0, 30, 'Configura el rendimiento desde el panel · Máximo rendimiento'),
         ]
         for plan in default_plans:
             execute_query(
@@ -1777,9 +1750,9 @@ def init_all_tables():
     count = execute_query("SELECT COUNT(*) as c FROM tasks", fetch_one=True)
     if count and count.get('c', 0) == 0:
         sample_tasks = [
-            ('join_channel', 'Únete al Canal', 'Únete al canal oficial de Telegram', 0.02, 'channel', 'telegram', 1, '@DogePixel', 1),
-            ('invite_friend', 'Invita un Amigo', 'Comparte tu enlace de referido', 0.05, 'users', 'social', 0, None, 2),
-            ('daily_quest', 'Check-In Diario', 'Reclama tu recompensa diaria', 0.01, 'calendar', 'daily', 0, None, 3),
+            ('join_channel', 'Únete al Canal', 'Únete al canal oficial de Telegram', 0, 'channel', 'telegram', 1, '@DogePixel', 1),
+            ('invite_friend', 'Invita un Amigo', 'Comparte tu enlace de referido', 0, 'users', 'social', 0, None, 2),
+            ('daily_quest', 'Check-In Diario', 'Reclama tu recompensa diaria', 0, 'calendar', 'daily', 0, None, 3),
         ]
         for t in sample_tasks:
             execute_query(
@@ -2080,11 +2053,20 @@ def _migrate_existing_fraud_referrals():
 
 _migrate_existing_fraud_referrals()
 
-# Create the invite_purchase task if it doesn't exist yet
+# La tarea especial 'invite_purchase' (Invite & Earn 10%) fue eliminada.
+# Ya no se crea automáticamente. Se elimina de la BD si existe (ver _remove_invite_purchase_task).
+
+def _remove_invite_purchase_task():
+    """Elimina la tarea 'invite_purchase' de la tabla tasks si aún existe."""
+    try:
+        execute_query("DELETE FROM tasks WHERE task_id = %s", ('invite_purchase',))
+    except Exception as _e:
+        logger.warning(f"remove invite_purchase task error: {_e}")
+
 try:
-    ensure_invite_task_exists()
-except Exception as _ite:
-    logger.warning(f"ensure_invite_task_exists error: {_ite}")
+    _remove_invite_purchase_task()
+except Exception as _e:
+    logger.warning(f"_remove_invite_purchase_task error: {_e}")
 
 def get_shared_ip_accounts(user_id, min_times_seen=2):
     """
