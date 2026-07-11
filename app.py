@@ -11,7 +11,7 @@ import logging
 import requests
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, abort
 from translations import get_t, get_supported_langs
 
 # Logging Configuration
@@ -118,6 +118,32 @@ ADMIN_IDS = os.environ.get('ADMIN_IDS', '5515244003').split(',')
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'CraftGemsbot')
 APP_NAME     = os.environ.get('APP_NAME', 'app')   # Mini App short name
+
+# ── Aislamiento del panel administrativo (configurable por variables de entorno) ──
+# ADMIN_PANEL_DOMAIN: si se define, el panel /admin SOLO responde en ese dominio.
+#   Ej: ADMIN_PANEL_DOMAIN=admin.midominio.com  → desde el dominio público da 404.
+#   Se pueden listar varios separados por coma. Vacío = sin restricción de dominio.
+ADMIN_PANEL_DOMAIN = os.environ.get('ADMIN_PANEL_DOMAIN', '').strip()
+_ADMIN_PANEL_HOSTS = [h.strip().lower() for h in ADMIN_PANEL_DOMAIN.split(',') if h.strip()]
+
+# ADMIN_TELEGRAM_IDS: lista blanca de Telegram IDs con acceso al panel (además de user/pass).
+#   Ej: ADMIN_TELEGRAM_IDS=272920200,5515244003. Vacío = no se exige Telegram ID.
+_ADMIN_TG_RAW = os.environ.get('ADMIN_TELEGRAM_IDS', '').strip()
+ADMIN_TELEGRAM_IDS = [i.strip() for i in _ADMIN_TG_RAW.split(',') if i.strip()]
+
+def _admin_host_allowed():
+    """True si la petición actual llega por un dominio autorizado para el panel."""
+    if not _ADMIN_PANEL_HOSTS:
+        return True  # sin restricción configurada
+    host = (request.host or '').split(':')[0].lower()
+    return host in _ADMIN_PANEL_HOSTS
+
+def _admin_tg_allowed():
+    """True si no se exige Telegram ID, o si la sesión tiene un ID autorizado."""
+    if not ADMIN_TELEGRAM_IDS:
+        return True
+    uid = str(session.get('admin_tg_id') or session.get('user_id') or '')
+    return uid in ADMIN_TELEGRAM_IDS
 APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","CraftGemsbot")}/app')
 _BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
 OFFICIAL_CHANNEL = os.environ.get('OFFICIAL_CHANNEL', '@CraftGems')
@@ -493,11 +519,19 @@ def require_user(f):
     return decorated
 
 def require_admin(f):
-    """Decorator to require admin access"""
+    """Decorator to require admin access (domain-isolated + Telegram-ID gated)."""
     @wraps(f)
     def decorated(*args, **kwargs):
+        # 1) El panel solo existe en el dominio autorizado. Fuera de él: 404.
+        if not _admin_host_allowed():
+            abort(404)
+        # 2) Requiere sesión autenticada.
         if not session.get('admin_authenticated'):
             return redirect(url_for('admin_login'))
+        # 3) Requiere Telegram ID en la lista blanca (si está configurada).
+        if not _admin_tg_allowed():
+            session.pop('admin_authenticated', None)
+            abort(404)
         return f(*args, **kwargs)
     return decorated
 
@@ -530,6 +564,10 @@ def auth():
         session['username']   = username
         session['first_name'] = first_name
         session.permanent     = True
+
+        # Marca el Telegram ID para el gate del panel admin (si está en la lista blanca)
+        if ADMIN_TELEGRAM_IDS and user_id in ADMIN_TELEGRAM_IDS:
+            session['admin_tg_id'] = user_id
 
         # Auto-detect language from Telegram user's language_code
         # Only set if not already manually chosen by the user
@@ -1421,7 +1459,9 @@ def api_update_icon():
 @app.route('/admin')
 def admin_login():
     """Admin login page"""
-    if session.get('admin_authenticated'):
+    if not _admin_host_allowed():
+        abort(404)
+    if session.get('admin_authenticated') and _admin_tg_allowed():
         return redirect(url_for('admin_dashboard'))
     return render_template('admin_login.html')
 
@@ -1429,16 +1469,23 @@ def admin_login():
 @app.route('/admin/login', methods=['POST'])
 def admin_auth():
     """Admin authentication"""
+    if not _admin_host_allowed():
+        abort(404)
     username = request.form.get('username', '')
     password = request.form.get('password', '')
     admin_pass = get_config('admin_password', 'admin123')
     admin_user = get_config('admin_username', 'admin')
-    
+
+    # Telegram-ID gate: si hay lista blanca, la sesión debe traer un ID autorizado.
+    if ADMIN_TELEGRAM_IDS and not _admin_tg_allowed():
+        return render_template('admin_login.html',
+                               error='Acceso restringido: abre el panel desde tu cuenta autorizada de Telegram.')
+
     # Support both username+password login and password-only login
     if password == admin_pass and (not username or username == admin_user):
         session['admin_authenticated'] = True
         return redirect(url_for('admin_dashboard'))
-    
+
     return render_template('admin_login.html', error='Invalid username or password')
 
 @app.route('/admin/dashboard')
