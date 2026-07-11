@@ -59,6 +59,8 @@ TRANSLATIONS = {
     'pf_row_member':       {'en': 'Member Since',          'es': 'Miembro Desde'},
     'pf_row_balance':      {'en': 'Balance',               'es': 'Saldo'},
     'pf_copied':           {'en': 'Copied!',               'es': '¡Copiado!'},
+    'pf_support_title':    {'en': 'SUPPORT',               'es': 'SOPORTE'},
+    'pf_support_sub':      {'en': 'Need help? Contact our support team on Telegram.', 'es': '¿Necesitas ayuda? Contacta a nuestro equipo de soporte en Telegram.'},
 
 
     # ── BASE / HEADER ──────────────────────────────────────────
@@ -229,6 +231,7 @@ TRANSLATIONS = {
     'wl_submit_withdraw':{'en': 'WITHDRAW',                  'es': 'RETIRAR'},
     'wl_deposit_title':  {'en': 'DEPOSIT TON',               'es': 'DEPOSITAR TON'},
     'wl_deposit_addr_lbl':{'en': 'Deposit Address',          'es': 'Dirección de Depósito'},
+    'wl_wallet_from_profile': {'en': 'Wallet loaded from your profile', 'es': 'Wallet cargada desde tu perfil'},
     'wl_deposit_from_any':{'en': 'Send TON from any wallet or exchange.', 'es': 'Envía TON desde cualquier billetera o exchange.'},
     'wl_insufficient':   {'en': 'Insufficient balance',      'es': 'Saldo insuficiente'},
     'wl_invalid_addr':   {'en': 'Invalid TON address',       'es': 'Dirección TON inválida'},

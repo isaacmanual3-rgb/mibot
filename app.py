@@ -700,6 +700,7 @@ def profile(user):
         ref_earnings=ref_stats.get('total_earnings', 0),
         member_since=member_since,
         format_doge=format_doge,
+        support_url=get_config('support_bot_url', '') or 'https://t.me/CraftGemsbotsoportbot',
     )
 
 
@@ -767,6 +768,7 @@ def wallet(user):
         ton_withdrawal_min=ton_withdrawal_min,
         ton_withdrawal_fee_pct=ton_withdrawal_fee_pct,
         doge_to_ton_rate=doge_to_ton_rate,
+        user_saved_wallet=user.get('ton_wallet') or '',
     )
 
 
