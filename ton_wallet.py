@@ -21,8 +21,10 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         if len(words) != 24:
             return False, None, f'Mnemonic necesita 24 palabras (tiene {len(words)})'
 
+        # API key es recomendada pero no obligatoria; sin ella Toncenter usa
+        # límites más estrictos pero puede funcionar para envíos ocasionales.
         if not api_key:
-            return False, None, 'TONCENTER_API_KEY no configurada'
+            logger.warning('send_ton sin TONCENTER_API_KEY — usando límites públicos')
 
         try:
             loop = asyncio.get_event_loop()
@@ -85,10 +87,20 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
 
     amount_nano = int(round(ton_amount * TON_TO_NANO))
 
+    # Crear el cliente de Toncenter de forma compatible con varias versiones de tonutils.
+    client = None
+    # tonutils >= 2.x : requiere 'network' como primer argumento (NetworkGlobalID.MAINNET)
     try:
-        client = ToncenterClient(api_key=api_key, is_testnet=False)
-    except TypeError:
-        client = ToncenterClient(api_key=api_key)
+        from ton_core import NetworkGlobalID
+        client = ToncenterClient(NetworkGlobalID.MAINNET, api_key=api_key or None)
+    except Exception:
+        client = None
+    # Fallbacks para versiones antiguas
+    if client is None:
+        try:
+            client = ToncenterClient(api_key=api_key, is_testnet=False)
+        except TypeError:
+            client = ToncenterClient(api_key=api_key)
 
     async with client:
         result = WalletV5R1.from_mnemonic(client, words)
