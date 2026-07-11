@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - DogePixel{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600&display=swap');
+
+.pf-shell {
+  --bg:#08080f; --surface:#0d0d1a; --surface2:#111122; --surface3:#070710;
+  --gold:#ffd700; --gold2:#ffb300; --gold-dark:#5a3a00; --gold-dim:rgba(255,215,0,0.07);
+  --green:#00e676; --blue:#40c4ff; --blue2:#0098EA; --red:#ff4d6a; --purple:#ce93d8;
+  --border:#1e1e34; --text:#e0e2f0; --text2:#9090b8; --muted:#4a4a6e;
+  --font-px:'Press Start 2P',monospace; --font-body:'Inter',sans-serif;
+  font-family:var(--font-body); color:var(--text);
+}
+.pf-shell *, .pf-shell *::before, .pf-shell *::after { box-sizing:border-box; }
+
+.pf-page {
+  max-width:560px; margin:0 auto; padding:18px 14px 90px;
+  display:flex; flex-direction:column; gap:14px;
+}
+
+/* pixel card base */
+.pf-card {
+  background:var(--surface); border:2px solid var(--border);
+  box-shadow:4px 4px 0 0 #030308; position:relative; padding:18px;
+  animation:pf-up .3s ease both;
+}
+.pf-card::before,.pf-card::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--gold); border-style:solid;
+}
+.pf-card::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.pf-card::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+@keyframes pf-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.pf-label {
+  font-family:var(--font-px); font-size:0.42rem; color:var(--muted);
+  letter-spacing:0.18em; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px; margin-bottom:16px;
+}
+.pf-label::after{ content:''; flex:1; height:1px; background:var(--border); }
+.pf-label svg{ width:14px; height:14px; }
+
+/* ════ HERO PROFILE ════ */
+.pf-hero {
+  background:linear-gradient(160deg,#08080e 0%,#0c1420 100%);
+  border:2px solid var(--blue-dark,#001a33);
+  box-shadow:4px 4px 0 0 #020205, 0 0 40px rgba(0,152,234,0.06);
+  padding:26px 20px 22px; text-align:center; position:relative; overflow:hidden;
+}
+.pf-hero::before,.pf-hero::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--blue2); border-style:solid;
+}
+.pf-hero::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.pf-hero::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
+.pf-hero-glow {
+  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+  width:200px; height:200px;
+  background:radial-gradient(circle,rgba(0,152,234,0.12) 0%,transparent 68%);
+  pointer-events:none;
+}
+
+.pf-avatar {
+  width:88px; height:88px; margin:0 auto 14px; position:relative; z-index:1;
+  border:3px solid var(--blue2);
+  box-shadow:4px 4px 0 0 #020205, 0 0 22px rgba(0,152,234,0.25);
+  background:var(--surface3); overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  image-rendering:auto;
+}
+.pf-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.pf-avatar-fallback {
+  font-family:var(--font-px); font-size:1.6rem; color:var(--blue2);
+  text-shadow:2px 2px 0 #001a33;
+}
+
+.pf-name {
+  font-family:var(--font-px); font-size:0.8rem; color:var(--text);
+  text-shadow:2px 2px 0 #020205; letter-spacing:.04em; margin-bottom:10px;
+  position:relative; z-index:1; word-break:break-word;
+}
+.pf-badges { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; position:relative; z-index:1; }
+.pf-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--font-px); font-size:0.4rem; letter-spacing:.05em;
+  padding:6px 10px; border:2px solid var(--border); background:var(--surface3);
+  color:var(--text2);
+}
+.pf-badge.id    { color:var(--blue);  border-color:rgba(64,196,255,0.3); }
+.pf-badge.user  { color:var(--green); border-color:rgba(0,230,118,0.3); }
+.pf-badge svg { width:11px; height:11px; }
+
+/* ════ WALLET CARD ════ */
+.pf-wallet-current {
+  background:var(--surface3); border:2px solid var(--border);
+  padding:12px 14px; margin-bottom:12px; display:flex; align-items:center; gap:10px;
+}
+.pf-wallet-current.linked { border-color:rgba(0,230,118,0.3); }
+.pf-wallet-icon {
+  width:34px; height:34px; flex-shrink:0; background:var(--surface);
+  border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+}
+.pf-wallet-icon svg { width:18px; height:18px; }
+.pf-wallet-info { flex:1; min-width:0; }
+.pf-wallet-status {
+  font-family:var(--font-px); font-size:0.36rem; letter-spacing:.06em;
+  margin-bottom:5px; color:var(--muted); text-transform:uppercase;
+}
+.pf-wallet-status.linked { color:var(--green); }
+.pf-wallet-addr {
+  font-size:0.72rem; color:var(--text2); font-family:monospace;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pf-wallet-addr.empty { color:var(--muted); font-style:italic; font-family:var(--font-body); }
+
+.pf-input-group { display:flex; flex-direction:column; gap:10px; }
+.pf-input {
+  width:100%; padding:13px 12px; background:var(--surface3);
+  border:2px solid var(--border); color:var(--text);
+  font-family:monospace; font-size:0.82rem; outline:none;
+  transition:border-color .15s;
+}
+.pf-input:focus { border-color:var(--blue2); }
+.pf-input::placeholder { color:var(--muted); }
+
+.pf-btn {
+  width:100%; padding:14px; display:flex; align-items:center; justify-content:center; gap:10px;
+  font-family:var(--font-px); font-size:0.5rem; letter-spacing:.06em;
+  background:var(--blue2); color:#04121f; border:2px solid #0077b3;
+  box-shadow:4px 4px 0 0 #001a33; cursor:pointer;
+  transition:transform .07s, box-shadow .07s;
+}
+.pf-btn:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #001a33; }
+.pf-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #001a33; }
+.pf-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.pf-btn svg { width:16px; height:16px; }
+.pf-btn.edit {
+  background:transparent; color:var(--blue2); border-color:rgba(0,152,234,0.4);
+  box-shadow:2px 2px 0 0 #001a33; font-size:0.42rem; padding:10px;
+}
+.pf-wallet-hint {
+  font-size:0.7rem; color:var(--muted); text-align:center; margin-top:10px; line-height:1.5;
+}
+
+/* ════ PLAN STATUS ════ */
+.pf-plan {
+  background:var(--surface3); border:2px solid var(--border);
+  padding:14px; display:flex; align-items:center; gap:12px; position:relative;
+}
+.pf-plan.active { border-color:rgba(0,230,118,0.3); }
+.pf-plan.active::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--green);
+}
+.pf-plan-icon {
+  width:44px; height:44px; flex-shrink:0; background:var(--surface);
+  border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+}
+.pf-plan-icon svg { width:24px; height:24px; }
+.pf-plan-body { flex:1; min-width:0; }
+.pf-plan-name {
+  font-family:var(--font-px); font-size:0.5rem; color:var(--text);
+  letter-spacing:.04em; margin-bottom:6px;
+}
+.pf-plan-name.none { color:var(--muted); }
+.pf-plan-meta { font-size:0.72rem; color:var(--text2); }
+.pf-plan-right { flex-shrink:0; text-align:right; }
+.pf-plan-status-tag {
+  display:inline-flex; align-items:center; gap:5px;
+  font-family:var(--font-px); font-size:0.36rem; letter-spacing:.05em;
+  color:var(--green); text-shadow:0 0 8px rgba(0,230,118,0.4);
+}
+.pf-plan-status-tag.off { color:var(--muted); text-shadow:none; }
+.pf-dot { width:6px; height:6px; background:var(--green); box-shadow:0 0 6px rgba(0,230,118,0.6);
+  animation:pf-blink 1s steps(1) infinite; }
+@keyframes pf-blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.pf-plan-cta {
+  display:block; margin-top:10px; text-align:center; text-decoration:none;
+  font-family:var(--font-px); font-size:0.42rem; letter-spacing:.05em;
+  color:var(--gold); padding:10px; border:2px solid rgba(255,215,0,0.3);
+  background:var(--gold-dim); box-shadow:2px 2px 0 0 #020201;
+  transition:transform .07s;
+}
+.pf-plan-cta:hover{ transform:translate(-1px,-1px); }
+
+/* ════ STATS GRID ════ */
+.pf-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.pf-stat {
+  background:var(--surface3); border:2px solid var(--border);
+  padding:14px 12px; display:flex; align-items:center; gap:10px;
+}
+.pf-stat-icon {
+  width:36px; height:36px; flex-shrink:0; background:var(--surface);
+  border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+}
+.pf-stat-icon svg { width:18px; height:18px; }
+.pf-stat-body { min-width:0; }
+.pf-stat-val {
+  display:block; font-family:var(--font-px); font-size:0.6rem;
+  color:var(--gold); text-shadow:2px 2px 0 var(--gold-dark);
+  margin-bottom:4px; overflow:hidden; text-overflow:ellipsis;
+}
+.pf-stat-lbl { font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+
+/* rows (info list) */
+.pf-rows { display:flex; flex-direction:column; }
+.pf-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 2px; border-bottom:1px solid var(--border); gap:12px;
+}
+.pf-row:last-child { border-bottom:none; }
+.pf-row-key { font-size:0.76rem; color:var(--text2); display:flex; align-items:center; gap:8px; }
+.pf-row-key svg { width:14px; height:14px; color:var(--muted); flex-shrink:0; }
+.pf-row-val { font-family:var(--font-px); font-size:0.44rem; color:var(--text); text-align:right; word-break:break-word; }
+.pf-copy-btn { cursor:pointer; color:var(--blue2); background:none; border:none; padding:2px; display:inline-flex; }
+.pf-copy-btn svg { width:13px; height:13px; }
+</style>
+
+<div class="pf-shell">
+  <div class="pf-page">
+
+    <!-- ═══ HERO PROFILE ═══ -->
+    <div class="pf-hero">
+      <div class="pf-hero-glow" aria-hidden="true"></div>
+      <div class="pf-avatar">
+        {% if photo_url %}
+          <img src="{{ photo_url }}" alt="avatar" referrerpolicy="no-referrer"
+               onerror="this.parentNode.innerHTML='<span class=\'pf-avatar-fallback\'>{{ (user.first_name or 'P')[0]|upper }}</span>'">
+        {% else %}
+          <span class="pf-avatar-fallback">{{ (user.first_name or 'P')[0]|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="pf-name">{{ user.first_name or 'PLAYER' }}</div>
+      <div class="pf-badges">
+        <span class="pf-badge id">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="14"/></svg>
+          ID {{ user.user_id }}
+        </span>
+        {% if username %}
+        <span class="pf-badge user">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          @{{ username }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ═══ WITHDRAWAL WALLET ═══ -->
+    <div class="pf-card">
+      <div class="pf-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/></svg>
+        {{ t.pf_wallet_title }}
+      </div>
+
+      <div id="walletDisplay">
+        <div class="pf-wallet-current {% if wallet_addr %}linked{% endif %}">
+          <div class="pf-wallet-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{% if wallet_addr %}#00e676{% else %}#4a4a6e{% endif %}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/><path d="M12 22V12M2 7l10 5 10-5"/></svg>
+          </div>
+          <div class="pf-wallet-info">
+            <div class="pf-wallet-status {% if wallet_addr %}linked{% endif %}" id="walletStatusLbl">
+              {% if wallet_addr %}{{ t.pf_wallet_linked }}{% else %}{{ t.pf_wallet_not_linked }}{% endif %}
+            </div>
+            <div class="pf-wallet-addr {% if not wallet_addr %}empty{% endif %}" id="walletAddrText">
+              {% if wallet_addr %}{{ wallet_addr }}{% else %}{{ t.pf_wallet_none }}{% endif %}
+            </div>
+          </div>
+        </div>
+        <button class="pf-btn edit" onclick="showWalletForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          {% if wallet_addr %}{{ t.pf_wallet_edit }}{% else %}{{ t.pf_wallet_link }}{% endif %}
+        </button>
+      </div>
+
+      <div id="walletForm" style="display:none;">
+        <div class="pf-input-group">
+          <input type="text" class="pf-input" id="walletInput" placeholder="UQ..." value="{{ wallet_addr }}" spellcheck="false" autocomplete="off">
+          <button class="pf-btn" id="saveWalletBtn" onclick="saveWallet()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#04121f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ t.pf_wallet_save }}
+          </button>
+          <button class="pf-btn edit" onclick="hideWalletForm()">{{ t.pf_wallet_cancel }}</button>
+        </div>
+        <div class="pf-wallet-hint">{{ t.pf_wallet_hint }}</div>
+      </div>
+    </div>
+
+    <!-- ═══ PLAN STATUS ═══ -->
+    <div class="pf-card">
+      <div class="pf-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        {{ t.pf_plan_title }}
+      </div>
+      <div class="pf-plan {% if plan_name %}active{% endif %}">
+        <div class="pf-plan-icon">
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="{% if plan_name %}#00e676{% else %}#4a4a6e{% endif %}"><rect x="6" y="1" width="1" height="2"/><rect x="9" y="1" width="1" height="2"/><rect x="6" y="13" width="1" height="2"/><rect x="9" y="13" width="1" height="2"/><rect x="1" y="6" width="2" height="1"/><rect x="1" y="9" width="2" height="1"/><rect x="13" y="6" width="2" height="1"/><rect x="13" y="9" width="2" height="1"/><rect x="3" y="3" width="10" height="1"/><rect x="3" y="12" width="10" height="1"/><rect x="3" y="3" width="1" height="10"/><rect x="12" y="3" width="1" height="10"/><rect x="6" y="6" width="4" height="4"/></svg>
+        </div>
+        <div class="pf-plan-body">
+          <div class="pf-plan-name {% if not plan_name %}none{% endif %}">
+            {% if plan_name %}{{ plan_name }}{% else %}{{ t.pf_plan_none }}{% endif %}
+          </div>
+          <div class="pf-plan-meta">
+            {% if plan_name %}
+              {{ "%.4f"|format(plan_rate) }} TON/hr{% if plan_expires %} · {{ t.pf_plan_expires }} {{ plan_expires }}{% endif %}
+            {% else %}
+              {{ t.pf_plan_activate_hint }}
+            {% endif %}
+          </div>
+        </div>
+        <div class="pf-plan-right">
+          {% if plan_name %}
+            <span class="pf-plan-status-tag"><span class="pf-dot"></span>{{ t.pf_plan_active }}</span>
+          {% else %}
+            <span class="pf-plan-status-tag off">{{ t.pf_plan_inactive }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if not plan_name %}
+      <a href="{{ url_for('mining') }}" class="pf-plan-cta">{{ t.pf_plan_go }}</a>
+      {% endif %}
+    </div>
+
+    <!-- ═══ STATS ═══ -->
+    <div class="pf-card">
+      <div class="pf-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-5"/></svg>
+        {{ t.pf_stats_title }}
+      </div>
+      <div class="pf-stats">
+        <div class="pf-stat">
+          <div class="pf-stat-icon">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#00e676"><rect x="4" y="3" width="8" height="1"/><rect x="3" y="4" width="10" height="1"/><rect x="4" y="5" width="8" height="1"/><rect x="4" y="6" width="8" height="1"/><rect x="5" y="7" width="6" height="1"/><rect x="5" y="8" width="6" height="1"/><rect x="6" y="9" width="4" height="1"/><rect x="6" y="10" width="4" height="1"/><rect x="7" y="11" width="2" height="1"/><rect x="7" y="12" width="2" height="1"/></svg>
+          </div>
+          <div class="pf-stat-body">
+            <span class="pf-stat-val">{{ format_doge(user.total_earned) }}</span>
+            <span class="pf-stat-lbl">{{ t.pf_stat_earned }}</span>
+          </div>
+        </div>
+        <div class="pf-stat">
+          <div class="pf-stat-icon">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#40c4ff"><rect x="6" y="2" width="4" height="1"/><rect x="5" y="3" width="1" height="3"/><rect x="10" y="3" width="1" height="3"/><rect x="6" y="6" width="4" height="1"/><rect x="4" y="8" width="8" height="1"/><rect x="3" y="9" width="1" height="5"/><rect x="12" y="9" width="1" height="5"/><rect x="4" y="9" width="8" height="1"/></svg>
+          </div>
+          <div class="pf-stat-body">
+            <span class="pf-stat-val">{{ ref_count }}</span>
+            <span class="pf-stat-lbl">{{ t.pf_stat_refs }}</span>
+          </div>
+        </div>
+        <div class="pf-stat">
+          <div class="pf-stat-icon">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ffd700"><rect x="6" y="1" width="1" height="2"/><rect x="9" y="1" width="1" height="2"/><rect x="6" y="13" width="1" height="2"/><rect x="9" y="13" width="1" height="2"/><rect x="1" y="6" width="2" height="1"/><rect x="1" y="9" width="2" height="1"/><rect x="13" y="6" width="2" height="1"/><rect x="13" y="9" width="2" height="1"/><rect x="3" y="3" width="10" height="1"/><rect x="3" y="12" width="10" height="1"/><rect x="3" y="3" width="1" height="10"/><rect x="12" y="3" width="1" height="10"/><rect x="6" y="6" width="4" height="4"/></svg>
+          </div>
+          <div class="pf-stat-body">
+            <span class="pf-stat-val">{{ total_machines }}</span>
+            <span class="pf-stat-lbl">{{ t.pf_stat_machines }}</span>
+          </div>
+        </div>
+        <div class="pf-stat">
+          <div class="pf-stat-icon">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ce93d8"><rect x="7" y="2" width="2" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="5" y="4" width="1" height="3"/><rect x="10" y="4" width="1" height="3"/><rect x="6" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="7" y="8" width="2" height="1"/><rect x="7" y="9" width="2" height="4"/><rect x="5" y="13" width="6" height="1"/></svg>
+          </div>
+          <div class="pf-stat-body">
+            <span class="pf-stat-val">{{ format_doge(ref_earnings) }}</span>
+            <span class="pf-stat-lbl">{{ t.pf_stat_ref_earn }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ACCOUNT INFO ═══ -->
+    <div class="pf-card">
+      <div class="pf-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        {{ t.pf_account_title }}
+      </div>
+      <div class="pf-rows">
+        <div class="pf-row">
+          <span class="pf-row-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="10" x2="7" y2="14"/></svg>
+            {{ t.pf_row_id }}
+          </span>
+          <span class="pf-row-val" style="display:flex;align-items:center;gap:8px;">
+            {{ user.user_id }}
+            <button class="pf-copy-btn" onclick="copyText('{{ user.user_id }}')" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </span>
+        </div>
+        {% if username %}
+        <div class="pf-row">
+          <span class="pf-row-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+            {{ t.pf_row_user }}
+          </span>
+          <span class="pf-row-val">@{{ username }}</span>
+        </div>
+        {% endif %}
+        <div class="pf-row">
+          <span class="pf-row-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ t.pf_row_member }}
+          </span>
+          <span class="pf-row-val">{{ member_since }}</span>
+        </div>
+        <div class="pf-row">
+          <span class="pf-row-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/></svg>
+            {{ t.pf_row_balance }}
+          </span>
+          <span class="pf-row-val" style="color:var(--gold);">{{ format_doge(user.doge_balance) }} TON</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showWalletForm(){
+  document.getElementById('walletDisplay').style.display='none';
+  document.getElementById('walletForm').style.display='block';
+  document.getElementById('walletInput').focus();
+}
+function hideWalletForm(){
+  document.getElementById('walletForm').style.display='none';
+  document.getElementById('walletDisplay').style.display='block';
+}
+async function saveWallet(){
+  const input=document.getElementById('walletInput');
+  const wallet=input.value.trim();
+  const btn=document.getElementById('saveWalletBtn');
+  if(!wallet){ pfToast('{{ t.pf_wallet_empty }}','error'); return; }
+  btn.disabled=true;
+  try{
+    const res=await fetch('/api/profile/wallet',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({wallet})
+    });
+    const data=await res.json();
+    if(data.success){
+      pfToast(data.message,'success');
+      // actualizar display sin recargar
+      const cur=document.querySelector('.pf-wallet-current');
+      cur.classList.add('linked');
+      document.getElementById('walletStatusLbl').textContent='{{ t.pf_wallet_linked }}';
+      document.getElementById('walletStatusLbl').classList.add('linked');
+      const addrEl=document.getElementById('walletAddrText');
+      addrEl.textContent=data.wallet; addrEl.classList.remove('empty');
+      hideWalletForm();
+    } else {
+      pfToast(data.message||'{{ t.pf_wallet_error }}','error');
+    }
+  }catch(e){ pfToast('{{ t.pf_wallet_error }}','error'); }
+  btn.disabled=false;
+}
+function copyText(txt){
+  if(navigator.clipboard){ navigator.clipboard.writeText(txt); }
+  else{ const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove(); }
+  pfToast('{{ t.pf_copied }}','success');
+}
+function pfToast(m,t){
+  if(window.DogeQuest&&window.DogeQuest.showToast){window.DogeQuest.showToast(m,t);}
+  else if(window.showToast){window.showToast(m,t);}
+  else{ /* fallback */ }
+}
+</script>
+{% endblock %}
