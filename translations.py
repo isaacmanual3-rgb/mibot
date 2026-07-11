@@ -23,7 +23,7 @@ TRANSLATIONS = {
     'bnav_invite': {'en': 'INVITE', 'es': 'INVITAR'},
     'bnav_tasks':  {'en': 'TASKS',  'es': 'TAREAS'},
     'bnav_top':    {'en': 'TOP',    'es': 'TOP'},
-    'bnav_wallet': {'en': 'WALLET', 'es': 'BILLETERA'},
+    'bnav_wallet': {'en': 'WALLET', 'es': 'CARTERA'},
     'bnav_profile':{'en': 'PROFILE','es': 'PERFIL'},
 
     # ── Profile page ──
