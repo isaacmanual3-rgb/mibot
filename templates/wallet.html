@@ -669,9 +669,17 @@
         <label class="form-label" style="color:#ffd700">{{ t.wl_deposit_addr_lbl }}</label>
         <input type="text" id="ton-wd-address-input" class="form-input"
                placeholder="{{ t.wl_ton_addr_placeholder }}"
+               value="{{ user_saved_wallet }}"
                autocomplete="off" spellcheck="false"
                style="font-size:0.72rem;letter-spacing:0.02em">
+        {% if user_saved_wallet %}
+        <div class="form-hint" style="color:#00e676;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ t.wl_wallet_from_profile }}
+        </div>
+        {% else %}
         <div class="form-hint">{{ t.wl_ton_addr_placeholder }}</div>
+        {% endif %}
       </div>
 
       <div class="form-group">
