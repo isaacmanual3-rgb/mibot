@@ -1575,7 +1575,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 0 1px;
+    padding: 0 3px;
     text-decoration: none;
     color: #3a3a5a;
     flex: 1;
@@ -1585,6 +1585,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
     border: none;
     outline: none;
     min-width: 0;
+    overflow: hidden;
 }
 
 /* Icono wrapper */
@@ -1608,11 +1609,16 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 /* Label pequeño — siempre visible */
 .bnav-label {
     font-family: var(--font-pixel);
-    font-size: 0.24rem;
-    letter-spacing: 0.03em;
+    font-size: 0.23rem;
+    letter-spacing: 0.01em;
     opacity: 0.45;
     transform: translateY(0);
     white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    line-height: 1.1;
 }
 
 /* Hover */
@@ -1677,16 +1683,20 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 }
 
 /* ── Responsive compact ── */
+@media (max-width: 400px) {
+    .bnav-label { font-size: 0.215rem; letter-spacing: 0.005em; }
+}
 @media (max-width: 380px) {
     .hdr-balance-amt { font-size: 0.5rem; }
     .hdr-user-name { max-width: 70px; font-size: 0.36rem; }
     .hdr-avatar { width: 28px; height: 28px; font-size: 0.52rem; }
-    .bnav-item { padding: 0; }
+    .bnav-item { padding: 0 2px; }
     .bnav-icon { width: 18px; height: 18px; }
     .bnav-icon svg { width: 17px; height: 17px; }
-    .bnav-label { font-size: 0.21rem; letter-spacing: 0.02em; }
+    .bnav-label { font-size: 0.2rem; letter-spacing: 0; }
 }
 @media (max-width: 330px) {
-    .bnav-label { font-size: 0.19rem; }
+    .bnav-item { padding: 0 1px; }
+    .bnav-label { font-size: 0.18rem; }
     .bnav-icon svg { width: 16px; height: 16px; }
 }
