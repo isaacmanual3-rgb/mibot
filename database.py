@@ -203,6 +203,131 @@ def get_balance_history(user_id, limit=20):
     """
     return execute_query(query, (str(user_id), limit), fetch_all=True) or []
 
+
+def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
+    """
+    Historial completo de un usuario para el panel admin, con paginación y filtros.
+    category: 'all' | 'movements' | 'withdrawals' | 'deposits' | 'referrals'
+    Devuelve dict: {items, total, page, per_page, total_pages}
+    """
+    uid = str(user_id)
+    offset = (page - 1) * per_page
+
+    def _count(sql, params):
+        r = execute_query(sql, params, fetch_one=True)
+        return int(r['c']) if r and r.get('c') is not None else 0
+
+    items = []
+    total = 0
+
+    if category == 'withdrawals':
+        total = _count("SELECT COUNT(*) as c FROM withdrawals WHERE user_id=%s", (uid,))
+        rows = execute_query(
+            "SELECT * FROM withdrawals WHERE user_id=%s ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (uid, per_page, offset), fetch_all=True) or []
+        for r in rows:
+            items.append({
+                'type': 'withdrawal',
+                'amount': float(r.get('amount', 0) or 0),
+                'currency': r.get('currency', 'DOGE'),
+                'status': r.get('status', ''),
+                'wallet': r.get('wallet_address', ''),
+                'tx_hash': r.get('ton_tx_hash', '') or '',
+                'detail': f"Retiro {r.get('status','')}",
+                'created_at': r.get('created_at'),
+            })
+
+    elif category == 'deposits':
+        total = _count("SELECT COUNT(*) as c FROM ton_deposits WHERE user_id=%s", (uid,))
+        rows = execute_query(
+            "SELECT * FROM ton_deposits WHERE user_id=%s ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (uid, per_page, offset), fetch_all=True) or []
+        for r in rows:
+            items.append({
+                'type': 'deposit',
+                'amount': float(r.get('ton_amount', 0) or 0),
+                'currency': 'TON',
+                'status': r.get('status', ''),
+                'doge_credited': float(r.get('doge_credited', 0) or 0),
+                'detail': f"Depósito {r.get('status','')} · +{float(r.get('doge_credited',0) or 0):.4f} DOGE",
+                'created_at': r.get('created_at'),
+            })
+
+    elif category == 'referrals':
+        total = _count("SELECT COUNT(*) as c FROM referrals WHERE referrer_id=%s", (uid,))
+        rows = execute_query(
+            "SELECT * FROM referrals WHERE referrer_id=%s ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (uid, per_page, offset), fetch_all=True) or []
+        for r in rows:
+            items.append({
+                'type': 'referral',
+                'referred_id': r.get('referred_id', ''),
+                'referred_name': r.get('referred_first_name', '') or r.get('referred_username', '') or 'Player',
+                'detail': f"Referido: {r.get('referred_first_name','') or r.get('referred_username','') or r.get('referred_id','')}",
+                'created_at': r.get('created_at'),
+            })
+
+    elif category == 'movements':
+        total = _count("SELECT COUNT(*) as c FROM balance_history WHERE user_id=%s", (uid,))
+        rows = execute_query(
+            "SELECT * FROM balance_history WHERE user_id=%s ORDER BY created_at DESC LIMIT %s OFFSET %s",
+            (uid, per_page, offset), fetch_all=True) or []
+        for r in rows:
+            items.append({
+                'type': 'movement',
+                'amount': float(r.get('amount', 0) or 0),
+                'currency': 'DOGE',
+                'action': r.get('action', ''),
+                'detail': r.get('description', '') or r.get('action', ''),
+                'balance_after': float(r.get('balance_after', 0) or 0),
+                'created_at': r.get('created_at'),
+            })
+
+    else:  # all — combinar todo, ordenado por fecha
+        movements = execute_query(
+            "SELECT 'movement' as _t, amount, action, description, balance_after, NULL as status, NULL as wallet_address, NULL as ton_tx_hash, NULL as currency, created_at FROM balance_history WHERE user_id=%s",
+            (uid,), fetch_all=True) or []
+        withdrawals = execute_query(
+            "SELECT 'withdrawal' as _t, amount, NULL as action, NULL as description, NULL as balance_after, status, wallet_address, ton_tx_hash, currency, created_at FROM withdrawals WHERE user_id=%s",
+            (uid,), fetch_all=True) or []
+        deposits = execute_query(
+            "SELECT 'deposit' as _t, ton_amount as amount, NULL as action, NULL as description, doge_credited as balance_after, status, NULL as wallet_address, NULL as ton_tx_hash, 'TON' as currency, created_at FROM ton_deposits WHERE user_id=%s",
+            (uid,), fetch_all=True) or []
+        referrals = execute_query(
+            "SELECT 'referral' as _t, NULL as amount, NULL as action, referred_first_name as description, NULL as balance_after, NULL as status, referred_username as wallet_address, referred_id as ton_tx_hash, NULL as currency, created_at FROM referrals WHERE referrer_id=%s",
+            (uid,), fetch_all=True) or []
+
+        combined = []
+        for r in movements:
+            combined.append({'type':'movement','amount':float(r.get('amount',0) or 0),'currency':'DOGE',
+                'action':r.get('action',''),'detail':r.get('description','') or r.get('action',''),
+                'balance_after':float(r.get('balance_after',0) or 0),'created_at':r.get('created_at')})
+        for r in withdrawals:
+            combined.append({'type':'withdrawal','amount':float(r.get('amount',0) or 0),'currency':r.get('currency','DOGE'),
+                'status':r.get('status',''),'wallet':r.get('wallet_address',''),'tx_hash':r.get('ton_tx_hash','') or '',
+                'detail':f"Retiro {r.get('status','')}",'created_at':r.get('created_at')})
+        for r in deposits:
+            combined.append({'type':'deposit','amount':float(r.get('amount',0) or 0),'currency':'TON',
+                'status':r.get('status',''),'doge_credited':float(r.get('balance_after',0) or 0),
+                'detail':f"Depósito {r.get('status','')} · +{float(r.get('balance_after',0) or 0):.4f} DOGE",'created_at':r.get('created_at')})
+        for r in referrals:
+            combined.append({'type':'referral','referred_id':r.get('ton_tx_hash',''),
+                'referred_name':r.get('description','') or r.get('wallet_address','') or 'Player',
+                'detail':f"Referido: {r.get('description','') or r.get('wallet_address','') or r.get('ton_tx_hash','')}",'created_at':r.get('created_at')})
+
+        # Ordenar por fecha desc (created_at puede ser None)
+        combined.sort(key=lambda x: (x['created_at'] is not None, x['created_at']), reverse=True)
+        total = len(combined)
+        items = combined[offset:offset + per_page]
+
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    # Serializar fechas
+    for it in items:
+        ca = it.get('created_at')
+        it['created_at'] = ca.strftime('%Y-%m-%d %H:%M') if ca and hasattr(ca, 'strftime') else (str(ca)[:16] if ca else '')
+
+    return {'items': items, 'total': total, 'page': page, 'per_page': per_page, 'total_pages': total_pages}
+
 # ============================================
 # DAILY CHECK-IN OPERATIONS
 # ============================================

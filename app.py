@@ -1797,6 +1797,35 @@ def admin_delete_task(task_id):
     delete_task(task_id)
     return jsonify({'success': True})
 
+@app.route('/admin/api/user/<user_id>/history')
+@require_admin
+def admin_api_user_history(user_id):
+    """Historial completo de un usuario con paginación (100) y filtros por categoría."""
+    from database import get_user_history_paginated
+    category = request.args.get('category', 'all')
+    page = max(1, int(request.args.get('page', 1)))
+    if category not in ('all', 'movements', 'withdrawals', 'deposits', 'referrals'):
+        category = 'all'
+    try:
+        data = get_user_history_paginated(user_id, category=category, page=page, per_page=100)
+        # Info resumida del usuario
+        u = get_user(user_id) or {}
+        summary = {
+            'user_id': str(user_id),
+            'first_name': u.get('first_name', 'Player'),
+            'username': u.get('username', ''),
+            'balance': float(u.get('doge_balance', 0) or 0),
+            'total_earned': float(u.get('total_earned', 0) or 0),
+            'referral_count': int(u.get('referral_count', 0) or 0),
+            'ton_wallet': u.get('ton_wallet', '') or '',
+            'banned': bool(u.get('banned', 0)),
+        }
+        return jsonify({'success': True, 'summary': summary, **data})
+    except Exception as e:
+        logger.warning(f"user history error: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
 @app.route('/admin/withdrawals')
 @require_admin
 def admin_withdrawals():
@@ -1804,7 +1833,7 @@ def admin_withdrawals():
     from database import execute_query
     filter_type = request.args.get('filter', 'pending')
     page = int(request.args.get('page', 1))
-    per_page = 50
+    per_page = 100
 
     if filter_type == 'all':
         rows = execute_query("SELECT * FROM withdrawals ORDER BY created_at DESC LIMIT %s OFFSET %s",
@@ -2218,37 +2247,81 @@ def admin_api_move_task(task_id):
 @app.route('/admin/api/withdrawal/approve', methods=['POST'])
 @require_admin
 def admin_api_approve_withdrawal():
-    """Approve a withdrawal"""
+    """Aprobar un retiro y ENVIAR el TON automáticamente al usuario.
+
+    Si el envío automático tiene éxito → marca 'completed' con el tx_hash real.
+    Si falla (o no hay mnemonic configurado) → el admin puede pegar un tx_hash
+    manual, o se marca completed sin envío automático (envío hecho a mano)."""
+    from database import execute_query as _eq
+    from datetime import datetime as _dt
     data = request.get_json(force=True) or {}
     withdrawal_id = data.get('withdrawal_id')
-    tx_hash = data.get('tx_hash', '')
+    manual_tx = (data.get('tx_hash', '') or '').strip()
     note = data.get('note', '')
+    auto_send = data.get('auto_send', True)  # por defecto intenta envío automático
+
     if not withdrawal_id:
         return jsonify({'success': False, 'message': 'Missing withdrawal_id'})
+
+    # Cargar el retiro
+    w = _eq("SELECT * FROM withdrawals WHERE withdrawal_id=%s OR id=%s",
+            (str(withdrawal_id), str(withdrawal_id)), fetch_one=True)
+    if not w:
+        return jsonify({'success': False, 'message': 'Retiro no encontrado'})
+    if w.get('status') != 'pending':
+        return jsonify({'success': False, 'message': f"Este retiro ya está '{w.get('status')}'"})
+
+    dest_wallet = w.get('wallet_address', '')
+    # Monto TON a enviar: net_amount si existe, si no amount
+    currency = (w.get('currency', 'TON') or 'TON').upper()
+    ton_amount = float(w.get('net_amount', 0) or w.get('amount', 0) or 0)
+
+    tx_hash = manual_tx
+    auto_sent = False
+    send_err = None
+
+    # Intentar envío automático solo si es TON y el admin no pegó un tx manual
+    if auto_send and not manual_tx and currency == 'TON' and dest_wallet:
+        auto_sent, tx_hash_auto, send_err = _auto_send_ton(dest_wallet, ton_amount, str(withdrawal_id))
+        if auto_sent:
+            tx_hash = tx_hash_auto
+        else:
+            # No se pudo enviar automáticamente
+            return jsonify({
+                'success': False,
+                'auto_failed': True,
+                'message': f'No se pudo enviar automáticamente: {send_err}. '
+                           f'Envía el TON manualmente y pega el hash, o revisa la config del bot.'
+            })
+
+    # Marcar como completado
     update_withdrawal(str(withdrawal_id), 'completed', tx_hash or None, note or None)
 
-    # ── Notificación al usuario ──
+    # Notificar al usuario
     if _NOTIF_OK:
         try:
-            from database import execute_query as _eq
-            from datetime import datetime as _dt
-            w = _eq("SELECT user_id, amount, currency, wallet_address FROM withdrawals WHERE withdrawal_id=%s OR id=%s",
-                    (str(withdrawal_id), str(withdrawal_id)), fetch_one=True)
-            if w:
-                user_obj = get_user(w['user_id'])
-                lang_code = user_obj.get('language_code') if user_obj else None
-                notify_withdrawal_approved(
-                    user_id=int(w['user_id']),
-                    amount=w.get('amount', '?'),
-                    currency=w.get('currency', 'DOGE'),
-                    wallet=w.get('wallet_address', '?'),
-                    withdrawal_id=str(withdrawal_id),
-                    date=_dt.now().strftime('%Y-%m-%d %H:%M'),
-                    language_code=lang_code,
-                )
+            user_obj = get_user(w['user_id'])
+            lang_code = user_obj.get('language_code') if user_obj else None
+            notify_withdrawal_approved(
+                user_id=int(w['user_id']),
+                amount=f"{ton_amount:.4f}" if currency == 'TON' else w.get('amount', '?'),
+                currency=currency,
+                wallet=dest_wallet or '?',
+                withdrawal_id=str(withdrawal_id),
+                date=_dt.now().strftime('%Y-%m-%d %H:%M'),
+                tx_hash=tx_hash or '—',
+                language_code=lang_code,
+            )
         except Exception as _ne:
             logger.warning(f"Withdrawal approve notification error: {_ne}")
-    return jsonify({'success': True})
+
+    return jsonify({
+        'success': True,
+        'auto_sent': auto_sent,
+        'tx_hash': tx_hash or '',
+        'message': (f'✅ Enviado automáticamente: {ton_amount:.4f} TON' if auto_sent
+                    else '✅ Retiro aprobado y marcado como completado')
+    })
 
 
 @app.route('/admin/api/withdrawal/reject', methods=['POST'])
