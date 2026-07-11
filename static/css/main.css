@@ -1609,7 +1609,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 /* Label pequeño — siempre visible */
 .bnav-label {
     font-family: var(--font-pixel);
-    font-size: 0.23rem;
+    font-size: 0.25rem;
     letter-spacing: 0.01em;
     opacity: 0.45;
     transform: translateY(0);
@@ -1684,7 +1684,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 
 /* ── Responsive compact ── */
 @media (max-width: 400px) {
-    .bnav-label { font-size: 0.215rem; letter-spacing: 0.005em; }
+    .bnav-label { font-size: 0.235rem; }
 }
 @media (max-width: 380px) {
     .hdr-balance-amt { font-size: 0.5rem; }
@@ -1693,10 +1693,10 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
     .bnav-item { padding: 0 2px; }
     .bnav-icon { width: 18px; height: 18px; }
     .bnav-icon svg { width: 17px; height: 17px; }
-    .bnav-label { font-size: 0.2rem; letter-spacing: 0; }
+    .bnav-label { font-size: 0.215rem; letter-spacing: 0; }
 }
 @media (max-width: 330px) {
     .bnav-item { padding: 0 1px; }
-    .bnav-label { font-size: 0.18rem; }
+    .bnav-label { font-size: 0.195rem; }
     .bnav-icon svg { width: 16px; height: 16px; }
 }
