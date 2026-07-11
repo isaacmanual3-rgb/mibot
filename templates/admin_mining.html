@@ -418,14 +418,14 @@ async function savePlan() {
     const desc      = document.getElementById('modal-desc').value.trim();
     const tier      = document.getElementById('modal-tier').value.trim() || name.toLowerCase();
 
-    if (!name || !hourlyRaw) {
-        showToast('Nombre y Hourly Rate son obligatorios', 'error');
+    if (!name) {
+        showToast('El nombre es obligatorio', 'error');
         return;
     }
 
     const hourlyNum = parseFloat(hourlyRaw);
-    if (isNaN(hourlyNum) || hourlyNum <= 0) {
-        showToast('Hourly Rate debe ser mayor a 0', 'error');
+    if (isNaN(hourlyNum) || hourlyNum < 0) {
+        showToast('Hourly Rate no puede ser negativo', 'error');
         return;
     }
 

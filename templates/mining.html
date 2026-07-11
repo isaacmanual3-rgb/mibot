@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Mining - DogeQuest{% endblock %}
+{% block title %}Minería - CraftGems{% endblock %}
 
 {% block content %}
 <style>
@@ -834,14 +834,16 @@
               <span class="mn-plan-price">
                 {% if is_free %}{{ t.mn_free_label }}{% else %}{{ plan.price|int }} TON{% endif %}
               </span>
-              <span class="mn-plan-price-unit">{{ t.mn_30_days }}</span>
+              <span class="mn-plan-price-unit">
+                {% if plan.duration_days == 1 %}{{ t.mn_1_day }}{% else %}{{ t.mn_n_days.replace('{days}', plan.duration_days|string) }}{% endif %}
+              </span>
             </div>
           </div>
 
           <!-- ROI bar -->
           <div class="mn-plan-roi">
             <div class="mn-plan-roi-label">
-              <span>{{ t.mn_30d_return }}</span>
+              <span>{% if plan.duration_days == 1 %}{{ t.mn_1d_return }}{% else %}{{ t.mn_nd_return.replace('{days}', plan.duration_days|string) }}{% endif %}</span>
               <span class="mn-plan-roi-pct">+{{ roi_pct }}%</span>
             </div>
             <div class="mn-plan-roi-track">

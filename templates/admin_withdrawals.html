@@ -383,7 +383,7 @@ function renderHistItem(it) {
     if (it.type === 'movement') {
         const pos = it.amount >= 0;
         icon = pos ? '➕' : '➖'; color = pos ? '#00e676' : '#f66';
-        right = `<span style="color:${color}">${pos ? '+' : ''}${fmtNum(it.amount)} DOGE</span>`;
+        right = `<span style="color:${color}">${pos ? '+' : ''}${fmtNum(it.amount)} TON</span>`;
     } else if (it.type === 'withdrawal') {
         icon = '📤'; color = '#ffb300';
         const st = it.status === 'completed' ? '#00e676' : (it.status === 'rejected' ? '#f66' : '#ffb300');
