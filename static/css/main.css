@@ -1189,19 +1189,31 @@ body::after {
 .ls-wrap {
     position: relative; z-index: 1;
     display: flex;
-    align-items: center; justify-content: center;
+    align-items: center;
+    gap: 11px;
 }
 
-.ls-pick {
-    width: 56px; height: 56px;
-    filter: drop-shadow(0 0 12px rgba(0,170,255,0.6));
-    animation: ls-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    transform-origin: center;
+.ls-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #0a2540;
+    animation: ls-wave 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
-@keyframes ls-spin {
-    0%   { transform: rotate(0deg)   scale(0.92); }
-    50%  { transform: rotate(180deg) scale(1.08); }
-    100% { transform: rotate(360deg) scale(0.92); }
+.ls-dot:nth-child(1) { animation-delay: 0s;    }
+.ls-dot:nth-child(2) { animation-delay: 0.2s;  }
+.ls-dot:nth-child(3) { animation-delay: 0.4s;  }
+
+@keyframes ls-wave {
+    0%, 60%, 100% {
+        transform: scale(0.75);
+        background: #0a2540;
+        box-shadow: none;
+    }
+    30% {
+        transform: scale(1);
+        background: #00aaff;
+        box-shadow: 0 0 12px 2px rgba(0,170,255,0.55);
+    }
 }
 
 
