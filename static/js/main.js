@@ -595,12 +595,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Expose to window for inline handlers
 window.DogeQuest = DogeQuest;
 
-// Telegram WebApp integration
+// Telegram WebApp integration (fullscreen + safe areas are handled in base.html)
 if (window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-    
+
     // Apply Telegram theme colors if available
     if (tg.themeParams) {
         document.documentElement.style.setProperty('--tg-theme-bg', tg.themeParams.bg_color || '#0a0a0a');
