@@ -18,7 +18,7 @@
             <div class="config-input-group">
                 <input type="number" class="form-input config-input" 
                        data-key="daily_base_reward" 
-                       value="{{ config.daily_base_reward or 0.01 }}"
+                       value="{{ config.daily_base_reward or 0 }}"
                        step="0.00000001" min="0">
                 <span class="config-unit">DOGE</span>
             </div>
@@ -30,7 +30,7 @@
             <div class="config-input-group">
                 <input type="number" class="form-input config-input" 
                        data-key="daily_streak_bonus" 
-                       value="{{ config.daily_streak_bonus or 0.002 }}"
+                       value="{{ config.daily_streak_bonus or 0 }}"
                        step="0.00000001" min="0">
                 <span class="config-unit">DOGE/day</span>
             </div>
@@ -42,7 +42,7 @@
             <div class="config-input-group">
                 <input type="number" class="form-input config-input" 
                        data-key="referral_bonus" 
-                       value="{{ config.referral_bonus or 0.05 }}"
+                       value="{{ config.referral_bonus or 0 }}"
                        step="0.00000001" min="0">
                 <span class="config-unit">DOGE</span>
             </div>
@@ -59,6 +59,72 @@
                 <span class="config-unit">days</span>
             </div>
             <p class="config-hint">Cap for streak bonus multiplier</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Máximo Bonus de Racha</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="daily_max_streak_bonus"
+                       value="{{ config.daily_max_streak_bonus or 0 }}"
+                       step="0.00000001" min="0">
+                <span class="config-unit">TON</span>
+            </div>
+            <p class="config-hint">Tope máximo del bonus de racha diaria (0 = sin bonus)</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Comisión de Referido (%)</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="referral_commission_pct"
+                       value="{{ config.referral_commission_pct or 0 }}"
+                       step="0.1" min="0" max="100">
+                <span class="config-unit">%</span>
+            </div>
+            <p class="config-hint">% de comisión continua sobre ganancias de referidos (0 = desactivado)</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Recompensa Invitar (%)</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="invite_purchase_reward_pct"
+                       value="{{ config.invite_purchase_reward_pct or 0 }}"
+                       step="0.1" min="0" max="100">
+                <span class="config-unit">%</span>
+            </div>
+            <p class="config-hint">% que gana el que invita cuando su referido compra un plan (0 = desactivado)</p>
+        </div>
+    </div>
+</div>
+
+<!-- Adsgram / Ads Settings -->
+<div class="admin-card">
+    <h3 class="card-section-title">📺 ANUNCIOS (ADSGRAM)</h3>
+
+    <div class="config-grid">
+        <div class="config-item">
+            <label class="config-label">Adsgram Block ID</label>
+            <div class="config-input-group">
+                <input type="text" class="form-input config-input"
+                       data-key="adsgram_block_id"
+                       value="{{ config.adsgram_block_id or '' }}"
+                       placeholder="int-XXXXXX">
+            </div>
+            <p class="config-hint">ID del bloque Rewarded de Adsgram (panel Adsgram → Rewarded). Sin esto los anuncios no cargan.</p>
+        </div>
+
+        <div class="config-item">
+            <label class="config-label">Anuncios para Plan Gratis</label>
+            <div class="config-input-group">
+                <input type="number" class="form-input config-input"
+                       data-key="free_plan_ads_required"
+                       value="{{ config.free_plan_ads_required or 10 }}"
+                       step="1" min="0">
+                <span class="config-unit">anuncios</span>
+            </div>
+            <p class="config-hint">Cuántos anuncios reward debe ver el usuario para activar el plan gratis (0 = activación directa sin anuncios)</p>
         </div>
     </div>
 </div>

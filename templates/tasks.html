@@ -343,6 +343,10 @@
   image-rendering: pixelated;
 }
 
+/* SVG pixel icons */
+.px-svg { display:flex; align-items:center; justify-content:center; width:24px; height:24px; }
+.px-svg svg { width:22px; height:22px; image-rendering:pixelated; shape-rendering:crispEdges; display:block; }
+
 /* ── CHECKMARK (done) ──────────────────
    . . . . . . X
    . . . . . X .
@@ -878,20 +882,22 @@
              data-task-id="{{ task.id }}"
              data-category="{{ task.category|default('social') }}">
 
-          <!-- CSS Pixel Icon -->
+          <!-- Pixel Icon (SVG) -->
           <div class="tq-task-icon {% if task.completed %}done{% elif task.locked %}locked{% endif %}">
             {% if task.completed %}
-              <i class="px-icon px-icon-check"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#00e676"><rect x="12" y="3" width="2" height="1"/><rect x="11" y="4" width="2" height="1"/><rect x="10" y="5" width="2" height="1"/><rect x="9" y="6" width="2" height="1"/><rect x="8" y="7" width="2" height="1"/><rect x="7" y="8" width="2" height="1"/><rect x="6" y="9" width="2" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="10" width="2" height="1"/></svg></span>
             {% elif task.locked %}
-              <i class="px-icon px-icon-lock"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#4a4a6e"><rect x="6" y="2" width="4" height="1"/><rect x="5" y="3" width="1" height="3"/><rect x="10" y="3" width="1" height="3"/><rect x="4" y="6" width="8" height="1"/><rect x="3" y="7" width="10" height="6"/><rect x="4" y="13" width="8" height="1"/><rect x="7" y="9" width="2" height="3" fill="#08080f"/></svg></span>
             {% elif task.category == 'daily' %}
-              <i class="px-icon px-icon-calendar"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#40c4ff"><rect x="4" y="1" width="1" height="2"/><rect x="11" y="1" width="1" height="2"/><rect x="2" y="3" width="12" height="1"/><rect x="2" y="3" width="1" height="10"/><rect x="13" y="3" width="1" height="10"/><rect x="2" y="12" width="12" height="1"/><rect x="2" y="5" width="12" height="1"/><rect x="4" y="7" width="2" height="2"/><rect x="7" y="7" width="2" height="2"/><rect x="10" y="7" width="2" height="2"/><rect x="4" y="10" width="2" height="1"/><rect x="7" y="10" width="2" height="1"/></svg></span>
             {% elif task.category == 'special' %}
-              <i class="px-icon px-icon-star"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ffd700"><rect x="7" y="1" width="2" height="1"/><rect x="7" y="2" width="2" height="2"/><rect x="6" y="4" width="4" height="1"/><rect x="1" y="5" width="14" height="1"/><rect x="3" y="6" width="10" height="1"/><rect x="4" y="7" width="8" height="1"/><rect x="4" y="8" width="3" height="1"/><rect x="9" y="8" width="3" height="1"/><rect x="3" y="9" width="3" height="1"/><rect x="10" y="9" width="3" height="1"/><rect x="2" y="10" width="2" height="1"/><rect x="12" y="10" width="2" height="1"/></svg></span>
+            {% elif task.requires_channel %}
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ffd700"><rect x="10" y="3" width="3" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="13" y="4" width="1" height="6"/><rect x="10" y="5" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="10" width="3" height="1"/><rect x="3" y="5" width="6" height="4"/><rect x="2" y="6" width="1" height="2"/><rect x="5" y="9" width="2" height="3"/><rect x="5" y="12" width="3" height="1"/></svg></span>
             {% elif task.category == 'social' %}
-              <i class="px-icon px-icon-user"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ffd700"><rect x="6" y="2" width="4" height="1"/><rect x="5" y="3" width="1" height="3"/><rect x="10" y="3" width="1" height="3"/><rect x="6" y="6" width="4" height="1"/><rect x="4" y="8" width="8" height="1"/><rect x="3" y="9" width="1" height="5"/><rect x="12" y="9" width="1" height="5"/><rect x="4" y="9" width="8" height="1"/><rect x="1" y="6" width="3" height="1" fill="#b38600"/><rect x="1" y="7" width="1" height="1" fill="#b38600"/><rect x="3" y="7" width="1" height="1" fill="#b38600"/><rect x="1" y="8" width="3" height="1" fill="#b38600"/><rect x="0" y="10" width="1" height="3" fill="#b38600"/></svg></span>
             {% else %}
-              <i class="px-icon px-icon-bolt"></i>
+              <span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#ffd700"><rect x="8" y="1" width="4" height="1"/><rect x="7" y="2" width="4" height="1"/><rect x="6" y="3" width="4" height="1"/><rect x="5" y="4" width="4" height="1"/><rect x="4" y="5" width="4" height="1"/><rect x="3" y="6" width="9" height="1"/><rect x="7" y="7" width="4" height="1"/><rect x="6" y="8" width="4" height="1"/><rect x="5" y="9" width="4" height="1"/><rect x="4" y="10" width="4" height="1"/><rect x="3" y="11" width="4" height="1"/><rect x="4" y="8" width="3" height="1"/></svg></span>
             {% endif %}
           </div>
 
@@ -1043,7 +1049,7 @@ async function verifyTask() {
       if (taskCard) {
         taskCard.classList.add('tq-task-done');
         taskCard.querySelector('.tq-task-icon').classList.add('done');
-        taskCard.querySelector('.tq-task-icon').innerHTML = '<i class="px-icon px-icon-check"></i>';
+        taskCard.querySelector('.tq-task-icon').innerHTML = '<span class="px-svg"><svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#00e676"><rect x="12" y="3" width="2" height="1"/><rect x="11" y="4" width="2" height="1"/><rect x="10" y="5" width="2" height="1"/><rect x="9" y="6" width="2" height="1"/><rect x="8" y="7" width="2" height="1"/><rect x="7" y="8" width="2" height="1"/><rect x="6" y="9" width="2" height="1"/><rect x="2" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="10" width="2" height="1"/></svg></span>';
         taskCard.querySelector('.tq-task-right').innerHTML =
           '<div class="tq-reward"><span class="tq-reward-icon" style="color:#40c4ff;">◈</span><span class="tq-reward-val">+' + data.reward + ' TON</span></div>' +
           '<span class="tq-badge tq-badge-done">' + (window.I18N?.tq_claimed || 'CLAIMED') + '</span>';

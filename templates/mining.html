@@ -708,7 +708,7 @@
     <div class="mn-hero">
       <div class="mn-hero-glow" aria-hidden="true"></div>
       <div class="mn-hero-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5C7 6 11 5 14.5 6.2"/><path d="M20.5 15.5C17 18 13 19 9.5 17.8"/><path d="M14.5 6.2C17 4 19.5 3.5 21 4c.5 1.5 0 4-2.2 6.5"/><path d="M9.5 17.8L4 22"/><line x1="12" y1="10" x2="14" y2="12"/></svg></span>
+        <span class="px-icon"><svg viewBox="0 0 16 16" width="30" height="30" shape-rendering="crispEdges" fill="#ffd700"><rect x="2" y="1" width="3" height="1"/><rect x="11" y="1" width="3" height="1"/><rect x="1" y="2" width="2" height="1"/><rect x="13" y="2" width="2" height="1"/><rect x="0" y="3" width="2" height="1"/><rect x="14" y="3" width="2" height="1"/><rect x="3" y="3" width="3" height="1"/><rect x="10" y="3" width="3" height="1"/><rect x="6" y="4" width="4" height="1"/><rect x="7" y="5" width="2" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="6" y="7" width="2" height="1"/><rect x="5" y="8" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="3" y="10" width="2" height="1"/><rect x="2" y="11" width="2" height="1"/><rect x="1" y="12" width="2" height="1"/><rect x="0" y="13" width="2" height="2"/></svg></span>
       </div>
       <div class="mn-hero-title">{{ t.mn_title }}</div>
       <div class="mn-hero-sub">{{ t.mn_sub }}</div>
@@ -718,20 +718,20 @@
     <div class="mn-card" style="padding:0; overflow:hidden;">
       <div class="mn-stats">
         <div class="mn-stat">
-          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5" fill="#40c4ff" stroke="none"/><line x1="9" y1="3" x2="9" y2="6"/><line x1="15" y1="3" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="21"/><line x1="15" y1="18" x2="15" y2="21"/><line x1="3" y1="9" x2="6" y2="9"/><line x1="3" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="21" y2="9"/><line x1="18" y1="15" x2="21" y2="15"/></svg></span></div>
+          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 16 16" width="20" height="20" shape-rendering="crispEdges" fill="#40c4ff"><rect x="6" y="1" width="1" height="2"/><rect x="9" y="1" width="1" height="2"/><rect x="6" y="13" width="1" height="2"/><rect x="9" y="13" width="1" height="2"/><rect x="1" y="6" width="2" height="1"/><rect x="1" y="9" width="2" height="1"/><rect x="13" y="6" width="2" height="1"/><rect x="13" y="9" width="2" height="1"/><rect x="3" y="3" width="10" height="1"/><rect x="3" y="12" width="10" height="1"/><rect x="3" y="3" width="1" height="10"/><rect x="12" y="3" width="1" height="10"/><rect x="6" y="6" width="4" height="4"/></svg></span></div>
           <span class="mn-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
           <span class="mn-stat-lbl">{{ t.mn_stat_machines }}</span>
         </div>
         <div class="mn-stat" style="background:rgba(255,215,0,0.03); border-top:2px solid rgba(255,215,0,0.12);">
           <div class="mn-stat-icon" style="border-color:var(--gold-dark); background:var(--gold-dim);">
-            <span class="px-icon"><svg viewBox="0 0 24 24" fill="#ffd700" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z"/></svg></span>
+            <span class="px-icon"><svg viewBox="0 0 16 16" width="20" height="20" shape-rendering="crispEdges" fill="#ffd700"><rect x="8" y="1" width="4" height="1"/><rect x="7" y="2" width="4" height="1"/><rect x="6" y="3" width="4" height="1"/><rect x="5" y="4" width="4" height="1"/><rect x="4" y="5" width="4" height="1"/><rect x="3" y="6" width="9" height="1"/><rect x="7" y="7" width="4" height="1"/><rect x="6" y="8" width="4" height="1"/><rect x="5" y="9" width="4" height="1"/><rect x="4" y="10" width="4" height="1"/><rect x="3" y="11" width="4" height="1"/><rect x="4" y="8" width="3" height="1"/></svg></span>
           </div>
           <span class="mn-stat-val">{{ format_ton(mining_stats.total_hourly_rate if mining_stats else 0) }}</span>
           <span class="mn-stat-lbl">{{ t.mn_stat_ton_hour }}</span>
         </div>
         <div class="mn-stat">
           <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
-            <span class="px-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 10l4-4 4 4-4 8-4-8z" fill="rgba(0,230,118,0.25)"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="12" y1="6" x2="12" y2="14"/></svg></span>
+            <span class="px-icon"><svg viewBox="0 0 16 16" width="20" height="20" shape-rendering="crispEdges" fill="#00e676"><rect x="4" y="3" width="8" height="1"/><rect x="3" y="4" width="10" height="1"/><rect x="4" y="5" width="8" height="1"/><rect x="4" y="6" width="8" height="1"/><rect x="5" y="7" width="6" height="1"/><rect x="5" y="8" width="6" height="1"/><rect x="6" y="9" width="4" height="1"/><rect x="6" y="10" width="4" height="1"/><rect x="7" y="11" width="2" height="1"/><rect x="7" y="12" width="2" height="1"/></svg></span>
           </div>
           <span class="mn-stat-val" id="pendingRewards">{{ format_ton(pending_rewards) }}</span>
           <span class="mn-stat-lbl">{{ t.mn_stat_pending }}</span>
@@ -929,7 +929,7 @@
     <div class="mn-ads-head">
       <div class="mn-ads-head-glow" aria-hidden="true"></div>
       <div class="mn-ads-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="#00e676" stroke="none"/></svg></span>
+        <span class="px-icon"><svg viewBox="0 0 16 16" width="30" height="30" shape-rendering="crispEdges" fill="#00e676"><rect x="1" y="3" width="14" height="1"/><rect x="1" y="12" width="14" height="1"/><rect x="1" y="4" width="1" height="8"/><rect x="14" y="4" width="1" height="8"/><rect x="6" y="5" width="1" height="6"/><rect x="7" y="6" width="1" height="4"/><rect x="8" y="7" width="1" height="2"/></svg></span>
       </div>
       <div class="mn-ads-title">{{ t.mn_ads_title }}</div>
       <div class="mn-ads-sub">{{ t.mn_ads_sub_1 }} <span class="mn-ads-plan-name" id="adsPlanName">—</span> {{ t.mn_ads_sub_2 }}</div>
@@ -951,12 +951,12 @@
       <div class="mn-ads-status" id="adsStatus"></div>
 
       <button class="mn-ads-watch" id="adsWatchBtn" onclick="watchAd()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#050f08" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="#050f08" stroke="none"/></svg>
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#050f08"><rect x="4" y="3" width="1" height="10"/><rect x="5" y="4" width="1" height="8"/><rect x="6" y="5" width="1" height="6"/><rect x="7" y="6" width="1" height="4"/><rect x="8" y="7" width="1" height="2"/></svg>
         <span id="adsWatchLabel">{{ t.mn_ads_watch }}</span>
       </button>
 
       <button class="mn-ads-activate" id="adsActivateBtn" onclick="activateFreePlan()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#0a0800" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z" fill="#0a0800" stroke="none"/></svg>
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges" fill="#0a0800"><rect x="8" y="1" width="4" height="1"/><rect x="7" y="2" width="4" height="1"/><rect x="6" y="3" width="4" height="1"/><rect x="5" y="4" width="4" height="1"/><rect x="4" y="5" width="4" height="1"/><rect x="3" y="6" width="9" height="1"/><rect x="7" y="7" width="4" height="1"/><rect x="6" y="8" width="4" height="1"/><rect x="5" y="9" width="4" height="1"/><rect x="4" y="10" width="4" height="1"/><rect x="3" y="11" width="4" height="1"/><rect x="4" y="8" width="3" height="1"/></svg>
         <span>{{ t.mn_ads_activate }}</span>
       </button>
 
@@ -1003,9 +1003,9 @@ let currentPlanPrice = 0;
 /* ═══════════════════════════════════════════════
    ADSGRAM — FREE PLAN TASK GATE
    ═══════════════════════════════════════════════ */
-// ⚠️ REEMPLAZA con tu Block ID real de Adsgram (panel Adsgram → Rewarded)
+// ⚠️ Block ID de Adsgram — se configura desde el panel admin (Configuración)
 const ADSGRAM_BLOCK_ID = "{{ adsgram_block_id }}";
-const ADS_REQUIRED = 10;
+const ADS_REQUIRED = {{ free_plan_ads_required }};
 
 let adsWatched = 0;
 let adsInProgress = false;
