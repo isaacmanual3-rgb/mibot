@@ -339,55 +339,6 @@
             const tg = window.Telegram.WebApp;
             tg.ready();
             tg.expand();
-
-            /* ── Fullscreen + Safe Areas ───────────
-               Pide pantalla completa (Bot API 8.0+) y aplica los "safe area"
-               para que el header y la barra no choquen con los controles
-               nativos de Telegram (arriba) ni de Android (abajo). */
-            function applySafeAreas() {
-                try {
-                    const root = document.documentElement;
-                    // contentSafeAreaInset = zona libre bajo los controles de Telegram
-                    const csa = tg.contentSafeAreaInset || {};
-                    // safeAreaInset = zona libre del dispositivo (notch, barra Android)
-                    const sa = tg.safeAreaInset || {};
-                    const top = Math.max(csa.top || 0, sa.top || 0);
-                    const bottom = Math.max(csa.bottom || 0, sa.bottom || 0);
-                    const left = Math.max(csa.left || 0, sa.left || 0);
-                    const right = Math.max(csa.right || 0, sa.right || 0);
-                    root.style.setProperty('--tg-safe-top', top + 'px');
-                    root.style.setProperty('--tg-safe-bottom', bottom + 'px');
-                    root.style.setProperty('--tg-safe-left', left + 'px');
-                    root.style.setProperty('--tg-safe-right', right + 'px');
-                } catch (e) { /* noop */ }
-            }
-
-            function goFullscreen() {
-                try {
-                    // Solo si el método existe (Bot API 8.0+) y no estamos ya en fullscreen
-                    if (typeof tg.requestFullscreen === 'function' && !tg.isFullscreen) {
-                        tg.requestFullscreen();
-                    }
-                } catch (e) { /* versiones viejas: se queda con expand() */ }
-            }
-
-            // Aplicar safe areas ahora y cuando cambien
-            applySafeAreas();
-            goFullscreen();
-            if (tg.onEvent) {
-                tg.onEvent('safeAreaChanged', applySafeAreas);
-                tg.onEvent('contentSafeAreaChanged', applySafeAreas);
-                tg.onEvent('fullscreenChanged', applySafeAreas);
-                tg.onEvent('viewportChanged', applySafeAreas);
-            }
-            // Reaplicar tras un instante (algunos clientes reportan tarde)
-            setTimeout(applySafeAreas, 300);
-            setTimeout(applySafeAreas, 1000);
-
-            // Desactivar el gesto de cierre por swipe (evita cierres accidentales
-            // al hacer scroll en pantalla completa)
-            try { if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes(); } catch (e) {}
-
             if (sessionStorage.getItem('tg_auth_done')) return;
             const initData = tg.initData;
             if (!initData) return;
