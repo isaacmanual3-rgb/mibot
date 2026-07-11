@@ -1108,7 +1108,8 @@ def mining(user):
         user_machines=user_machines,
         mining_stats=mining_stats,
         pending_rewards=pending_rewards,
-        format_doge=format_doge
+        format_doge=format_doge,
+        adsgram_block_id=os.environ.get('ADSGRAM_BLOCK_ID', 'int-XXXXXX')
     )
 
 # ============================================
@@ -1270,7 +1271,21 @@ def api_mining_purchase(user):
     
     if not plan_id:
         return jsonify({'success': False, 'message': 'Plan ID required'})
-    
+
+    # ── Free plans require watching rewarded ads (anti-abuse) ──
+    ADS_REQUIRED = 10
+    try:
+        plan_check = get_mining_plan(plan_id)
+        if plan_check and float(plan_check.get('price', 0)) == 0.0:
+            ads_completed = int(data.get('ads_completed', 0) or 0)
+            if ads_completed < ADS_REQUIRED:
+                return jsonify({
+                    'success': False,
+                    'message': f'Debes ver {ADS_REQUIRED} anuncios para activar el plan gratis.'
+                })
+    except Exception as _ae:
+        logger.warning(f"free-plan ads check error: {_ae}")
+
     result = purchase_mining_machine(user['user_id'], plan_id)
     translated = translate_result(result)
 

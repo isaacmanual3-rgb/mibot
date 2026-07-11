@@ -126,6 +126,21 @@ TRANSLATIONS = {
     'mn_modal_free':     {'en': '✨ FREE',                  'es': '✨ GRATIS'},
     'mn_modal_cancel':   {'en': 'CANCEL',                   'es': 'CANCELAR'},
     'mn_modal_confirm':  {'en': 'CONFIRM',                  'es': 'CONFIRMAR'},
+
+    # ── Adsgram free-plan task gate ──
+    'mn_ads_title':      {'en': 'UNLOCK FREE PLAN',         'es': 'DESBLOQUEA PLAN GRATIS'},
+    'mn_ads_sub_1':      {'en': 'Watch 10 rewarded videos to activate the',  'es': 'Mira 10 videos con recompensa para activar el plan'},
+    'mn_ads_sub_2':      {'en': 'plan for 30 days.',        'es': 'por 30 días.'},
+    'mn_ads_progress':   {'en': 'Ads watched',              'es': 'Anuncios vistos'},
+    'mn_ads_watch':      {'en': 'WATCH AD',                 'es': 'VER ANUNCIO'},
+    'mn_ads_loading':    {'en': 'LOADING AD...',            'es': 'CARGANDO...'},
+    'mn_ads_activate':   {'en': 'ACTIVATE PLAN',            'es': 'ACTIVAR PLAN'},
+    'mn_ads_hint':       {'en': 'Watch all ads to unlock activation',      'es': 'Mira todos los anuncios para desbloquear'},
+    'mn_ads_complete':   {'en': '✓ ALL ADS COMPLETED',      'es': '✓ ANUNCIOS COMPLETADOS'},
+    'mn_ads_counted':    {'en': '✓ Ad counted · {n} left',  'es': '✓ Anuncio contado · faltan {n}'},
+    'mn_ads_incomplete': {'en': 'Ad not completed. Try again.',             'es': 'Anuncio no completado. Inténtalo de nuevo.'},
+    'mn_ads_unavailable':{'en': 'No ad available. Try again shortly.',      'es': 'No hay anuncio disponible. Intenta en un momento.'},
+
     'mn_processing':     {'en': 'PROCESSING...',            'es': 'PROCESANDO...'},
     'mn_claiming':       {'en': 'CLAIMING...',              'es': 'RECLAMANDO...'},
     'mn_purchase_failed':{'en': 'Purchase failed',          'es': 'Compra fallida'},
