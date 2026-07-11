@@ -88,6 +88,14 @@
     --nav-w:        260px;
     --max-w:        480px;
 
+    /* === TELEGRAM FULLSCREEN SAFE AREAS ===
+       Se rellenan por JS con los insets reales de Telegram/dispositivo.
+       Fallback a env(safe-area-inset-*) para navegador/notch nativo. */
+    --tg-safe-top:    env(safe-area-inset-top, 0px);
+    --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --tg-safe-left:   env(safe-area-inset-left, 0px);
+    --tg-safe-right:  env(safe-area-inset-right, 0px);
+
     /* === EFECTOS PIXEL === */
     --transition-pixel: all 0.1s steps(2);
     --shadow-pixel: 4px 4px 0 0 #020208;
@@ -188,7 +196,7 @@ body::after {
 }
 
 .main-content {
-    padding: calc(var(--header-h) + 8px) 14px calc(var(--bottom-nav-h) + 16px);
+    padding: calc(var(--header-h) + var(--tg-safe-top) + 8px) 14px calc(var(--bottom-nav-h) + var(--tg-safe-bottom) + 16px);
     position: relative;
     z-index: 2;
     transition: var(--transition-pixel);
@@ -206,12 +214,14 @@ body::after {
     transform: translateX(-50%);
     width: 100%;
     max-width: var(--max-w);
-    height: var(--header-h);
+    height: calc(var(--header-h) + var(--tg-safe-top));
+    padding-top: var(--tg-safe-top);
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px;
+    padding-left: 14px;
+    padding-right: 14px;
     background: rgba(10, 10, 15, 0.96);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -324,6 +334,7 @@ body::after {
     left: -290px;
     width: var(--nav-w);
     height: 100vh;
+    padding-top: var(--tg-safe-top);
     background: #0a0a14;
     border-right: 2px solid #1e1e34;
     box-shadow: 4px 0 0 0 #020208, 8px 0 30px rgba(0,0,0,0.5);
@@ -521,7 +532,8 @@ body::after {
     transform: translateX(-50%);
     width: 100%;
     max-width: var(--max-w);
-    height: var(--bottom-nav-h);
+    height: calc(var(--bottom-nav-h) + var(--tg-safe-bottom));
+    padding-bottom: var(--tg-safe-bottom);
     background: rgba(8, 8, 16, 0.97);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -530,7 +542,8 @@ body::after {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 0 6px;
+    padding-left: 6px;
+    padding-right: 6px;
     z-index: 200;
 }
 
@@ -1083,6 +1096,8 @@ body::after {
    ══════════════════════════════ */
 .modal-overlay {
     position: fixed; inset: 0;
+    padding-top: var(--tg-safe-top);
+    padding-bottom: var(--tg-safe-bottom);
     background: rgba(0,0,0,0.92);
     display: flex; align-items: center; justify-content: center;
     z-index: 1000;
@@ -1127,7 +1142,7 @@ body::after {
    ══════════════════════════════ */
 .toast-container {
     position: fixed;
-    bottom: calc(var(--bottom-nav-h) + 16px);
+    bottom: calc(var(--bottom-nav-h) + var(--tg-safe-bottom) + 16px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 9000;
@@ -1416,7 +1431,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
     grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 8px;
-    padding: 0 14px;
+    padding: var(--tg-safe-top) 14px 0;
 }
 
 /* ── IZQUIERDA: Usuario (avatar + nombre + id) ── */
