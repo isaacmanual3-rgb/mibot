@@ -1863,7 +1863,7 @@ def init_all_tables():
         # NOTA: hourly_rate (ganancia) inicia en 0 — configúralo desde el panel admin.
         # price define el tier/costo; el rendimiento lo estableces manualmente.
         default_plans = [
-            ('Starter',  'starter',  0.0,   0.0, 30, 'Plan gratuito · Configura el rendimiento desde el panel · Solo una activación'),
+            ('Starter',  'starter',  0.0,   0.0, 1, 'Plan gratuito diario · Configura el rendimiento desde el panel · Reactívalo viendo anuncios al vencer'),
             ('Basic',    'basic',    1.0,   0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
             ('Pro',      'pro',      5.0,   0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
             ('Elite',    'elite',    20.0,  0.0, 30, 'Configura el rendimiento desde el panel · Renovable cada mes'),
@@ -2117,6 +2117,12 @@ def _run_migrations():
 
     safe_run("add_ton_deposits_memo",
         "ALTER TABLE ton_deposits ADD COLUMN memo VARCHAR(50) DEFAULT NULL"
+    )
+
+    # Plan gratuito Starter: pasar de 30 días a 1 día y hacerlo reactivable
+    # (no one-time). El rendimiento se sigue configurando desde el panel.
+    safe_run("starter_plan_daily_reactivable",
+        "UPDATE mining_plans SET duration_days = 1, one_time_only = 0 WHERE tier = 'starter' AND price = 0"
     )
 
     log.info("[migrations] ✅ All migrations checked.")
