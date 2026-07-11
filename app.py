@@ -741,7 +741,7 @@ def wallet(user):
     ton_rate = float(get_config('ton_to_doge_rate', '100'))
     ton_min = float(get_config('ton_min_deposit', '0.1'))
     ton_enabled = get_config('ton_deposits_enabled', '1') == '1'
-    ton_wallet_addr = get_config('ton_wallet_address', '')
+    ton_wallet_addr = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
     # Unique memo per user for deposit identification
     user_deposit_memo = get_or_create_user_deposit_address(user['user_id']) if ton_enabled else ''
 
@@ -905,7 +905,7 @@ def api_ton_deposit_address(user):
     if not bot_addr:
         return jsonify({'success': False, 'message': _t('api_bot_addr_missing')})
 
-    ton_wallet_addr = get_config('ton_wallet_address', '')
+    ton_wallet_addr = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
     if not ton_wallet_addr or 'AQUI' in ton_wallet_addr:
         return jsonify({'success': False, 'message': _t('api_bot_addr_missing')})
 
@@ -985,7 +985,7 @@ def _scan_and_credit_deposit(user_id, deposit_id):
     """
     from database import execute_query
     try:
-        receiver = get_config('ton_wallet_address', '')
+        receiver = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
         api_key  = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
         if not receiver or 'AQUI' in receiver:
             return
@@ -1013,7 +1013,10 @@ def _scan_and_credit_deposit(user_id, deposit_id):
             value_nano = int(in_msg.get('value', '0') or 0)
             tx_hash = tx.get('transaction_id', {}).get('hash', '')
 
-            if memo not in comment:
+            # Comparación robusta: ignora mayúsculas/minúsculas y espacios
+            memo_norm = memo.upper().replace(' ', '').replace('-', '')
+            comment_norm = comment.upper().replace(' ', '').replace('-', '')
+            if memo_norm not in comment_norm:
                 continue
 
             ton_amount = value_nano / 1e9
@@ -2424,6 +2427,110 @@ def admin_api_ban_user(user_id):
     return jsonify({'success': True})
 
 
+@app.route('/admin/diag/ton')
+@require_admin
+def admin_diag_ton():
+    """Diagnóstico del sistema de depósitos/retiros TON.
+    Abre /admin/diag/ton para ver qué está configurado y qué falta."""
+    def _mask(v):
+        if not v: return '(vacío)'
+        v = str(v)
+        return (v[:6] + '…' + v[-4:]) if len(v) > 12 else '(configurado)'
+
+    deposits_enabled = get_config('ton_deposits_enabled', '1')
+    withdrawal_enabled = get_config('ton_withdrawal_enabled', '1')
+    wallet_addr = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
+    mnemonic = get_config('ton_bot_mnemonic', '') or os.getenv('TON_BOT_MNEMONIC', '')
+    api_key = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
+
+    checks = {
+        'ton_deposits_enabled': deposits_enabled,
+        'deposit_button_will_show': (deposits_enabled == '1'),
+        'ton_withdrawal_enabled': withdrawal_enabled,
+        'ton_wallet_address (deposito)': wallet_addr if wallet_addr else '❌ VACÍO — sin esto NO hay depósitos',
+        'ton_wallet_address_valida': bool(wallet_addr and 'AQUI' not in wallet_addr and len(wallet_addr) > 40),
+        'ton_bot_mnemonic (retiro auto)': _mask(mnemonic) + (' ✅' if mnemonic else ' ❌ falta para envío automático'),
+        'toncenter_api_key': _mask(api_key) + (' ✅' if api_key else ' ⚠️ recomendada'),
+        'ton_to_doge_rate': get_config('ton_to_doge_rate', '100'),
+        'ton_min_deposit': get_config('ton_min_deposit', '0.1'),
+        'ton_withdrawal_min_doge': get_config('ton_withdrawal_min_doge', '10'),
+        'ton_withdrawal_fee_percent': get_config('ton_withdrawal_fee_percent', '2'),
+    }
+
+    problems = []
+    if deposits_enabled != '1':
+        problems.append("ton_deposits_enabled NO es '1' → el botón de depósito está oculto. Actívalo en el panel.")
+    if not wallet_addr or 'AQUI' in wallet_addr:
+        problems.append("ton_wallet_address está vacío → los depósitos no funcionan. Ponlo en el panel (Configuración → wallet de depósito).")
+    if not mnemonic:
+        problems.append("ton_bot_mnemonic vacío → retiros en modo MANUAL (tú los apruebas y envías a mano). Es normal si lo quieres así.")
+    if not api_key:
+        problems.append("toncenter_api_key vacío → puede fallar la detección de depósitos entrantes. Consigue una gratis en toncenter.com")
+
+    return jsonify({
+        'status': 'ok',
+        'config': checks,
+        'problems': problems if problems else ['✅ Todo configurado correctamente'],
+    })
+
+
+@app.route('/admin/diag/ton/scan')
+@require_admin
+def admin_diag_ton_scan():
+    """Escanea las últimas transacciones REALES de tu wallet en Toncenter.
+    Úsalo tras enviar un depósito para ver si la transacción llegó y qué
+    comentario/memo trae. /admin/diag/ton/scan"""
+    receiver = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
+    api_key  = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
+
+    if not receiver:
+        return jsonify({'error': 'No hay wallet configurada (ton_wallet_address / TON_BOT_WALLET_ADDRESS)'})
+
+    headers = {}
+    if api_key:
+        headers['X-API-Key'] = api_key
+
+    try:
+        resp = requests.get(
+            'https://toncenter.com/api/v2/getTransactions',
+            params={'address': receiver, 'limit': 20},
+            headers=headers, timeout=15
+        )
+        raw = resp.json()
+    except Exception as e:
+        return jsonify({'error': f'Error llamando a Toncenter: {e}', 'wallet': receiver})
+
+    if not raw.get('ok'):
+        return jsonify({
+            'error': 'Toncenter respondió con error',
+            'toncenter_response': raw,
+            'wallet_escaneada': receiver,
+            'hint': 'Revisa que la dirección sea correcta y que el API key (si lo pusiste) sea válido.'
+        })
+
+    # Listar las transacciones entrantes con su comentario y monto
+    incoming = []
+    for tx in raw.get('result', []):
+        in_msg = tx.get('in_msg', {})
+        value_nano = int(in_msg.get('value', '0') or 0)
+        if value_nano <= 0:
+            continue  # no es una transacción entrante con valor
+        incoming.append({
+            'de': str(in_msg.get('source', ''))[:20] + '…',
+            'monto_TON': round(value_nano / 1e9, 6),
+            'comentario_memo': str(in_msg.get('message', '') or '') or '(SIN COMENTARIO ⚠️)',
+            'tx_hash': tx.get('transaction_id', {}).get('hash', '')[:16] + '…',
+        })
+
+    return jsonify({
+        'wallet_escaneada': receiver,
+        'total_transacciones_entrantes': len(incoming),
+        'transacciones': incoming if incoming else '⚠️ No hay transacciones entrantes recientes en esta wallet.',
+        'nota': 'El "comentario_memo" debe coincidir con el memo del usuario (ej. TONU98766141). '
+                'Si aparece "(SIN COMENTARIO)", el depósito se hizo sin memo y no se acredita automático.',
+    })
+
+
 @app.route('/admin/api/user/<user_id>/unban', methods=['POST'])
 @require_admin
 def admin_api_unban_user(user_id):
@@ -3167,6 +3274,35 @@ def _delayed_webhook_setup():
     _auto_register_webhook()
 
 _threading.Thread(target=_delayed_webhook_setup, daemon=True).start()
+
+
+def _background_deposit_scanner():
+    """Escanea depósitos TON pendientes cada 30s, así se acreditan aunque
+    el usuario cierre la app. Solo corre si hay wallet + API configuradas."""
+    import time
+    time.sleep(15)  # esperar a que la app arranque
+    while True:
+        try:
+            receiver = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
+            if receiver and 'AQUI' not in receiver and get_config('ton_deposits_enabled', '1') == '1':
+                from database import execute_query as _eq
+                # Depósitos pendientes de las últimas 24h
+                pendings = _eq(
+                    "SELECT deposit_id, user_id FROM ton_deposits "
+                    "WHERE status='pending' AND created_at >= NOW() - INTERVAL 1 DAY "
+                    "ORDER BY created_at DESC LIMIT 50",
+                    fetch_all=True
+                ) or []
+                for p in pendings:
+                    try:
+                        _scan_and_credit_deposit(p['user_id'], p['deposit_id'])
+                    except Exception as _e:
+                        logger.warning(f"bg scan deposit {p.get('deposit_id')}: {_e}")
+        except Exception as e:
+            logger.warning(f"background deposit scanner error: {e}")
+        time.sleep(30)
+
+_threading.Thread(target=_background_deposit_scanner, daemon=True).start()
 
 
 
