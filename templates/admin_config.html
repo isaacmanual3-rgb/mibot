@@ -414,6 +414,23 @@
         </div>
 
         <div class="config-item">
+            <label class="config-label">Modo de Retiro TON</label>
+            <div class="config-toggle">
+                <label class="toggle">
+                    {% set ton_wd_mode = config.get('ton_withdrawal_mode', 'automatic') if config is mapping else 'automatic' %}
+                    <input type="checkbox" data-key="ton_withdrawal_mode"
+                           data-on-value="manual" data-off-value="automatic"
+                           data-on-label="MANUAL (requiere aprobación)"
+                           data-off-label="AUTOMÁTICO (envío instantáneo)"
+                           {{ 'checked' if ton_wd_mode == 'manual' else '' }}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">{{ 'MANUAL (requiere aprobación)' if ton_wd_mode == 'manual' else 'AUTOMÁTICO (envío instantáneo)' }}</span>
+            </div>
+            <p class="config-hint">MANUAL: el retiro queda pendiente y tú lo apruebas en el panel de retiros. AUTOMÁTICO: se envía solo al instante cuando el usuario lo solicita.</p>
+        </div>
+
+        <div class="config-item">
             <label class="config-label">Min. Retiro TON (DOGE)</label>
             <div class="config-input-group">
                 <input type="number" class="form-input config-input"
@@ -665,7 +682,11 @@
 document.querySelectorAll('.toggle input').forEach(toggle => {
     toggle.addEventListener('change', function() {
         const label = this.closest('.config-toggle').querySelector('.toggle-label');
-        label.textContent = this.checked ? 'Enabled' : 'Disabled';
+        if (this.dataset.onLabel || this.dataset.offLabel) {
+            label.textContent = this.checked ? (this.dataset.onLabel || 'ON') : (this.dataset.offLabel || 'OFF');
+        } else {
+            label.textContent = this.checked ? 'Enabled' : 'Disabled';
+        }
     });
 });
 
@@ -685,7 +706,11 @@ function saveAllConfig() {
     // Collect toggles
     document.querySelectorAll('.toggle input').forEach(toggle => {
         const key = toggle.dataset.key;
-        configs[key] = toggle.checked ? '1' : '0';
+        if (toggle.dataset.onValue || toggle.dataset.offValue) {
+            configs[key] = toggle.checked ? (toggle.dataset.onValue || '1') : (toggle.dataset.offValue || '0');
+        } else {
+            configs[key] = toggle.checked ? '1' : '0';
+        }
     });
     
     fetch('/admin/config/save', {
