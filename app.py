@@ -2276,9 +2276,18 @@ def admin_api_approve_withdrawal():
         return jsonify({'success': False, 'message': f"Este retiro ya está '{w.get('status')}'"})
 
     dest_wallet = w.get('wallet_address', '')
-    # Monto TON a enviar: net_amount si existe, si no amount
     currency = (w.get('currency', 'TON') or 'TON').upper()
     ton_amount = float(w.get('net_amount', 0) or w.get('amount', 0) or 0)
+
+    # ⚠️ PROTECCIÓN ANTI-DOBLE-PAGO: si ya hay un tx_hash guardado, el TON YA se
+    # envió antes (aunque el estado no se haya marcado). NO reenviar — solo completar.
+    existing_tx = w.get('ton_tx_hash') or w.get('tx_hash')
+    if existing_tx:
+        update_withdrawal(str(w.get('withdrawal_id') or w.get('id')), 'completed', existing_tx, note or 'Ya enviado previamente')
+        return jsonify({
+            'success': True, 'auto_sent': False, 'tx_hash': existing_tx,
+            'message': '✅ Ya se había enviado antes. Marcado como completado (sin reenviar).'
+        })
 
     tx_hash = manual_tx
     auto_sent = False

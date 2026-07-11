@@ -859,12 +859,13 @@ def get_pending_withdrawals():
     return execute_query(query, fetch_all=True) or []
 
 def update_withdrawal(withdrawal_id, status, tx_hash=None, admin_note=None):
-    """Update withdrawal status"""
+    """Update withdrawal status. Acepta tanto el id numérico como el withdrawal_id de texto."""
     execute_query("""
         UPDATE withdrawals
-        SET status = %s, tx_hash = %s, admin_note = %s, processed_at = NOW()
-        WHERE withdrawal_id = %s
-    """, (status, tx_hash, admin_note, str(withdrawal_id)))
+        SET status = %s, tx_hash = %s, ton_tx_hash = COALESCE(%s, ton_tx_hash),
+            admin_note = %s, processed_at = NOW()
+        WHERE withdrawal_id = %s OR id = %s
+    """, (status, tx_hash, tx_hash, admin_note, str(withdrawal_id), str(withdrawal_id)))
 
 # ============================================
 # PROMO CODE OPERATIONS
@@ -1980,23 +1981,26 @@ def save_user_ton_wallet(user_id, ton_wallet):
 
 def get_or_create_user_deposit_address(user_id):
     """
-    Returns the bot's shared deposit address + a unique memo for this user.
-    The memo is used to identify which user sent the TON.
-    Format: TONU-<user_id_short>  (e.g. TONU-12345678)
+    Returns a unique memo for this user (used to identify their TON deposits).
+    Format: TONU<user_id_short>  (e.g. TONU12345678)
+    A prueba de fallos: si la columna ton_deposit_address no existe todavía,
+    devuelve el memo generado sin romper la página.
     """
-    user = execute_query(
-        "SELECT ton_deposit_address FROM users WHERE user_id = %s",
-        (str(user_id),), fetch_one=True
-    )
-    if user and user.get('ton_deposit_address'):
-        return user['ton_deposit_address']
-
-    # Generate stable memo from user_id
     memo = f"TONU{str(user_id)[-8:]}"
-    execute_query(
-        "UPDATE users SET ton_deposit_address = %s WHERE user_id = %s",
-        (memo, str(user_id))
-    )
+    try:
+        user = execute_query(
+            "SELECT ton_deposit_address FROM users WHERE user_id = %s",
+            (str(user_id),), fetch_one=True
+        )
+        if user and user.get('ton_deposit_address'):
+            return user['ton_deposit_address']
+        execute_query(
+            "UPDATE users SET ton_deposit_address = %s WHERE user_id = %s",
+            (memo, str(user_id))
+        )
+    except Exception as e:
+        # La columna puede no existir aún; el memo es estable de todos modos.
+        logger.warning(f"get_or_create_user_deposit_address fallback: {e}")
     return memo
 
 
