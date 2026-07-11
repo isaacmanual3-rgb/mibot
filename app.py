@@ -139,10 +139,23 @@ def _admin_host_allowed():
     return host in _ADMIN_PANEL_HOSTS
 
 def _admin_tg_allowed():
-    """True si no se exige Telegram ID, o si la sesión tiene un ID autorizado."""
+    """Gate opcional por Telegram ID.
+
+    Devuelve True (permite) en estos casos:
+      - No hay lista blanca configurada (ADMIN_TELEGRAM_IDS vacío), o
+      - La sesión trae un Telegram ID autorizado, o
+      - No hay ninguna sesión de Telegram (acceso por navegador puro).
+
+    Solo bloquea si el usuario SÍ abrió con una cuenta de Telegram y esa
+    cuenta NO está en la lista blanca. Así el admin puede entrar desde el
+    navegador con usuario/contraseña sin quedar bloqueado, pero un usuario
+    de Telegram no autorizado que intente colarse queda fuera.
+    """
     if not ADMIN_TELEGRAM_IDS:
         return True
     uid = str(session.get('admin_tg_id') or session.get('user_id') or '')
+    if not uid:
+        return True  # navegador sin sesión de Telegram → decide la contraseña
     return uid in ADMIN_TELEGRAM_IDS
 APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","CraftGemsbot")}/app')
 _BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
@@ -1476,10 +1489,11 @@ def admin_auth():
     admin_pass = get_config('admin_password', 'admin123')
     admin_user = get_config('admin_username', 'admin')
 
-    # Telegram-ID gate: si hay lista blanca, la sesión debe traer un ID autorizado.
-    if ADMIN_TELEGRAM_IDS and not _admin_tg_allowed():
+    # Telegram-ID gate: solo bloquea si el usuario abrió con una cuenta de
+    # Telegram NO autorizada. Desde navegador puro no bloquea (manda la contraseña).
+    if not _admin_tg_allowed():
         return render_template('admin_login.html',
-                               error='Acceso restringido: abre el panel desde tu cuenta autorizada de Telegram.')
+                               error='Esta cuenta de Telegram no tiene acceso al panel.')
 
     # Support both username+password login and password-only login
     if password == admin_pass and (not username or username == admin_user):
@@ -1493,12 +1507,24 @@ def admin_auth():
 def admin_dashboard():
     """Admin dashboard"""
     from datetime import datetime
-    stats = get_all_stats()
-    config = get_all_config()
-    
+    try:
+        stats = get_all_stats() or {}
+    except Exception as _e:
+        logger.warning(f"get_all_stats failed: {_e}"); stats = {}
+    try:
+        config = get_all_config() or {}
+    except Exception as _e:
+        logger.warning(f"get_all_config failed: {_e}"); config = {}
+
     # Counts
-    total_users = get_users_count()
-    pending_withdrawal_list = get_pending_withdrawals()
+    try:
+        total_users = get_users_count()
+    except Exception as _e:
+        logger.warning(f"get_users_count failed: {_e}"); total_users = 0
+    try:
+        pending_withdrawal_list = get_pending_withdrawals() or []
+    except Exception as _e:
+        logger.warning(f"get_pending_withdrawals failed: {_e}"); pending_withdrawal_list = []
     pending_withdrawals = len(pending_withdrawal_list)
     
     # Stats from the stats table (with defaults)
@@ -1510,20 +1536,33 @@ def admin_dashboard():
     
     # Active today: users active in last 24h
     from database import execute_query
-    res = execute_query(
-        "SELECT COUNT(*) as c FROM users WHERE last_active >= NOW() - INTERVAL 1 DAY",
-        fetch_one=True
-    )
-    active_today = res["c"] if res else 0
+    try:
+        res = execute_query(
+            "SELECT COUNT(*) as c FROM users WHERE last_active >= NOW() - INTERVAL 1 DAY",
+            fetch_one=True
+        )
+        active_today = res["c"] if res else 0
+    except Exception as _e:
+        logger.warning(f"active_today query failed: {_e}")
+        active_today = 0
     
     # Recent users (last 10)
-    recent_users = get_all_users(limit=10, offset=0)
-    
+    try:
+        recent_users = get_all_users(limit=10, offset=0)
+    except Exception as _e:
+        logger.warning(f"recent_users failed: {_e}"); recent_users = []
+
     # Top earners
-    top_earners = get_top_earners(limit=10)
-    
+    try:
+        top_earners = get_top_earners(limit=10)
+    except Exception as _e:
+        logger.warning(f"top_earners failed: {_e}"); top_earners = []
+
     # Active tasks
-    active_tasks = get_all_tasks(active_only=True)
+    try:
+        active_tasks = get_all_tasks(active_only=True)
+    except Exception as _e:
+        logger.warning(f"active_tasks failed: {_e}"); active_tasks = []
     
     return render_template("admin_dashboard.html",
         stats=stats,
