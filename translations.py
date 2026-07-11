@@ -24,6 +24,42 @@ TRANSLATIONS = {
     'bnav_tasks':  {'en': 'TASKS',  'es': 'TAREAS'},
     'bnav_top':    {'en': 'TOP',    'es': 'TOP'},
     'bnav_wallet': {'en': 'WALLET', 'es': 'BILLETERA'},
+    'bnav_profile':{'en': 'PROFILE','es': 'PERFIL'},
+
+    # ── Profile page ──
+    'pf_wallet_title':     {'en': 'Withdrawal Wallet',    'es': 'Wallet de Retiro'},
+    'pf_wallet_linked':    {'en': 'Wallet linked',         'es': 'Wallet vinculada'},
+    'pf_wallet_not_linked':{'en': 'No wallet linked',      'es': 'Sin wallet vinculada'},
+    'pf_wallet_none':      {'en': 'Add your TON address to withdraw', 'es': 'Añade tu dirección TON para retirar'},
+    'pf_wallet_link':      {'en': 'LINK WALLET',           'es': 'VINCULAR WALLET'},
+    'pf_wallet_edit':      {'en': 'EDIT WALLET',           'es': 'EDITAR WALLET'},
+    'pf_wallet_save':      {'en': 'SAVE',                  'es': 'GUARDAR'},
+    'pf_wallet_cancel':    {'en': 'CANCEL',                'es': 'CANCELAR'},
+    'pf_wallet_hint':      {'en': 'Enter a valid TON wallet (UQ... or EQ...). This is where your withdrawals will be sent.', 'es': 'Ingresa una wallet TON válida (UQ... o EQ...). Aquí se enviarán tus retiros.'},
+    'pf_wallet_empty':     {'en': 'Enter a wallet address', 'es': 'Ingresa una dirección de wallet'},
+    'pf_wallet_error':     {'en': 'Could not save wallet',  'es': 'No se pudo guardar la wallet'},
+
+    'pf_plan_title':       {'en': 'Plan Status',           'es': 'Estado del Plan'},
+    'pf_plan_none':        {'en': 'No active plan',         'es': 'Sin plan activo'},
+    'pf_plan_activate_hint':{'en': 'Activate a plan to start mining', 'es': 'Activa un plan para empezar a minar'},
+    'pf_plan_active':      {'en': 'ACTIVE',                'es': 'ACTIVO'},
+    'pf_plan_inactive':    {'en': 'INACTIVE',              'es': 'INACTIVO'},
+    'pf_plan_expires':     {'en': 'Expires',               'es': 'Vence'},
+    'pf_plan_go':          {'en': '→ GO TO MINING STATION', 'es': '→ IR A LA ESTACIÓN DE MINERÍA'},
+
+    'pf_stats_title':      {'en': 'Statistics',            'es': 'Estadísticas'},
+    'pf_stat_earned':      {'en': 'Total Earned',          'es': 'Total Ganado'},
+    'pf_stat_refs':        {'en': 'Referrals',             'es': 'Referidos'},
+    'pf_stat_machines':    {'en': 'Machines',              'es': 'Máquinas'},
+    'pf_stat_ref_earn':    {'en': 'Ref. Earnings',         'es': 'Ganancia Ref.'},
+
+    'pf_account_title':    {'en': 'Account Info',          'es': 'Información de Cuenta'},
+    'pf_row_id':           {'en': 'User ID',               'es': 'ID de Usuario'},
+    'pf_row_user':         {'en': 'Username',              'es': 'Usuario'},
+    'pf_row_member':       {'en': 'Member Since',          'es': 'Miembro Desde'},
+    'pf_row_balance':      {'en': 'Balance',               'es': 'Saldo'},
+    'pf_copied':           {'en': 'Copied!',               'es': '¡Copiado!'},
+
 
     # ── BASE / HEADER ──────────────────────────────────────────
     'balance_label':   {'en': 'TON BALANCE',          'es': 'SALDO TON'},

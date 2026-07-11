@@ -124,7 +124,22 @@ APP_NAME     = os.environ.get('APP_NAME', 'app')   # Mini App short name
 #   Ej: ADMIN_PANEL_DOMAIN=admin.midominio.com  → desde el dominio público da 404.
 #   Se pueden listar varios separados por coma. Vacío = sin restricción de dominio.
 ADMIN_PANEL_DOMAIN = os.environ.get('ADMIN_PANEL_DOMAIN', '').strip()
-_ADMIN_PANEL_HOSTS = [h.strip().lower() for h in ADMIN_PANEL_DOMAIN.split(',') if h.strip()]
+
+def _clean_host(h):
+    """Normaliza un dominio: quita protocolo, ruta, barras y espacios."""
+    h = (h or '').strip().lower()
+    if not h:
+        return ''
+    # quitar protocolo si lo pusieron (https:// o http://)
+    if '://' in h:
+        h = h.split('://', 1)[1]
+    # quitar cualquier ruta/barra tras el dominio ("dominio.com/" o "dominio.com/x")
+    h = h.split('/', 1)[0]
+    # quitar puerto
+    h = h.split(':', 1)[0]
+    return h.strip()
+
+_ADMIN_PANEL_HOSTS = [c for c in (_clean_host(h) for h in ADMIN_PANEL_DOMAIN.split(',')) if c]
 
 # ADMIN_TELEGRAM_IDS: lista blanca de Telegram IDs con acceso al panel (además de user/pass).
 #   Ej: ADMIN_TELEGRAM_IDS=272920200,5515244003. Vacío = no se exige Telegram ID.
@@ -135,7 +150,7 @@ def _admin_host_allowed():
     """True si la petición actual llega por un dominio autorizado para el panel."""
     if not _ADMIN_PANEL_HOSTS:
         return True  # sin restricción configurada
-    host = (request.host or '').split(':')[0].lower()
+    host = _clean_host(request.host or '')
     return host in _ADMIN_PANEL_HOSTS
 
 def _admin_tg_allowed():
@@ -572,10 +587,13 @@ def auth():
         user_id   = str(user_data.get('id'))
         username  = user_data.get('username', '')
         first_name = user_data.get('first_name', 'Player')
-        
+        photo_url = user_data.get('photo_url', '') or ''
+
         session['user_id']    = user_id
         session['username']   = username
         session['first_name'] = first_name
+        if photo_url:
+            session['photo_url'] = photo_url
         session.permanent     = True
 
         # Marca el Telegram ID para el gate del panel admin (si está en la lista blanca)
@@ -639,6 +657,74 @@ def index():
         bot_username=BOT_USERNAME,
         format_doge=format_doge
     )
+
+@app.route('/profile')
+@require_user
+def profile(user):
+    """User profile page — avatar, ID, username, withdrawal wallet, plan status, stats."""
+    # Mining / plan status
+    machines = get_user_machines(user['user_id'])
+    mining_stats = get_user_mining_stats(user['user_id'])
+    plan_name = None
+    plan_expires = None
+    plan_rate = 0
+    if machines:
+        first = machines[0]
+        plan_name = first.get('plan_name') or first.get('name')
+        exp = first.get('expires_at')
+        plan_expires = exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else (str(exp) if exp else None)
+        plan_rate = float(first.get('hourly_rate', 0) or 0)
+
+    # Referral stats
+    ref_stats = get_referral_stats(user['user_id']) or {}
+
+    # Withdrawal wallet (TON)
+    wallet_addr = user.get('ton_wallet') or ''
+
+    # Member since
+    created = user.get('created_at')
+    member_since = created.strftime('%Y-%m-%d') if created and hasattr(created, 'strftime') else (str(created)[:10] if created else 'N/A')
+
+    return render_template('profile.html',
+        user=user,
+        photo_url=session.get('photo_url', ''),
+        username=session.get('username', '') or user.get('username', ''),
+        wallet_addr=wallet_addr,
+        plan_name=plan_name,
+        plan_expires=plan_expires,
+        plan_rate=plan_rate,
+        total_machines=mining_stats.get('total_machines', 0) if mining_stats else 0,
+        total_hourly_rate=mining_stats.get('total_hourly_rate', 0) if mining_stats else 0,
+        ref_count=ref_stats.get('total_referrals', 0),
+        ref_validated=ref_stats.get('validated_referrals', 0),
+        ref_earnings=ref_stats.get('total_earnings', 0),
+        member_since=member_since,
+        format_doge=format_doge,
+    )
+
+
+@app.route('/api/profile/wallet', methods=['POST'])
+@require_user
+def api_profile_wallet(user):
+    """Link or update the user's TON withdrawal wallet."""
+    data = request.get_json() or {}
+    wallet = (data.get('wallet') or '').strip()
+
+    if not wallet:
+        return jsonify({'success': False, 'message': 'Ingresa una dirección de wallet'})
+
+    # Basic TON address validation: starts with UQ/EQ/kQ/0Q, length 48
+    valid_prefix = wallet[:2] in ('UQ', 'EQ', 'kQ', '0Q', 'Uf', 'Ef')
+    if len(wallet) < 40 or len(wallet) > 70 or not valid_prefix:
+        return jsonify({'success': False, 'message': 'Dirección TON inválida. Debe empezar con UQ o EQ.'})
+
+    try:
+        save_user_ton_wallet(user['user_id'], wallet)
+        return jsonify({'success': True, 'message': 'Wallet vinculada correctamente', 'wallet': wallet})
+    except Exception as e:
+        logger.warning(f"save wallet error: {e}")
+        return jsonify({'success': False, 'message': 'No se pudo guardar la wallet'})
+
 
 @app.route('/wallet')
 @require_user
