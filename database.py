@@ -321,10 +321,15 @@ def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
         items = combined[offset:offset + per_page]
 
     total_pages = max(1, (total + per_page - 1) // per_page)
-    # Serializar fechas
+    # Serializar fechas y añadir campos de compatibilidad (para admin_users.html)
     for it in items:
         ca = it.get('created_at')
         it['created_at'] = ca.strftime('%Y-%m-%d %H:%M') if ca and hasattr(ca, 'strftime') else (str(ca)[:16] if ca else '')
+        # Campos que espera el historial simple de admin_users.html
+        it.setdefault('action', it.get('type', ''))
+        it.setdefault('description', it.get('detail', ''))
+        it.setdefault('amount', 0)
+        it.setdefault('balance_after', it.get('balance_after', 0))
 
     return {'items': items, 'total': total, 'page': page, 'per_page': per_page, 'total_pages': total_pages}
 

@@ -1820,10 +1820,11 @@ def admin_api_user_history(user_id):
             'ton_wallet': u.get('ton_wallet', '') or '',
             'banned': bool(u.get('banned', 0)),
         }
-        return jsonify({'success': True, 'summary': summary, **data})
+        # 'history' es un alias de 'items' para compatibilidad con admin_users.html
+        return jsonify({'success': True, 'summary': summary, 'history': data.get('items', []), **data})
     except Exception as e:
         logger.warning(f"user history error: {e}")
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({'success': False, 'message': str(e), 'history': [], 'items': []})
 
 
 @app.route('/admin/withdrawals')
@@ -2412,24 +2413,6 @@ def admin_api_adjust_balance():
     if ok:
         return jsonify({'success': True, 'message': f'Balance adjusted by {amount:+.8f} DOGE'})
     return jsonify({'success': False, 'message': 'Balance adjustment failed (insufficient funds?)'})
-
-
-@app.route('/admin/api/user/<user_id>/history')
-@require_admin
-def admin_api_user_history(user_id):
-    """Return full balance history for a user"""
-    limit  = int(request.args.get('limit', 50))
-    history = get_balance_history(user_id, limit=limit)
-    rows = []
-    for h in history:
-        row = dict(h)
-        for k, v in row.items():
-            if hasattr(v, 'isoformat'):
-                row[k] = str(v)
-            elif hasattr(v, '__float__'):
-                row[k] = float(v)
-        rows.append(row)
-    return jsonify({'success': True, 'history': rows})
 
 
 @app.route('/admin/api/user/<user_id>/ban', methods=['POST'])
