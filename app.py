@@ -1706,13 +1706,13 @@ def admin_users():
     if search:
         users = execute_query(
             """SELECT * FROM users
-               WHERE username LIKE %s OR first_name LIKE %s OR telegram_id LIKE %s
+               WHERE username LIKE %s OR first_name LIKE %s OR user_id LIKE %s
                ORDER BY created_at DESC LIMIT %s OFFSET %s""",
             (f'%{search}%', f'%{search}%', f'%{search}%', per_page, offset),
             fetch_all=True
         ) or []
         res = execute_query(
-            "SELECT COUNT(*) as c FROM users WHERE username LIKE %s OR first_name LIKE %s OR telegram_id LIKE %s",
+            "SELECT COUNT(*) as c FROM users WHERE username LIKE %s OR first_name LIKE %s OR user_id LIKE %s",
             (f'%{search}%', f'%{search}%', f'%{search}%'), fetch_one=True
         )
         total_users = res['c'] if res else 0
@@ -1745,6 +1745,9 @@ def admin_users():
         u.setdefault('validated_referrals', u.get('validated_referrals', u.get('referral_count', 0)))
         u.setdefault('referral_earnings',   u.get('referral_earnings', 0))
         u['is_banned'] = bool(u.get('banned', 0))
+        # La plantilla muestra {{ user.telegram_id }}, pero el identificador real
+        # es user_id (que ES el ID de Telegram). Lo exponemos como alias.
+        u['telegram_id'] = u.get('user_id', '')
 
     return render_template('admin_users.html',
         users=users,
@@ -1856,16 +1859,29 @@ def admin_withdrawals():
     page = int(request.args.get('page', 1))
     per_page = 100
 
+    # El botón "Approved" del panel usa filter=approved, pero en BD el estado
+    # real es 'completed'. Mapeamos para que el filtro encuentre los retiros.
+    status_filter = 'completed' if filter_type == 'approved' else filter_type
+
     if filter_type == 'all':
-        rows = execute_query("SELECT * FROM withdrawals ORDER BY created_at DESC LIMIT %s OFFSET %s",
-                             (per_page, (page-1)*per_page), fetch_all=True) or []
+        rows = execute_query(
+            """SELECT w.*, u.username AS username, u.first_name AS first_name,
+                      w.user_id AS telegram_id
+               FROM withdrawals w
+               LEFT JOIN users u ON u.user_id = w.user_id
+               ORDER BY w.created_at DESC LIMIT %s OFFSET %s""",
+            (per_page, (page-1)*per_page), fetch_all=True) or []
         total_count = (execute_query("SELECT COUNT(*) as c FROM withdrawals", fetch_one=True) or {}).get('c', 0)
     else:
         rows = execute_query(
-            "SELECT * FROM withdrawals WHERE status=%s ORDER BY created_at DESC LIMIT %s OFFSET %s",
-            (filter_type, per_page, (page-1)*per_page), fetch_all=True) or []
+            """SELECT w.*, u.username AS username, u.first_name AS first_name,
+                      w.user_id AS telegram_id
+               FROM withdrawals w
+               LEFT JOIN users u ON u.user_id = w.user_id
+               WHERE w.status=%s ORDER BY w.created_at DESC LIMIT %s OFFSET %s""",
+            (status_filter, per_page, (page-1)*per_page), fetch_all=True) or []
         total_count = (execute_query("SELECT COUNT(*) as c FROM withdrawals WHERE status=%s",
-                                     (filter_type,), fetch_one=True) or {}).get('c', 0)
+                                     (status_filter,), fetch_one=True) or {}).get('c', 0)
 
     total_pages = max(1, (total_count + per_page - 1) // per_page)
 
@@ -2413,6 +2429,8 @@ def admin_api_get_user(user_id):
         elif hasattr(v, '__float__'):
             user_dict[k] = float(v)
     user_dict['is_banned'] = bool(user_dict.get('banned', 0))
+    # La plantilla del modal usa u.telegram_id; el ID real es user_id.
+    user_dict['telegram_id'] = user_dict.get('user_id', '')
     return jsonify({'success': True, 'user': user_dict})
 
 
