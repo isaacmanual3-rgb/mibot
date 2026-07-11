@@ -427,7 +427,7 @@ def _validate_referral_on_purchase(user_id):
             lang_code = referrer_obj.get('language_code') if referrer_obj else None
             # Obtener datos actualizados del referidor tras el pago del bono
             referrer_fresh = get_user(referrer_id)
-            bonus_amount = float(get_config('referral_bonus', '0.05'))
+            bonus_amount = float(get_config('referral_bonus', '0'))
             total_refs = referrer_fresh.get('validated_referrals', 0) if referrer_fresh else 0
             total_earnings = referrer_fresh.get('referral_earnings', 0.0) if referrer_fresh else 0.0
             notify_referral_validated(
@@ -1009,7 +1009,7 @@ def referrals(user):
     stats = get_referral_stats(user['user_id'])
 
     # Get referral bonus from config
-    referral_bonus = float(get_config('referral_bonus', '0.05'))
+    referral_bonus = float(get_config('referral_bonus', '0'))
 
     # ── Fraud detection in Python (more reliable than SQL correlated subquery) ──
     if refs:
@@ -1109,7 +1109,8 @@ def mining(user):
         mining_stats=mining_stats,
         pending_rewards=pending_rewards,
         format_doge=format_doge,
-        adsgram_block_id=os.environ.get('ADSGRAM_BLOCK_ID', 'int-XXXXXX')
+        adsgram_block_id=get_config('adsgram_block_id', '') or os.environ.get('ADSGRAM_BLOCK_ID', ''),
+        free_plan_ads_required=int(get_config('free_plan_ads_required', '10') or 10)
     )
 
 # ============================================
@@ -1273,10 +1274,10 @@ def api_mining_purchase(user):
         return jsonify({'success': False, 'message': 'Plan ID required'})
 
     # ── Free plans require watching rewarded ads (anti-abuse) ──
-    ADS_REQUIRED = 10
+    ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
     try:
         plan_check = get_mining_plan(plan_id)
-        if plan_check and float(plan_check.get('price', 0)) == 0.0:
+        if plan_check and float(plan_check.get('price', 0)) == 0.0 and ADS_REQUIRED > 0:
             ads_completed = int(data.get('ads_completed', 0) or 0)
             if ads_completed < ADS_REQUIRED:
                 return jsonify({
