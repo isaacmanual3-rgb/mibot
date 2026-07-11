@@ -456,6 +456,162 @@
 .mn-step-arrow { font-family:var(--font-px); font-size:0.5rem; color:var(--muted); margin-top:20px; flex-shrink:0; }
 
 /* ═══════════════════════════════
+   ADSGRAM TASKS MODAL (free plan gate)
+═══════════════════════════════ */
+.mn-ads-modal {
+  background:var(--surface2);
+  border:2px solid var(--border);
+  box-shadow:0 0 40px rgba(0,0,0,0.75);
+  width:92%; max-width:420px; max-height:88vh; overflow-y:auto;
+  position:relative; padding:0;
+  animation:mn-sheet .28s cubic-bezier(.22,.77,.42,1) both;
+}
+.mn-ads-modal::before,.mn-ads-modal::after {
+  content:''; position:absolute; width:9px; height:9px;
+  border-color:var(--green); border-style:solid; z-index:2;
+}
+.mn-ads-modal::before{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.mn-ads-modal::after{top:-2px;right:-2px;border-width:2px 2px 0 0}
+
+.mn-ads-head {
+  position:relative; overflow:hidden;
+  background:linear-gradient(160deg,#060612 0%,#0a1410 100%);
+  border-bottom:2px solid rgba(0,230,118,0.25);
+  padding:24px 20px 20px; text-align:center;
+}
+.mn-ads-head-glow {
+  position:absolute; top:-50px; left:50%; transform:translateX(-50%);
+  width:180px; height:180px;
+  background:radial-gradient(circle,rgba(0,230,118,0.14) 0%,transparent 68%);
+  pointer-events:none;
+}
+.mn-ads-close {
+  position:absolute; top:12px; right:12px; z-index:3;
+  width:28px; height:28px; background:var(--surface3);
+  border:2px solid var(--border); color:var(--text2);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:2px 2px 0 0 #020205; transition:transform .07s;
+}
+.mn-ads-close:hover{ transform:translate(-1px,-1px); }
+.mn-ads-close svg{ width:14px; height:14px; }
+
+.mn-ads-icon {
+  width:56px; height:56px; margin:0 auto 14px; position:relative; z-index:1;
+  background:rgba(0,230,118,0.08); border:2px solid rgba(0,230,118,0.35);
+  box-shadow:3px 3px 0 0 #020205, 0 0 24px rgba(0,230,118,0.12);
+  display:flex; align-items:center; justify-content:center;
+  animation:mn-bounce .9s steps(1) infinite;
+}
+.mn-ads-title {
+  position:relative; z-index:1;
+  font-family:var(--font-px); font-size:0.62rem; color:var(--green);
+  text-shadow:2px 2px 0 #003318, 0 0 14px rgba(0,230,118,0.35);
+  letter-spacing:.05em; margin-bottom:10px; line-height:1.5;
+}
+.mn-ads-sub {
+  position:relative; z-index:1;
+  font-size:0.8rem; color:var(--text2); line-height:1.5; padding:0 6px;
+}
+.mn-ads-plan-name { color:var(--green); font-weight:600; }
+
+.mn-ads-body { padding:20px; }
+
+/* progress */
+.mn-ads-progress-wrap { margin-bottom:20px; }
+.mn-ads-progress-top {
+  display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;
+}
+.mn-ads-progress-label {
+  font-family:var(--font-px); font-size:0.4rem; color:var(--muted);
+  letter-spacing:.14em; text-transform:uppercase;
+}
+.mn-ads-progress-count {
+  font-family:var(--font-px); font-size:0.7rem; color:var(--green);
+  text-shadow:2px 2px 0 #003318;
+}
+.mn-ads-progress-count .mn-ads-total { color:var(--muted); text-shadow:none; font-size:0.5rem; }
+.mn-ads-progress-track {
+  height:14px; background:var(--surface3); border:2px solid var(--border);
+  position:relative; overflow:hidden; box-shadow:inset 2px 2px 0 rgba(0,0,0,0.4);
+}
+.mn-ads-progress-fill {
+  height:100%; width:0%;
+  background:repeating-linear-gradient(45deg,#00e676,#00e676 6px,#00c853 6px,#00c853 12px);
+  box-shadow:0 0 12px rgba(0,230,118,0.5);
+  transition:width .5s cubic-bezier(.22,.77,.42,1);
+}
+
+/* dots grid — 10 anuncios */
+.mn-ads-dots {
+  display:grid; grid-template-columns:repeat(10,1fr); gap:5px; margin-bottom:22px;
+}
+.mn-ads-dot {
+  aspect-ratio:1; background:var(--surface3);
+  border:2px solid var(--border); position:relative;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .25s ease;
+}
+.mn-ads-dot.done {
+  background:rgba(0,230,118,0.12); border-color:var(--green);
+  box-shadow:0 0 8px rgba(0,230,118,0.3);
+}
+.mn-ads-dot.done::after {
+  content:''; width:7px; height:7px; background:var(--green);
+  box-shadow:0 0 6px rgba(0,230,118,0.7);
+}
+.mn-ads-dot.active {
+  border-color:var(--gold); background:var(--gold-dim);
+  animation:mn-dot-pulse 1s ease-in-out infinite;
+}
+@keyframes mn-dot-pulse{ 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0)} 50%{box-shadow:0 0 10px 2px rgba(255,215,0,0.4)} }
+
+/* watch button */
+.mn-ads-watch {
+  width:100%; padding:16px; display:flex; align-items:center; justify-content:center; gap:10px;
+  font-family:var(--font-px); font-size:0.5rem; letter-spacing:.06em;
+  background:var(--green); color:#050f08; border:2px solid #00c853;
+  box-shadow:4px 4px 0 0 #003318; cursor:pointer;
+  transition:transform .07s, box-shadow .07s; margin-bottom:12px;
+}
+.mn-ads-watch:hover  { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #003318; }
+.mn-ads-watch:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #003318; }
+.mn-ads-watch:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:4px 4px 0 0 #003318; }
+.mn-ads-watch svg { width:18px; height:18px; }
+
+/* activate (unlocked) */
+.mn-ads-activate {
+  width:100%; padding:16px; display:none; align-items:center; justify-content:center; gap:10px;
+  font-family:var(--font-px); font-size:0.52rem; letter-spacing:.06em;
+  background:var(--gold); color:#0a0800; border:2px solid var(--gold2);
+  box-shadow:4px 4px 0 0 var(--gold-dark); cursor:pointer;
+  transition:transform .07s, box-shadow .07s;
+  animation:mn-pulse-gold 1.6s ease-in-out infinite;
+}
+.mn-ads-activate.show { display:flex; }
+@keyframes mn-pulse-gold{
+  0%,100%{box-shadow:4px 4px 0 0 var(--gold-dark), 0 0 0 0 rgba(255,215,0,0)}
+  50%{box-shadow:4px 4px 0 0 var(--gold-dark), 0 0 18px 4px rgba(255,215,0,0.25)}
+}
+.mn-ads-activate:hover  { transform:translate(-1px,-1px); }
+.mn-ads-activate:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 var(--gold-dark); animation:none; }
+.mn-ads-activate svg { width:18px; height:18px; }
+
+.mn-ads-hint {
+  font-size:0.7rem; color:var(--muted); text-align:center; line-height:1.5;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.mn-ads-hint svg{ width:12px; height:12px; flex-shrink:0; }
+
+.mn-ads-status {
+  font-family:var(--font-px); font-size:0.4rem; letter-spacing:.05em;
+  text-align:center; padding:10px; margin-bottom:12px; min-height:14px;
+  color:var(--gold); line-height:1.6; display:none;
+}
+.mn-ads-status.show{ display:block; }
+.mn-ads-status.error{ color:var(--red); }
+.mn-ads-status.ok{ color:var(--green); }
+
+/* ═══════════════════════════════
    PURCHASE MODAL
 ═══════════════════════════════ */
 .mn-modal-bg {
@@ -552,7 +708,7 @@
     <div class="mn-hero">
       <div class="mn-hero-glow" aria-hidden="true"></div>
       <div class="mn-hero-icon">
-        <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2.5l7 7-3.5 3.5-7-7z"/><path d="M11 6L3 14l1.5 1.5 2-2L9 16l-2 2 1.5 1.5 8-8"/><path d="M2 22l4-4"/></svg></span>
+        <span class="px-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5C7 6 11 5 14.5 6.2"/><path d="M20.5 15.5C17 18 13 19 9.5 17.8"/><path d="M14.5 6.2C17 4 19.5 3.5 21 4c.5 1.5 0 4-2.2 6.5"/><path d="M9.5 17.8L4 22"/><line x1="12" y1="10" x2="14" y2="12"/></svg></span>
       </div>
       <div class="mn-hero-title">{{ t.mn_title }}</div>
       <div class="mn-hero-sub">{{ t.mn_sub }}</div>
@@ -562,7 +718,7 @@
     <div class="mn-card" style="padding:0; overflow:hidden;">
       <div class="mn-stats">
         <div class="mn-stat">
-          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><circle cx="12" cy="12" r="1.5" fill="#40c4ff" stroke="#40c4ff"/><circle cx="16" cy="12" r="1.5" fill="#ffd700" stroke="#ffd700"/><path d="M6 8h2M16 8h2"/></svg></span></div>
+          <div class="mn-stat-icon"><span class="px-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#40c4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.5" fill="#40c4ff" stroke="none"/><line x1="9" y1="3" x2="9" y2="6"/><line x1="15" y1="3" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="21"/><line x1="15" y1="18" x2="15" y2="21"/><line x1="3" y1="9" x2="6" y2="9"/><line x1="3" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="21" y2="9"/><line x1="18" y1="15" x2="21" y2="15"/></svg></span></div>
           <span class="mn-stat-val">{{ mining_stats.total_machines if mining_stats else 0 }}</span>
           <span class="mn-stat-lbl">{{ t.mn_stat_machines }}</span>
         </div>
@@ -575,7 +731,7 @@
         </div>
         <div class="mn-stat">
           <div class="mn-stat-icon" style="border-color:rgba(0,230,118,0.25); background:rgba(0,230,118,0.04);">
-            <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2m-4-6h8" stroke-width="1.5"/><path d="M9.5 9.5C10 8.5 11 8 12 8s2.5.5 2.5 2-1 2-2.5 2-2.5.5-2.5 2 1 2.5 2.5 2.5 2.5-.5 2.5-2" stroke-width="1.5"/></svg></span>
+            <span class="px-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 10l4-4 4 4-4 8-4-8z" fill="rgba(0,230,118,0.25)"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="12" y1="6" x2="12" y2="14"/></svg></span>
           </div>
           <span class="mn-stat-val" id="pendingRewards">{{ format_ton(pending_rewards) }}</span>
           <span class="mn-stat-lbl">{{ t.mn_stat_pending }}</span>
@@ -763,6 +919,55 @@
   </div>
 </div>
 
+<!-- ── ADSGRAM TASKS MODAL (free plan) ── -->
+<div id="adsModal" class="mn-modal-bg">
+  <div class="mn-ads-modal">
+    <div class="mn-ads-close" onclick="closeAdsModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </div>
+
+    <div class="mn-ads-head">
+      <div class="mn-ads-head-glow" aria-hidden="true"></div>
+      <div class="mn-ads-icon">
+        <span class="px-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="#00e676" stroke="none"/></svg></span>
+      </div>
+      <div class="mn-ads-title">{{ t.mn_ads_title }}</div>
+      <div class="mn-ads-sub">{{ t.mn_ads_sub_1 }} <span class="mn-ads-plan-name" id="adsPlanName">—</span> {{ t.mn_ads_sub_2 }}</div>
+    </div>
+
+    <div class="mn-ads-body">
+      <div class="mn-ads-progress-wrap">
+        <div class="mn-ads-progress-top">
+          <span class="mn-ads-progress-label">{{ t.mn_ads_progress }}</span>
+          <span class="mn-ads-progress-count"><span id="adsDone">0</span><span class="mn-ads-total">/<span id="adsTotal">10</span></span></span>
+        </div>
+        <div class="mn-ads-progress-track">
+          <div class="mn-ads-progress-fill" id="adsProgressFill"></div>
+        </div>
+      </div>
+
+      <div class="mn-ads-dots" id="adsDots"></div>
+
+      <div class="mn-ads-status" id="adsStatus"></div>
+
+      <button class="mn-ads-watch" id="adsWatchBtn" onclick="watchAd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#050f08" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="#050f08" stroke="none"/></svg>
+        <span id="adsWatchLabel">{{ t.mn_ads_watch }}</span>
+      </button>
+
+      <button class="mn-ads-activate" id="adsActivateBtn" onclick="activateFreePlan()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0a0800" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L10 22l9.5-11.5H14L13 2z" fill="#0a0800" stroke="none"/></svg>
+        <span>{{ t.mn_ads_activate }}</span>
+      </button>
+
+      <div class="mn-ads-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4a4a6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        {{ t.mn_ads_hint }}
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── PURCHASE MODAL ── -->
 <div id="purchaseModal" class="mn-modal-bg">
   <div class="mn-modal">
@@ -795,11 +1000,164 @@ let currentPlanId = null;
 let currentPlanName = '';
 let currentPlanPrice = 0;
 
+/* ═══════════════════════════════════════════════
+   ADSGRAM — FREE PLAN TASK GATE
+   ═══════════════════════════════════════════════ */
+// ⚠️ REEMPLAZA con tu Block ID real de Adsgram (panel Adsgram → Rewarded)
+const ADSGRAM_BLOCK_ID = "{{ adsgram_block_id }}";
+const ADS_REQUIRED = 10;
+
+let adsWatched = 0;
+let adsInProgress = false;
+let AdController = null;
+
+// Inicializa el controlador de Adsgram cuando el SDK esté disponible
+function initAdsgram() {
+  if (typeof window.Adsgram === 'undefined') return false;
+  if (AdController) return true;
+  try {
+    AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    return true;
+  } catch (e) { console.warn('Adsgram init error', e); return false; }
+}
+
+function buildAdsDots() {
+  const wrap = document.getElementById('adsDots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < ADS_REQUIRED; i++) {
+    const d = document.createElement('div');
+    d.className = 'mn-ads-dot';
+    d.dataset.idx = i;
+    wrap.appendChild(d);
+  }
+  document.getElementById('adsTotal').textContent = ADS_REQUIRED;
+}
+
+function renderAdsProgress() {
+  document.getElementById('adsDone').textContent = adsWatched;
+  const pct = Math.min(100, (adsWatched / ADS_REQUIRED) * 100);
+  document.getElementById('adsProgressFill').style.width = pct + '%';
+  const dots = document.querySelectorAll('.mn-ads-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active');
+    if (i < adsWatched) d.classList.add('done');
+    else d.classList.remove('done');
+  });
+  if (adsWatched < ADS_REQUIRED && dots[adsWatched]) dots[adsWatched].classList.add('active');
+
+  const watchBtn = document.getElementById('adsWatchBtn');
+  const activateBtn = document.getElementById('adsActivateBtn');
+  if (adsWatched >= ADS_REQUIRED) {
+    watchBtn.style.display = 'none';
+    activateBtn.classList.add('show');
+    setAdsStatus((window.I18N?.mn_ads_complete || '{{ t.mn_ads_complete }}'), 'ok');
+  } else {
+    watchBtn.style.display = 'flex';
+    activateBtn.classList.remove('show');
+  }
+}
+
+function setAdsStatus(msg, type) {
+  const el = document.getElementById('adsStatus');
+  el.textContent = msg || '';
+  el.className = 'mn-ads-status' + (msg ? ' show' : '') + (type ? ' ' + type : '');
+}
+
+function openAdsModal(planName) {
+  adsWatched = 0;
+  adsInProgress = false;
+  document.getElementById('adsPlanName').textContent = planName;
+  const wl = document.getElementById('adsWatchLabel');
+  wl.textContent = (window.I18N?.mn_ads_watch || '{{ t.mn_ads_watch }}');
+  buildAdsDots();
+  renderAdsProgress();
+  setAdsStatus('', '');
+  document.getElementById('adsWatchBtn').disabled = false;
+  document.getElementById('adsModal').classList.add('show');
+  initAdsgram();
+}
+
+function closeAdsModal() {
+  if (adsInProgress) return; // no cerrar mientras carga un anuncio
+  document.getElementById('adsModal').classList.remove('show');
+}
+
+async function watchAd() {
+  if (adsInProgress || adsWatched >= ADS_REQUIRED) return;
+  const btn = document.getElementById('adsWatchBtn');
+
+  if (!initAdsgram()) {
+    setAdsStatus((window.I18N?.mn_ads_unavailable || '{{ t.mn_ads_unavailable }}'), 'error');
+    return;
+  }
+
+  adsInProgress = true;
+  btn.disabled = true;
+  const lbl = document.getElementById('adsWatchLabel');
+  const prevLbl = lbl.textContent;
+  lbl.textContent = (window.I18N?.mn_ads_loading || '{{ t.mn_ads_loading }}');
+  setAdsStatus('', '');
+
+  try {
+    // Adsgram muestra el rewarded; resuelve solo si el usuario lo ve completo
+    await AdController.show();
+    adsWatched++;
+    renderAdsProgress();
+    createPixelExplosion(window.innerWidth / 2, window.innerHeight / 2, '#00ff66');
+    if (adsWatched < ADS_REQUIRED) {
+      setAdsStatus((window.I18N?.mn_ads_counted || '{{ t.mn_ads_counted }}').replace('{n}', ADS_REQUIRED - adsWatched), 'ok');
+    }
+  } catch (err) {
+    // El usuario cerró el anuncio antes de tiempo o hubo un error
+    setAdsStatus((window.I18N?.mn_ads_incomplete || '{{ t.mn_ads_incomplete }}'), 'error');
+  } finally {
+    adsInProgress = false;
+    btn.disabled = false;
+    if (adsWatched < ADS_REQUIRED) lbl.textContent = prevLbl;
+  }
+}
+
+async function activateFreePlan() {
+  if (adsWatched < ADS_REQUIRED) return;
+  const btn = document.getElementById('adsActivateBtn');
+  btn.disabled = true;
+  const span = btn.querySelector('span');
+  const prev = span.textContent;
+  span.textContent = (window.I18N?.mn_processing || 'PROCESSING...');
+  try {
+    const res = await fetch('/api/mining/purchase', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan_id: currentPlanId, ads_completed: adsWatched })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('adsModal').classList.remove('show');
+      showToast(data.message, 'success');
+      createCoinRain(12);
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      setAdsStatus(data.message || (window.I18N?.mn_purchase_failed || '{{ t.mn_purchase_failed }}'), 'error');
+      btn.disabled = false; span.textContent = prev;
+    }
+  } catch (e) {
+    setAdsStatus((window.I18N?.mn_conn_error || '{{ t.mn_conn_error }}'), 'error');
+    btn.disabled = false; span.textContent = prev;
+  }
+}
+
+// Cerrar modal ads al tocar el fondo
+document.addEventListener('DOMContentLoaded', function () {
+  const am = document.getElementById('adsModal');
+  if (am) am.addEventListener('click', function (e) { if (e.target === this) closeAdsModal(); });
+});
+
 function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
+  // ── Free plans require completing Adsgram tasks first ──
+  if (price === 0) { openAdsModal(planName); return; }
   var msg = (window.I18N?.mn_activate_plan || '¿Activar el plan {name} por 30 días?').replace('{name}', planName);
   document.getElementById('purchaseMessage').textContent = msg;
-  document.getElementById('purchaseCost').textContent = price === 0 ? '{{ t.mn_modal_free }}' : `${price} TON`;
+  document.getElementById('purchaseCost').textContent = `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
 }
 function closePurchaseModal() {
