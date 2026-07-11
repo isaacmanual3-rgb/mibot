@@ -96,12 +96,16 @@
                 <td class="text-muted">{{ w.created_at }}</td>
                 <td>
                     {% if w.status == 'pending' %}
-                    <div class="flex gap-2">
+                    <div class="flex gap-2" style="flex-wrap:wrap">
+                        <button class="btn btn-secondary" onclick="viewUserHistory('{{ w.telegram_id }}')" style="background:#1a3a5a;border-color:#0098EA;color:#0098EA">📋 HISTORIAL</button>
                         <button class="btn btn-success" onclick="approveWithdrawal({{ w.id }})">APPROVE</button>
                         <button class="btn btn-danger" onclick="rejectWithdrawal({{ w.id }})">REJECT</button>
                     </div>
                     {% else %}
-                    <button class="btn btn-secondary" onclick="viewDetails({{ w.id }})">DETAILS</button>
+                    <div class="flex gap-2" style="flex-wrap:wrap">
+                        <button class="btn btn-secondary" onclick="viewUserHistory('{{ w.telegram_id }}')" style="background:#1a3a5a;border-color:#0098EA;color:#0098EA">📋 HISTORIAL</button>
+                        <button class="btn btn-secondary" onclick="viewDetails({{ w.id }})">DETAILS</button>
+                    </div>
                     {% endif %}
                 </td>
             </tr>
@@ -141,22 +145,26 @@
 <div id="approveModal" class="modal">
     <div class="modal-content pixel-border">
         <div class="modal-header">
-            <h3 class="modal-title">APPROVE WITHDRAWAL</h3>
+            <h3 class="modal-title">✅ APROBAR RETIRO</h3>
         </div>
         <form id="approveForm">
             <input type="hidden" name="withdrawal_id" id="approveId">
-            <div class="form-group">
-                <label class="form-label">Transaction Hash (optional)</label>
-                <input type="text" name="tx_hash" class="form-input" placeholder="Enter TON transaction hash">
+            <div style="background:#0a2540;border:1px solid #0098EA;padding:10px 12px;margin-bottom:12px;font-size:0.85rem;color:#8ec9f0;line-height:1.5">
+                Al aprobar, el bot <strong>enviará el TON automáticamente</strong> a la wallet del usuario y marcará el retiro como completado.
+                <br>Si el envío automático falla (o prefieres enviarlo a mano), pega el hash de la transacción abajo.
             </div>
             <div class="form-group">
-                <label class="form-label">Notes (optional)</label>
-                <textarea name="notes" class="form-input" rows="2" placeholder="Admin notes"></textarea>
+                <label class="form-label">Transaction Hash (solo si envías manual)</label>
+                <input type="text" name="tx_hash" class="form-input" placeholder="Déjalo vacío para envío automático">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notas (opcional)</label>
+                <textarea name="note" class="form-input" rows="2" placeholder="Notas del admin"></textarea>
             </div>
         </form>
         <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeModal('approveModal')">CANCEL</button>
-            <button class="btn btn-success" onclick="submitApproval()">CONFIRM APPROVAL</button>
+            <button class="btn btn-secondary" onclick="closeModal('approveModal')">CANCELAR</button>
+            <button class="btn btn-success" onclick="submitApproval()">CONFIRMAR Y ENVIAR</button>
         </div>
     </div>
 </div>
@@ -207,6 +215,42 @@
         </div>
     </div>
 </div>
+
+<!-- User History Modal -->
+<div id="historyModal" class="modal">
+    <div class="modal-content pixel-border" style="max-width:640px;width:94%;max-height:88vh;display:flex;flex-direction:column">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3 class="modal-title">📋 HISTORIAL DEL USUARIO</h3>
+            <button class="btn btn-secondary" onclick="closeModal('historyModal')" style="padding:4px 10px">✕</button>
+        </div>
+
+        <!-- Resumen del usuario -->
+        <div id="histSummary" style="background:#0a0e18;border:1px solid #1e2a3a;padding:12px;margin-bottom:12px;font-size:0.9rem">
+            <div style="color:#888">Cargando...</div>
+        </div>
+
+        <!-- Filtros -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="hist-filter btn btn-primary" data-cat="all"        onclick="setHistFilter('all')">TODO</button>
+            <button class="hist-filter btn btn-secondary" data-cat="movements"   onclick="setHistFilter('movements')">MOVIMIENTOS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="withdrawals" onclick="setHistFilter('withdrawals')">RETIROS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="deposits"    onclick="setHistFilter('deposits')">DEPÓSITOS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="referrals"   onclick="setHistFilter('referrals')">REFERIDOS</button>
+        </div>
+
+        <!-- Lista scrollable -->
+        <div id="histList" style="flex:1;overflow-y:auto;min-height:200px;max-height:48vh;border:1px solid #1e2a3a;background:#06090f">
+            <div style="padding:20px;text-align:center;color:#666">Cargando historial...</div>
+        </div>
+
+        <!-- Paginación -->
+        <div id="histPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px">
+            <button class="btn btn-secondary" id="histPrev" onclick="histPage(-1)" style="padding:6px 12px">← PREV</button>
+            <span id="histPageInfo" style="font-size:0.85rem;color:#888">—</span>
+            <button class="btn btn-secondary" id="histNext" onclick="histPage(1)" style="padding:6px 12px">NEXT →</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -229,26 +273,137 @@ function rejectWithdrawal(id) {
 async function submitApproval() {
     const form = document.getElementById('approveForm');
     const formData = new FormData(form);
-    
+
     try {
         const response = await fetch('/admin/api/withdrawal/approve', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.fromEntries(formData))
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
-            showToast('Withdrawal approved', 'success');
+            showToast(data.message || 'Retiro aprobado', 'success');
             closeModal('approveModal');
-            location.reload();
+            setTimeout(() => location.reload(), 1200);
+        } else if (data.auto_failed) {
+            // El envío automático falló — mostrar el motivo, no recargar
+            showToast(data.message || 'Envío automático falló', 'error');
         } else {
             showToast(data.message || 'Failed to approve', 'error');
         }
     } catch (error) {
         showToast('Connection error', 'error');
     }
+}
+
+/* ═══════════ HISTORIAL DEL USUARIO ═══════════ */
+let histUserId = null;
+let histCategory = 'all';
+let histCurrentPage = 1;
+let histTotalPages = 1;
+
+function viewUserHistory(userId) {
+    histUserId = userId;
+    histCategory = 'all';
+    histCurrentPage = 1;
+    document.querySelectorAll('.hist-filter').forEach(b => {
+        b.className = 'hist-filter btn ' + (b.dataset.cat === 'all' ? 'btn-primary' : 'btn-secondary');
+    });
+    openModal('historyModal');
+    loadHistory();
+}
+
+function setHistFilter(cat) {
+    histCategory = cat;
+    histCurrentPage = 1;
+    document.querySelectorAll('.hist-filter').forEach(b => {
+        b.className = 'hist-filter btn ' + (b.dataset.cat === cat ? 'btn-primary' : 'btn-secondary');
+    });
+    loadHistory();
+}
+
+function histPage(delta) {
+    const next = histCurrentPage + delta;
+    if (next < 1 || next > histTotalPages) return;
+    histCurrentPage = next;
+    loadHistory();
+}
+
+function fmtNum(n) { return Number(n).toLocaleString(undefined, {maximumFractionDigits: 4}); }
+
+async function loadHistory() {
+    const list = document.getElementById('histList');
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#666">Cargando...</div>';
+    try {
+        const res = await fetch(`/admin/api/user/${histUserId}/history?category=${histCategory}&page=${histCurrentPage}`);
+        const data = await res.json();
+        if (!data.success) {
+            list.innerHTML = `<div style="padding:20px;text-align:center;color:#f66">${data.message || 'Error'}</div>`;
+            return;
+        }
+
+        // Resumen
+        const s = data.summary;
+        document.getElementById('histSummary').innerHTML = `
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+                <div><strong style="color:#fff">${s.first_name}</strong> ${s.username ? '@'+s.username : ''} ${s.banned ? '<span style="color:#f66">⛔ BANEADO</span>' : ''}</div>
+                <div style="color:#888">ID: ${s.user_id}</div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:0.82rem">
+                <span>💰 Saldo: <strong style="color:#ffd700">${fmtNum(s.balance)}</strong></span>
+                <span>📈 Ganado: <strong style="color:#00e676">${fmtNum(s.total_earned)}</strong></span>
+                <span>👥 Referidos: <strong style="color:#40c4ff">${s.referral_count}</strong></span>
+            </div>
+            ${s.ton_wallet ? `<div style="margin-top:6px;font-size:0.78rem;color:#0098EA;word-break:break-all">Wallet: ${s.ton_wallet}</div>` : ''}
+        `;
+
+        // Items
+        if (!data.items.length) {
+            list.innerHTML = '<div style="padding:24px;text-align:center;color:#666">Sin registros</div>';
+        } else {
+            list.innerHTML = data.items.map(it => renderHistItem(it)).join('');
+        }
+
+        // Paginación
+        histTotalPages = data.total_pages;
+        document.getElementById('histPageInfo').textContent = `Página ${data.page}/${data.total_pages} · ${data.total} registros`;
+        document.getElementById('histPrev').disabled = (data.page <= 1);
+        document.getElementById('histNext').disabled = (data.page >= data.total_pages);
+        document.getElementById('histPrev').style.opacity = (data.page <= 1) ? '0.4' : '1';
+        document.getElementById('histNext').style.opacity = (data.page >= data.total_pages) ? '0.4' : '1';
+    } catch (e) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:#f66">Error de conexión</div>';
+    }
+}
+
+function renderHistItem(it) {
+    let icon = '•', color = '#888', right = '';
+    if (it.type === 'movement') {
+        const pos = it.amount >= 0;
+        icon = pos ? '➕' : '➖'; color = pos ? '#00e676' : '#f66';
+        right = `<span style="color:${color}">${pos ? '+' : ''}${fmtNum(it.amount)} DOGE</span>`;
+    } else if (it.type === 'withdrawal') {
+        icon = '📤'; color = '#ffb300';
+        const st = it.status === 'completed' ? '#00e676' : (it.status === 'rejected' ? '#f66' : '#ffb300');
+        right = `<span style="color:${color}">-${fmtNum(it.amount)} ${it.currency}</span> <span style="color:${st};font-size:0.72rem">[${it.status}]</span>`;
+    } else if (it.type === 'deposit') {
+        icon = '📥'; color = '#40c4ff';
+        right = `<span style="color:${color}">+${fmtNum(it.amount)} TON</span>`;
+    } else if (it.type === 'referral') {
+        icon = '👤'; color = '#ce93d8';
+        right = `<span style="color:${color}">ref</span>`;
+    }
+    return `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #131a26">
+            <div style="min-width:0;flex:1">
+                <div style="color:#ddd;font-size:0.86rem">${icon} ${it.detail || it.type}</div>
+                <div style="color:#666;font-size:0.72rem">${it.created_at || ''}</div>
+            </div>
+            <div style="text-align:right;font-size:0.82rem;white-space:nowrap">${right}</div>
+        </div>
+    `;
 }
 
 async function submitRejection() {
