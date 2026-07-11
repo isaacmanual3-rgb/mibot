@@ -807,6 +807,23 @@ def api_ton_withdraw_init(user):
     withdrawal_id = result['withdrawal_id']
     ton_amount    = result['ton_amount']
 
+    # --- Modo de retiro: manual vs automático ---
+    # 'manual'    → el retiro queda PENDIENTE, el admin lo aprueba en el panel.
+    # 'automatic' → se envía solo al instante (comportamiento por defecto).
+    withdrawal_mode = get_config('ton_withdrawal_mode', 'automatic')
+    if withdrawal_mode == 'manual':
+        logger.info(f"TON withdrawal {withdrawal_id}: MODO MANUAL — queda pendiente para aprobación del admin.")
+        return jsonify({
+            'success':       True,
+            'auto_sent':     False,
+            'pending':       True,
+            'withdrawal_id': withdrawal_id,
+            'doge_amount':   result['doge_amount'],
+            'ton_amount':    ton_amount,
+            'ton_wallet':    ton_wallet,
+            'message':       f"Retiro solicitado: {ton_amount:.4f} TON quedan pendientes de aprobación. Te avisaremos cuando se procese. ⏳"
+        })
+
     # --- Attempt automatic TON send ---
     auto_sent, tx_hash, send_err = _auto_send_ton(ton_wallet, ton_amount, withdrawal_id)
 
