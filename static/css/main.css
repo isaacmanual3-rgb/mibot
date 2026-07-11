@@ -1564,7 +1564,7 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 0 3px;
+    padding: 0 1px;
     text-decoration: none;
     color: #3a3a5a;
     flex: 1;
@@ -1578,8 +1578,8 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 
 /* Icono wrapper */
 .bnav-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1588,8 +1588,8 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 }
 
 .bnav-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 19px;
+    height: 19px;
     stroke: currentColor;
     transition: inherit;
 }
@@ -1597,8 +1597,8 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 /* Label pequeño — siempre visible */
 .bnav-label {
     font-family: var(--font-pixel);
-    font-size: 0.26rem;
-    letter-spacing: 0.06em;
+    font-size: 0.24rem;
+    letter-spacing: 0.03em;
     opacity: 0.45;
     transform: translateY(0);
     white-space: nowrap;
@@ -1666,9 +1666,16 @@ h4 { font-size: 0.65rem; margin-bottom: 0.5rem; }
 }
 
 /* ── Responsive compact ── */
-@media (max-width: 360px) {
+@media (max-width: 380px) {
     .hdr-balance-amt { font-size: 0.5rem; }
     .hdr-user-name { max-width: 70px; font-size: 0.36rem; }
     .hdr-avatar { width: 28px; height: 28px; font-size: 0.52rem; }
-    .bnav-item { padding: 0 2px; }
+    .bnav-item { padding: 0; }
+    .bnav-icon { width: 18px; height: 18px; }
+    .bnav-icon svg { width: 17px; height: 17px; }
+    .bnav-label { font-size: 0.21rem; letter-spacing: 0.02em; }
+}
+@media (max-width: 330px) {
+    .bnav-label { font-size: 0.19rem; }
+    .bnav-icon svg { width: 16px; height: 16px; }
 }
