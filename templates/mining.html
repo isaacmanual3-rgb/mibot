@@ -939,7 +939,7 @@
         <span class="px-icon"><svg viewBox="0 0 16 16" width="30" height="30" shape-rendering="crispEdges" fill="#00e676"><rect x="1" y="3" width="14" height="1"/><rect x="1" y="12" width="14" height="1"/><rect x="1" y="4" width="1" height="8"/><rect x="14" y="4" width="1" height="8"/><rect x="6" y="5" width="1" height="6"/><rect x="7" y="6" width="1" height="4"/><rect x="8" y="7" width="1" height="2"/></svg></span>
       </div>
       <div class="mn-ads-title">{{ t.mn_ads_title }}</div>
-      <div class="mn-ads-sub">{{ t.mn_ads_sub_1 }} <span class="mn-ads-plan-name" id="adsPlanName">—</span> {{ t.mn_ads_sub_2 }}</div>
+      <div class="mn-ads-sub">{{ t.mn_ads_sub_1.replace('{n}', free_plan_ads_required|string) }} <span class="mn-ads-plan-name" id="adsPlanName">—</span> {{ t.mn_ads_sub_2 }}</div>
     </div>
 
     <div class="mn-ads-body">
@@ -1082,6 +1082,20 @@ function openAdsModal(planName) {
   document.getElementById('adsWatchBtn').disabled = false;
   document.getElementById('adsModal').classList.add('show');
   initAdsgram();
+  // Cargar el progreso guardado en el servidor (persiste al salir de la app)
+  loadAdProgress();
+}
+
+async function loadAdProgress() {
+  if (!currentPlanId) return;
+  try {
+    const res = await fetch('/api/mining/ad-progress?plan_id=' + currentPlanId);
+    const data = await res.json();
+    if (data.success && typeof data.ads_watched === 'number') {
+      adsWatched = Math.min(data.ads_watched, ADS_REQUIRED);
+      renderAdsProgress();
+    }
+  } catch (e) { /* si falla, empieza en 0 */ }
 }
 
 function closeAdsModal() {
@@ -1108,7 +1122,21 @@ async function watchAd() {
   try {
     // Adsgram muestra el rewarded; resuelve solo si el usuario lo ve completo
     await AdController.show();
-    adsWatched++;
+    // Registrar en el servidor (persistente). El servidor es la fuente de verdad.
+    try {
+      const res = await fetch('/api/mining/ad-watched', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_id: currentPlanId })
+      });
+      const data = await res.json();
+      if (data.success && typeof data.ads_watched === 'number') {
+        adsWatched = data.ads_watched;
+      } else {
+        adsWatched++; // fallback local si el servidor no responde bien
+      }
+    } catch (_e) {
+      adsWatched++; // fallback local
+    }
     renderAdsProgress();
     createPixelExplosion(window.innerWidth / 2, window.innerHeight / 2, '#00ff66');
     if (adsWatched < ADS_REQUIRED) {
@@ -1162,7 +1190,7 @@ function purchaseMachine(planId, planName, price) {
   currentPlanId = planId; currentPlanName = planName; currentPlanPrice = price;
   // ── Free plans require completing Adsgram tasks first ──
   if (price === 0) { openAdsModal(planName); return; }
-  var msg = (window.I18N?.mn_activate_plan || '¿Activar el plan {name} por 30 días?').replace('{name}', planName);
+  var msg = (window.I18N?.mn_activate_plan || '¿Activar el plan {name}?').replace('{name}', planName);
   document.getElementById('purchaseMessage').textContent = msg;
   document.getElementById('purchaseCost').textContent = `${price} TON`;
   document.getElementById('purchaseModal').classList.add('show');
