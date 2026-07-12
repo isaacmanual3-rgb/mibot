@@ -593,6 +593,9 @@ def get_referrals(user_id, limit=50):
     """Get user's referrals — detects fraud in real-time via shared IP check"""
     query = """
         SELECT r.*, u.doge_balance, u.last_active,
+               COALESCE(NULLIF(u.username, ''), NULLIF(r.referred_username, '')) AS referred_username,
+               COALESCE(NULLIF(u.first_name, ''), NULLIF(r.referred_first_name, ''), 'Player') AS referred_first_name,
+               r.referred_id AS referred_user_id,
                CASE
                  WHEN r.is_fraud = 1 THEN 1
                  WHEN EXISTS (
