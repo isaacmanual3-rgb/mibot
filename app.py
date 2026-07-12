@@ -49,9 +49,12 @@ from database import (
     create_ton_withdrawal,
     get_pending_ton_deposits, save_user_ton_wallet,
     get_or_create_user_deposit_address, create_ton_deposit_pending,
+    link_user_wallet, admin_change_user_wallet, admin_unlock_user_wallet,
+    get_wallet_owner, get_duplicate_wallets,
     # Anti-fraud
     is_withdrawal_blocked, check_and_flag_multi_account, unflag_user_fraud,
-    get_shared_ip_accounts, are_accounts_related
+    get_shared_ip_accounts, are_accounts_related,
+    get_shared_ip_groups, search_multiaccounts,
 )
 
 # ── NOTIFICATION HELPERS ──────────────────────────────────────────
@@ -323,9 +326,33 @@ def verify_channel_membership(user_id, channel_username):
 # ============================================
 
 def get_client_ip():
-    """Get client IP address"""
-    if request.headers.get('X-Forwarded-For'):
-        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    """
+    Obtiene la IP REAL del usuario.
+
+    Detrás de Cloudflare, 'X-Forwarded-For' puede contener la IP de un proxy
+    de Cloudflare (compartida por muchos usuarios) → causaba baneos por error
+    al vincular cuentas no relacionadas. 'CF-Connecting-IP' siempre trae la IP
+    real del visitante, así que la priorizamos.
+
+    Orden de preferencia:
+      1. CF-Connecting-IP   (IP real, la pone Cloudflare)
+      2. True-Client-IP     (algunos planes Enterprise de Cloudflare)
+      3. X-Forwarded-For    (primer IP de la cadena, como fallback)
+      4. remote_addr        (conexión directa sin proxy)
+    """
+    cf_ip = request.headers.get('CF-Connecting-IP')
+    if cf_ip:
+        return cf_ip.strip()
+
+    true_ip = request.headers.get('True-Client-IP')
+    if true_ip:
+        return true_ip.strip()
+
+    xff = request.headers.get('X-Forwarded-For')
+    if xff:
+        # El primer valor es el cliente original; los siguientes son proxies.
+        return xff.split(',')[0].strip()
+
     return request.remote_addr or '127.0.0.1'
 
 def get_user_id():
@@ -691,6 +718,7 @@ def profile(user):
         photo_url=session.get('photo_url', ''),
         username=session.get('username', '') or user.get('username', ''),
         wallet_addr=wallet_addr,
+        wallet_locked=bool(user.get('wallet_locked', 0)),
         plan_name=plan_name,
         plan_expires=plan_expires,
         plan_rate=plan_rate,
@@ -721,8 +749,16 @@ def api_profile_wallet(user):
         return jsonify({'success': False, 'message': 'Dirección TON inválida. Debe empezar con UQ o EQ.'})
 
     try:
-        save_user_ton_wallet(user['user_id'], wallet)
-        return jsonify({'success': True, 'message': 'Wallet vinculada correctamente', 'wallet': wallet})
+        result = link_user_wallet(user['user_id'], wallet)
+        if result.get('success'):
+            return jsonify({'success': True, 'message': 'Wallet vinculada correctamente. Por seguridad, solo puedes vincularla una vez.', 'wallet': wallet, 'locked': True})
+
+        err = result.get('err')
+        if err == 'wallet_locked':
+            return jsonify({'success': False, 'message': 'Tu wallet ya está vinculada y no se puede cambiar. Contacta al soporte si necesitas cambiarla.'})
+        if err == 'wallet_duplicate':
+            return jsonify({'success': False, 'message': 'Esta dirección de retiro ya está en uso por otra cuenta. Cada dirección solo puede pertenecer a una cuenta.'})
+        return jsonify({'success': False, 'message': 'No se pudo guardar la wallet'})
     except Exception as e:
         logger.warning(f"save wallet error: {e}")
         return jsonify({'success': False, 'message': 'No se pudo guardar la wallet'})
@@ -797,6 +833,20 @@ def api_ton_withdraw_init(user):
 
     if get_config('ton_withdrawal_enabled', '1') != '1':
         return jsonify({'success': False, 'message': _t('api_wd_disabled')})
+
+    # ── Anti-fraud: una dirección de retiro = una cuenta ──
+    # Si la dirección ya está registrada a OTRO usuario, bloquear el retiro.
+    try:
+        owner = get_wallet_owner(ton_wallet)
+        if owner and str(owner) != str(user['user_id']):
+            lang = session.get('lang', 'en')
+            msg = ('⛔ Esta dirección de retiro ya pertenece a otra cuenta.'
+                   if lang == 'es' else
+                   '⛔ This withdrawal address already belongs to another account.')
+            logger.warning(f"[ANTI-FRAUD] Duplicate withdrawal address by user {user['user_id']} → {ton_wallet} (owner {owner})")
+            return jsonify({'success': False, 'message': msg})
+    except Exception as _we:
+        logger.warning(f"wallet-owner check error: {_we}")
 
     # Create the withdrawal record (deducts DOGE balance)
     result = create_ton_withdrawal(user['user_id'], doge_amount, ton_wallet)
@@ -2453,6 +2503,91 @@ def admin_api_reject_withdrawal():
 
 
 # ============================================
+# ADMIN — Multi-account IP investigation
+# ============================================
+
+@app.route('/admin/multiaccounts')
+@require_admin
+def admin_multiaccounts():
+    """Panel de investigación de multicuentas por IP con buscador."""
+    query = request.args.get('q', '').strip()
+    search_result = None
+    if query:
+        try:
+            search_result = search_multiaccounts(query)
+        except Exception as e:
+            logger.warning(f"multiaccount search error: {e}")
+            search_result = {'mode': 'error', 'query': query, 'results': []}
+
+    try:
+        groups = get_shared_ip_groups(min_accounts=2, limit=200)
+    except Exception as e:
+        logger.warning(f"shared ip groups error: {e}")
+        groups = []
+
+    try:
+        dup_wallets = get_duplicate_wallets()
+    except Exception as e:
+        logger.warning(f"duplicate wallets error: {e}")
+        dup_wallets = []
+
+    return render_template('admin_multiaccounts.html',
+                           groups=groups,
+                           dup_wallets=dup_wallets,
+                           search_result=search_result,
+                           query=query,
+                           active_page='multiaccounts')
+
+
+@app.route('/admin/api/multiaccount/search')
+@require_admin
+def admin_api_multiaccount_search():
+    """Búsqueda de multicuentas vía JSON (para búsqueda dinámica)."""
+    query = request.args.get('q', '').strip()
+    try:
+        result = search_multiaccounts(query)
+        return jsonify({'success': True, 'result': result})
+    except Exception as e:
+        logger.warning(f"multiaccount api search error: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# ============================================
+# ADMIN — Wallet management
+# ============================================
+
+@app.route('/admin/api/user/<user_id>/wallet/change', methods=['POST'])
+@require_admin
+def admin_api_change_wallet(user_id):
+    """El admin cambia la wallet de retiro de un usuario."""
+    data = request.get_json() or {}
+    new_wallet = (data.get('wallet') or '').strip()
+    if not new_wallet:
+        return jsonify({'success': False, 'message': 'Ingresa una dirección'})
+
+    valid_prefix = new_wallet[:2] in ('UQ', 'EQ', 'kQ', '0Q', 'Uf', 'Ef')
+    if len(new_wallet) < 40 or len(new_wallet) > 70 or not valid_prefix:
+        return jsonify({'success': False, 'message': 'Dirección TON inválida'})
+
+    result = admin_change_user_wallet(user_id, new_wallet)
+    if result.get('success'):
+        return jsonify({'success': True, 'message': 'Wallet actualizada', 'wallet': new_wallet})
+    if result.get('err') == 'wallet_duplicate':
+        return jsonify({'success': False, 'message': 'Esa dirección ya pertenece a otra cuenta'})
+    return jsonify({'success': False, 'message': 'No se pudo actualizar la wallet'})
+
+
+@app.route('/admin/api/user/<user_id>/wallet/unlock', methods=['POST'])
+@require_admin
+def admin_api_unlock_wallet(user_id):
+    """El admin desbloquea la wallet para que el usuario pueda vincular otra."""
+    result = admin_unlock_user_wallet(user_id)
+    if result.get('success'):
+        return jsonify({'success': True, 'message': 'Wallet desbloqueada. El usuario puede vincular una nueva.'})
+    return jsonify({'success': False, 'message': 'No se pudo desbloquear'})
+
+
+# ============================================
 # ADMIN API — User detail, balance & history
 # ============================================
 
@@ -2471,6 +2606,7 @@ def admin_api_get_user(user_id):
         elif hasattr(v, '__float__'):
             user_dict[k] = float(v)
     user_dict['is_banned'] = bool(user_dict.get('banned', 0))
+    user_dict['wallet_locked'] = bool(user_dict.get('wallet_locked', 0))
     # La plantilla del modal usa u.telegram_id; el ID real es user_id.
     user_dict['telegram_id'] = user_dict.get('user_id', '')
     return jsonify({'success': True, 'user': user_dict})

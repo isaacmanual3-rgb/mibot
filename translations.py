@@ -36,6 +36,8 @@ TRANSLATIONS = {
     'pf_wallet_save':      {'en': 'SAVE',                  'es': 'GUARDAR'},
     'pf_wallet_cancel':    {'en': 'CANCEL',                'es': 'CANCELAR'},
     'pf_wallet_hint':      {'en': 'Enter a valid TON wallet (UQ... or EQ...). This is where your withdrawals will be sent.', 'es': 'Ingresa una wallet TON válida (UQ... o EQ...). Aquí se enviarán tus retiros.'},
+    'pf_wallet_locked':    {'en': '🔒 Wallet locked · contact support to change it', 'es': '🔒 Wallet bloqueada · contacta soporte para cambiarla'},
+    'pf_wallet_lock_warn': {'en': '⚠ You can only link your wallet ONCE. Make sure it is correct.', 'es': '⚠ Solo puedes vincular tu wallet UNA vez. Verifica que sea correcta.'},
     'pf_wallet_empty':     {'en': 'Enter a wallet address', 'es': 'Ingresa una dirección de wallet'},
     'pf_wallet_error':     {'en': 'Could not save wallet',  'es': 'No se pudo guardar la wallet'},
 

@@ -2019,6 +2019,126 @@ def save_user_ton_wallet(user_id, ton_wallet):
     )
 
 
+def get_wallet_owner(wallet_address):
+    """Devuelve el user_id dueño de una dirección de retiro, o None si está libre."""
+    row = execute_query(
+        "SELECT user_id FROM wallet_address_registry WHERE wallet_address = %s",
+        (wallet_address,), fetch_one=True
+    )
+    return row['user_id'] if row else None
+
+
+def link_user_wallet(user_id, wallet_address):
+    """
+    Vincula la wallet de retiro a un usuario aplicando las reglas:
+      - Una dirección de retiro solo puede pertenecer a UNA cuenta.
+      - Una vez vinculada, queda bloqueada (wallet_locked=1). Solo el admin
+        puede cambiarla o desbloquearla.
+    Devuelve un dict con {'success': bool, 'err': código} para traducir arriba.
+    """
+    uid = str(user_id)
+    user = get_user(uid)
+    if not user:
+        return {'success': False, 'err': 'user_not_found'}
+
+    # ¿Ya tiene wallet bloqueada?
+    if int(user.get('wallet_locked', 0)) == 1:
+        return {'success': False, 'err': 'wallet_locked'}
+
+    # ¿La dirección ya la usa otra cuenta?
+    owner = get_wallet_owner(wallet_address)
+    if owner and str(owner) != uid:
+        return {'success': False, 'err': 'wallet_duplicate'}
+
+    # Registrar la dirección (una dirección = una cuenta) y bloquear.
+    execute_query(
+        """INSERT INTO wallet_address_registry (wallet_address, user_id)
+           VALUES (%s, %s)
+           ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)""",
+        (wallet_address, uid)
+    )
+    execute_query(
+        "UPDATE users SET ton_wallet = %s, wallet_locked = 1 WHERE user_id = %s",
+        (wallet_address, uid)
+    )
+    return {'success': True}
+
+
+def admin_change_user_wallet(user_id, new_wallet):
+    """
+    El admin cambia la wallet de un usuario. Libera la dirección anterior del
+    registro, valida que la nueva no pertenezca a otra cuenta, y la re-registra.
+    """
+    uid = str(user_id)
+    user = get_user(uid)
+    if not user:
+        return {'success': False, 'err': 'user_not_found'}
+
+    # La nueva dirección no puede estar en uso por OTRA cuenta.
+    owner = get_wallet_owner(new_wallet)
+    if owner and str(owner) != uid:
+        return {'success': False, 'err': 'wallet_duplicate'}
+
+    old_wallet = user.get('ton_wallet')
+    if old_wallet and old_wallet != new_wallet:
+        execute_query(
+            "DELETE FROM wallet_address_registry WHERE wallet_address = %s AND user_id = %s",
+            (old_wallet, uid)
+        )
+
+    execute_query(
+        """INSERT INTO wallet_address_registry (wallet_address, user_id)
+           VALUES (%s, %s)
+           ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)""",
+        (new_wallet, uid)
+    )
+    execute_query(
+        "UPDATE users SET ton_wallet = %s, wallet_locked = 1 WHERE user_id = %s",
+        (new_wallet, uid)
+    )
+    return {'success': True}
+
+
+def admin_unlock_user_wallet(user_id):
+    """
+    El admin desbloquea la wallet de un usuario para que pueda vincular otra.
+    Libera también la dirección actual del registro global.
+    """
+    uid = str(user_id)
+    user = get_user(uid)
+    if not user:
+        return {'success': False, 'err': 'user_not_found'}
+
+    old_wallet = user.get('ton_wallet')
+    if old_wallet:
+        execute_query(
+            "DELETE FROM wallet_address_registry WHERE wallet_address = %s AND user_id = %s",
+            (old_wallet, uid)
+        )
+    execute_query(
+        "UPDATE users SET wallet_locked = 0 WHERE user_id = %s",
+        (uid,)
+    )
+    return {'success': True}
+
+
+def get_duplicate_wallets():
+    """
+    Devuelve direcciones de retiro asociadas a más de una cuenta (histórico).
+    Útil para investigación de multicuentas por wallet en el panel.
+    """
+    return execute_query(
+        """SELECT ton_wallet AS wallet, COUNT(*) AS cnt,
+                  GROUP_CONCAT(user_id) AS user_ids
+           FROM users
+           WHERE ton_wallet IS NOT NULL AND ton_wallet <> ''
+           GROUP BY ton_wallet
+           HAVING cnt > 1
+           ORDER BY cnt DESC""",
+        fetch_all=True
+    ) or []
+
+
 def get_or_create_user_deposit_address(user_id):
     """
     Returns a unique memo for this user (used to identify their TON deposits).
@@ -2177,6 +2297,23 @@ def _run_migrations():
         )"""
     )
 
+    # Wallet de retiro: bloqueo tras vincular una vez.
+    # 0 = aún no vinculada / desbloqueada por admin; 1 = bloqueada.
+    safe_run("add_users_wallet_locked",
+        "ALTER TABLE users ADD COLUMN wallet_locked TINYINT(1) DEFAULT 0"
+    )
+
+    # Registro global de direcciones de retiro para impedir duplicados
+    # (una dirección de retiro = una cuenta).
+    safe_run("create_wallet_address_registry",
+        """CREATE TABLE IF NOT EXISTS wallet_address_registry (
+            wallet_address VARCHAR(100) NOT NULL,
+            user_id VARCHAR(50) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (wallet_address)
+        )"""
+    )
+
     log.info("[migrations] ✅ All migrations checked.")
 
 
@@ -2276,6 +2413,150 @@ def get_shared_ip_accounts(user_id, min_times_seen=2):
           AND ui2.times_seen >= %s
     """, (str(user_id), min_times_seen, min_times_seen), fetch_all=True)
     return [r['user_id'] for r in rows] if rows else []
+
+
+def get_shared_ip_groups(min_accounts=2, limit=200):
+    """
+    Devuelve grupos de cuentas que comparten la misma IP (multicuentas).
+    Cada grupo: {ip, account_count, user_ids, usernames}.
+    Ordenado por cantidad de cuentas (más sospechoso primero).
+    """
+    rows = execute_query("""
+        SELECT ui.ip_address AS ip,
+               COUNT(DISTINCT ui.user_id) AS account_count,
+               GROUP_CONCAT(DISTINCT ui.user_id) AS user_ids
+        FROM user_ips ui
+        GROUP BY ui.ip_address
+        HAVING account_count >= %s
+        ORDER BY account_count DESC
+        LIMIT %s
+    """, (min_accounts, limit), fetch_all=True) or []
+
+    groups = []
+    for r in rows:
+        uid_list = [u for u in (r.get('user_ids') or '').split(',') if u]
+        # Traer nombres para mostrar
+        names = []
+        if uid_list:
+            placeholders = ','.join(['%s'] * len(uid_list))
+            urows = execute_query(
+                f"""SELECT user_id, username, first_name, banned, withdrawal_blocked
+                    FROM users WHERE user_id IN ({placeholders})""",
+                tuple(uid_list), fetch_all=True
+            ) or []
+            for u in urows:
+                names.append({
+                    'user_id': u['user_id'],
+                    'name': u.get('username') or u.get('first_name') or f"#{u['user_id']}",
+                    'banned': bool(u.get('banned', 0)),
+                    'blocked': bool(u.get('withdrawal_blocked', 0)),
+                })
+        groups.append({
+            'ip': r['ip'],
+            'account_count': r['account_count'],
+            'accounts': names,
+        })
+    return groups
+
+
+def search_multiaccounts(query, limit=100):
+    """
+    Buscador de multicuentas. Acepta:
+      - un user_id  → devuelve sus IPs y las cuentas que comparten cada IP
+      - una IP      → devuelve todas las cuentas que han usado esa IP
+      - un username → resuelve al user_id y hace lo mismo
+    Devuelve dict {'mode', 'query', 'results'}.
+    """
+    q = (query or '').strip()
+    if not q:
+        return {'mode': 'empty', 'query': q, 'results': []}
+
+    # ¿Es una IP? (contiene punto o dos puntos y dígitos)
+    looks_like_ip = ('.' in q or ':' in q) and any(c.isdigit() for c in q)
+
+    if looks_like_ip:
+        rows = execute_query("""
+            SELECT ui.user_id, ui.first_seen, ui.last_seen, ui.times_seen,
+                   u.username, u.first_name, u.banned, u.withdrawal_blocked,
+                   u.ton_wallet
+            FROM user_ips ui
+            LEFT JOIN users u ON u.user_id = ui.user_id
+            WHERE ui.ip_address = %s
+            ORDER BY ui.last_seen DESC
+            LIMIT %s
+        """, (q, limit), fetch_all=True) or []
+        results = [{
+            'user_id': r['user_id'],
+            'name': r.get('username') or r.get('first_name') or f"#{r['user_id']}",
+            'times_seen': r.get('times_seen', 0),
+            'last_seen': r['last_seen'].strftime('%Y-%m-%d %H:%M') if r.get('last_seen') and hasattr(r['last_seen'], 'strftime') else str(r.get('last_seen') or ''),
+            'banned': bool(r.get('banned', 0)),
+            'blocked': bool(r.get('withdrawal_blocked', 0)),
+            'wallet': r.get('ton_wallet') or '',
+        } for r in rows]
+        return {'mode': 'ip', 'query': q, 'ip': q, 'results': results}
+
+    # Si no es numérico puro, tratar como username → resolver user_id
+    target_uid = q
+    if not q.isdigit():
+        urow = execute_query(
+            "SELECT user_id FROM users WHERE username = %s OR first_name = %s LIMIT 1",
+            (q, q), fetch_one=True
+        )
+        if not urow:
+            urow = execute_query(
+                "SELECT user_id FROM users WHERE username LIKE %s LIMIT 1",
+                (f'%{q}%',), fetch_one=True
+            )
+        if not urow:
+            return {'mode': 'notfound', 'query': q, 'results': []}
+        target_uid = urow['user_id']
+
+    # Buscar por user_id: sus IPs y las cuentas que comparten cada IP
+    ip_rows = execute_query("""
+        SELECT ip_address, first_seen, last_seen, times_seen
+        FROM user_ips WHERE user_id = %s
+        ORDER BY last_seen DESC
+    """, (str(target_uid),), fetch_all=True) or []
+
+    user_info = execute_query(
+        "SELECT user_id, username, first_name, banned, withdrawal_blocked, ton_wallet FROM users WHERE user_id = %s",
+        (str(target_uid),), fetch_one=True
+    ) or {}
+
+    ip_details = []
+    for ipr in ip_rows:
+        ip = ipr['ip_address']
+        shared = execute_query("""
+            SELECT ui.user_id, u.username, u.first_name, u.banned, u.withdrawal_blocked
+            FROM user_ips ui
+            LEFT JOIN users u ON u.user_id = ui.user_id
+            WHERE ui.ip_address = %s AND ui.user_id != %s
+        """, (ip, str(target_uid)), fetch_all=True) or []
+        ip_details.append({
+            'ip': ip,
+            'times_seen': ipr.get('times_seen', 0),
+            'last_seen': ipr['last_seen'].strftime('%Y-%m-%d %H:%M') if ipr.get('last_seen') and hasattr(ipr['last_seen'], 'strftime') else str(ipr.get('last_seen') or ''),
+            'shared_with': [{
+                'user_id': s['user_id'],
+                'name': s.get('username') or s.get('first_name') or f"#{s['user_id']}",
+                'banned': bool(s.get('banned', 0)),
+                'blocked': bool(s.get('withdrawal_blocked', 0)),
+            } for s in shared],
+        })
+
+    return {
+        'mode': 'user',
+        'query': q,
+        'user': {
+            'user_id': user_info.get('user_id', target_uid),
+            'name': user_info.get('username') or user_info.get('first_name') or f"#{target_uid}",
+            'banned': bool(user_info.get('banned', 0)),
+            'blocked': bool(user_info.get('withdrawal_blocked', 0)),
+            'wallet': user_info.get('ton_wallet') or '',
+        },
+        'ip_details': ip_details,
+    }
 
 
 def count_accounts_on_same_ip(user_id, min_times_seen=2):
