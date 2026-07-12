@@ -76,6 +76,7 @@
                         {% else %}
                             <button class="btn btn-danger" onclick="banUser('{{ user.user_id }}')">BAN</button>
                         {% endif %}
+                        <button class="btn btn-danger" style="background:#8b0000;" onclick="deleteUser('{{ user.user_id }}', '{{ user.username or user.user_id }}')">🗑 BORRAR</button>
                     </div>
                 </td>
             </tr>
@@ -330,6 +331,26 @@ async function unbanUser(userId) {
         if (data.success) { showToast('User unbanned','success'); location.reload(); }
         else { showToast(data.message||'Failed','error'); }
     } catch(e) { showToast('Connection error','error'); }
+}
+
+async function deleteUser(userId, userName) {
+    // Doble confirmación por ser IRREVERSIBLE
+    if (!confirm(`⚠️ BORRAR PERMANENTEMENTE la cuenta "${userName}" (#${userId})?\n\nSe eliminará TODO: balance, planes, retiros, depósitos, referidos, wallet e historial.\n\nEsta acción NO se puede deshacer.`)) return;
+    const typed = prompt(`Para confirmar, escribe el ID del usuario a borrar:\n${userId}`);
+    if (typed === null) return;
+    if (String(typed).trim() !== String(userId)) {
+        showToast('El ID no coincide. Borrado cancelado.', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`/admin/api/user/${userId}/delete`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: true })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Cuenta borrada permanentemente', 'success'); setTimeout(()=>location.reload(), 1200); }
+        else { showToast(data.message || 'No se pudo borrar', 'error'); }
+    } catch(e) { showToast('Error de conexión', 'error'); }
 }
 </script>
 {% endblock %}
