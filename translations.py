@@ -153,7 +153,7 @@ TRANSLATIONS = {
     'mn_ton_month':      {'en': 'TON/mo',                   'es': 'TON/mes'},
     'mn_activate_free':  {'en': '★ ACTIVATE FREE',          'es': '★ ACTIVAR GRATIS'},
     'mn_activate_paid':  {'en': '⚡ ACTIVATE FOR',          'es': '⚡ ACTIVAR POR'},
-    'mn_renewable':      {'en': '↻ Renewable every 30 days','es': '↻ Renovable cada 30 días'},
+    'mn_renewable':      {'en': '↻ Renewable on expiry',    'es': '↻ Renovable al vencer'},
     'mn_how_title':      {'en': 'How It Works',             'es': 'Cómo Funciona'},
     'mn_step1':          {'en': 'Purchase a miner',         'es': 'Compra un minero'},
     'mn_step2':          {'en': 'Mining starts auto',       'es': 'Minería automática'},
@@ -162,7 +162,7 @@ TRANSLATIONS = {
     'mn_no_plans':       {'en': 'NO PLANS AVAILABLE',       'es': 'SIN PLANES DISPONIBLES'},
     'mn_check_back':     {'en': 'Check back soon!',         'es': '¡Vuelve pronto!'},
     'mn_modal_title':    {'en': 'CONFIRM PLAN',             'es': 'CONFIRMAR PLAN'},
-    'mn_modal_activate': {'en': 'Activate this plan for 30 days?', 'es': '¿Activar este plan por 30 días?'},
+    'mn_modal_activate': {'en': 'Activate this plan?',       'es': '¿Activar este plan?'},
     'mn_modal_cost':     {'en': 'Cost',                     'es': 'Costo'},
     'mn_modal_balance':  {'en': 'Your Balance',             'es': 'Tu Saldo'},
     'mn_modal_free':     {'en': '✨ FREE',                  'es': '✨ GRATIS'},
@@ -171,8 +171,8 @@ TRANSLATIONS = {
 
     # ── Adsgram free-plan task gate ──
     'mn_ads_title':      {'en': 'UNLOCK FREE PLAN',         'es': 'DESBLOQUEA PLAN GRATIS'},
-    'mn_ads_sub_1':      {'en': 'Watch 10 rewarded videos to activate the',  'es': 'Mira 10 videos con recompensa para activar el plan'},
-    'mn_ads_sub_2':      {'en': 'plan for 30 days.',        'es': 'por 30 días.'},
+    'mn_ads_sub_1':      {'en': 'Watch {n} rewarded videos to activate the',  'es': 'Mira {n} videos con recompensa para activar el plan'},
+    'mn_ads_sub_2':      {'en': 'plan.',                    'es': '.'},
     'mn_ads_progress':   {'en': 'Ads watched',              'es': 'Anuncios vistos'},
     'mn_ads_watch':      {'en': 'WATCH AD',                 'es': 'VER ANUNCIO'},
     'mn_ads_loading':    {'en': 'LOADING AD...',            'es': 'CARGANDO...'},
@@ -205,8 +205,8 @@ TRANSLATIONS = {
     'wl_dep_credited':     {'en': 'TON CREDITED!',              'es': '¡TON ACREDITADO!'},
     # Mining JS dynamic strings (via window.I18N)
     'mn_activate_plan_msg': {
-        'en': 'Activate the {name} plan for 30 days?',
-        'es': '¿Activar el plan {name} por 30 días?'
+        'en': 'Activate the {name} plan?',
+        'es': '¿Activar el plan {name}?'
     },
 
     # ── WALLET PAGE ────────────────────────────────────────────
@@ -458,12 +458,12 @@ TRANSLATIONS = {
         'es': 'Saldo insuficiente. Necesitas {amount} TON'
     },
     'api_plan_activated_free':{
-        'en': 'Plan {name} activated for free! Earn TON for 30 days.',
-        'es': '¡Plan {name} activado gratis! Gana TON por 30 días.'
+        'en': 'Plan {name} activated for free! Start earning TON.',
+        'es': '¡Plan {name} activado gratis! Empieza a ganar TON.'
     },
     'api_plan_activated_paid':{
-        'en': 'Plan {name} activated for {price} TON! Earn TON for 30 days.',
-        'es': '¡Plan {name} activado por {price} TON! Gana TON por 30 días.'
+        'en': 'Plan {name} activated for {price} TON! Start earning TON.',
+        'es': '¡Plan {name} activado por {price} TON! Empieza a ganar TON.'
     },
     'api_no_wallet':         {'en': 'Connect your TON wallet first', 'es': 'Conecta tu wallet TON primero'},
     'api_wd_disabled':       {'en': 'TON withdrawals temporarily disabled', 'es': 'Retiros TON temporalmente deshabilitados'},

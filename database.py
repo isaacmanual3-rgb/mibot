@@ -1178,6 +1178,36 @@ def get_mining_plan(plan_id):
     query = "SELECT * FROM mining_plans WHERE id = %s"
     return execute_query(query, (plan_id,), fetch_one=True)
 
+def get_free_plan_ad_progress(user_id, plan_id):
+    """Devuelve cuántos anuncios lleva vistos el usuario para el plan gratis."""
+    row = execute_query(
+        "SELECT ads_watched FROM free_plan_ad_progress WHERE user_id=%s AND plan_id=%s",
+        (str(user_id), plan_id), fetch_one=True
+    )
+    return int(row['ads_watched']) if row else 0
+
+
+def increment_free_plan_ad_progress(user_id, plan_id, ads_required):
+    """Suma 1 anuncio visto (con tope en ads_required) y devuelve el total actual."""
+    current = get_free_plan_ad_progress(user_id, plan_id)
+    new_val = min(current + 1, int(ads_required))
+    execute_query(
+        """INSERT INTO free_plan_ad_progress (user_id, plan_id, ads_watched)
+           VALUES (%s, %s, %s)
+           ON DUPLICATE KEY UPDATE ads_watched = %s""",
+        (str(user_id), plan_id, new_val, new_val)
+    )
+    return new_val
+
+
+def reset_free_plan_ad_progress(user_id, plan_id):
+    """Reinicia el contador de anuncios (al activar el plan o cuando vence)."""
+    execute_query(
+        "DELETE FROM free_plan_ad_progress WHERE user_id=%s AND plan_id=%s",
+        (str(user_id), plan_id)
+    )
+
+
 def purchase_mining_machine(user_id, plan_id):
     """Purchase a mining machine — free plans skip balance check, 30-day cooldown per plan"""
     import uuid
@@ -1233,6 +1263,13 @@ def purchase_mining_machine(user_id, plan_id):
     """, (machine_id, str(user_id), plan_id, plan['name'], plan['hourly_rate'], expires_at))
 
     action = 'free' if is_free else f'paid_{price:.2f}'
+    # Al activar exitosamente el plan gratis, reiniciar el contador de anuncios
+    # para que la próxima reactivación (cuando venza) empiece de cero.
+    if is_free:
+        try:
+            reset_free_plan_ad_progress(user_id, plan_id)
+        except Exception:
+            pass
     return {
         'success': True,
         'err_code': 'api_plan_activated_free' if is_free else 'api_plan_activated_paid',
@@ -2123,6 +2160,18 @@ def _run_migrations():
     # (no one-time). El rendimiento se sigue configurando desde el panel.
     safe_run("starter_plan_daily_reactivable",
         "UPDATE mining_plans SET duration_days = 1, one_time_only = 0 WHERE tier = 'starter' AND price = 0"
+    )
+
+    # Progreso de anuncios del plan gratis — persiste por usuario y plan
+    # para que no se pierda al salir de la app.
+    safe_run("create_free_plan_ad_progress",
+        """CREATE TABLE IF NOT EXISTS free_plan_ad_progress (
+            user_id VARCHAR(50) NOT NULL,
+            plan_id INT NOT NULL,
+            ads_watched INT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, plan_id)
+        )"""
     )
 
     log.info("[migrations] ✅ All migrations checked.")

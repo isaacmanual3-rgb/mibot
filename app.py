@@ -43,6 +43,7 @@ from database import (
     get_user_machines, get_user_mining_stats, get_pending_mining_rewards,
     claim_mining_rewards, process_mining_rewards, create_mining_plan,
     delete_mining_plan, update_mining_plan, get_mining_stats,
+    get_free_plan_ad_progress, increment_free_plan_ad_progress, reset_free_plan_ad_progress,
     # TON Deposit functions
     create_ton_deposit, confirm_ton_deposit, get_user_ton_deposits,
     create_ton_withdrawal,
@@ -1422,6 +1423,46 @@ def api_verify_channel(user):
 # MINING API ROUTES
 # ============================================
 
+@app.route('/api/mining/ad-progress', methods=['GET'])
+@require_user
+def api_mining_ad_progress(user):
+    """Devuelve el progreso de anuncios guardado para el plan gratis."""
+    plan_id = request.args.get('plan_id', type=int)
+    if not plan_id:
+        return jsonify({'success': False, 'message': 'Plan ID required'})
+    ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
+    watched = get_free_plan_ad_progress(user['user_id'], plan_id)
+    return jsonify({'success': True, 'ads_watched': watched, 'ads_required': ADS_REQUIRED})
+
+
+@app.route('/api/mining/ad-watched', methods=['POST'])
+@require_user
+def api_mining_ad_watched(user):
+    """Registra que el usuario vio un anuncio (persistente en servidor)."""
+    data = request.get_json() or {}
+    plan_id = data.get('plan_id')
+    if not plan_id:
+        return jsonify({'success': False, 'message': 'Plan ID required'})
+    try:
+        plan_id = int(plan_id)
+    except (ValueError, TypeError):
+        return jsonify({'success': False, 'message': 'Plan ID inválido'})
+
+    # Solo aplica a planes gratis
+    plan_check = get_mining_plan(plan_id)
+    if not plan_check or float(plan_check.get('price', 0)) != 0.0:
+        return jsonify({'success': False, 'message': 'No es un plan gratis'})
+
+    ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
+    watched = increment_free_plan_ad_progress(user['user_id'], plan_id, ADS_REQUIRED)
+    return jsonify({
+        'success': True,
+        'ads_watched': watched,
+        'ads_required': ADS_REQUIRED,
+        'complete': watched >= ADS_REQUIRED
+    })
+
+
 @app.route('/api/mining/purchase', methods=['POST'])
 @require_user
 def api_mining_purchase(user):
@@ -1433,12 +1474,13 @@ def api_mining_purchase(user):
         return jsonify({'success': False, 'message': 'Plan ID required'})
 
     # ── Free plans require watching rewarded ads (anti-abuse) ──
+    # Se valida contra el progreso GUARDADO EN SERVIDOR, no contra el cliente.
     ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
     try:
         plan_check = get_mining_plan(plan_id)
         if plan_check and float(plan_check.get('price', 0)) == 0.0 and ADS_REQUIRED > 0:
-            ads_completed = int(data.get('ads_completed', 0) or 0)
-            if ads_completed < ADS_REQUIRED:
+            server_watched = get_free_plan_ad_progress(user['user_id'], int(plan_id))
+            if server_watched < ADS_REQUIRED:
                 return jsonify({
                     'success': False,
                     'message': f'Debes ver {ADS_REQUIRED} anuncios para activar el plan gratis.'
