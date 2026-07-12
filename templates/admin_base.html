@@ -361,6 +361,19 @@
             background: var(--danger);
             color: var(--bg-primary);
         }
+
+        .badge-secondary {
+            background: var(--surface, #2a2a3a);
+            color: var(--text-muted, #9a9ab0);
+            border: 1px solid var(--border, #3a3a4a);
+        }
+
+        .section-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            margin-bottom: 12px;
+            color: var(--text, #e0e0f0);
+        }
         
         .badge-info {
             background: var(--blue-primary);
@@ -523,6 +536,12 @@
                         <a href="/admin/withdrawals" class="nav-link {% if active_page == 'withdrawals' %}active{% endif %}">
                             <span class="nav-icon">↑</span>
                             <span class="nav-text">WITHDRAWALS</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/multiaccounts" class="nav-link {% if active_page == 'multiaccounts' %}active{% endif %}">
+                            <span class="nav-icon" style="color:#ff3366">⚠</span>
+                            <span class="nav-text" style="color:#ff3366">MULTICUENTAS</span>
                         </a>
                     </li>
                     <li class="nav-item">

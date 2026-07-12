@@ -1,0 +1,167 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Multi-Accounts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">MULTICUENTAS · IP</h1>
+        <p class="page-subtitle">Investiga cuentas que comparten IP o dirección de retiro</p>
+    </div>
+    <form method="get" action="/admin/multiaccounts" class="flex gap-2">
+        <input type="text" name="q" value="{{ query }}" class="form-input"
+               placeholder="Buscar por ID, usuario o IP..." style="width: 260px;">
+        <button type="submit" class="btn btn-primary">BUSCAR</button>
+        {% if query %}<a href="/admin/multiaccounts" class="btn btn-secondary">LIMPIAR</a>{% endif %}
+    </form>
+</div>
+
+{# ─────────── RESULTADO DE BÚSQUEDA ─────────── #}
+{% if search_result %}
+<div class="card pixel-border">
+    <h2 class="section-title">🔎 Resultado: "{{ search_result.query }}"</h2>
+
+    {% if search_result.mode == 'notfound' %}
+    <p class="text-muted">No se encontró ninguna cuenta con ese usuario/ID.</p>
+
+    {% elif search_result.mode == 'empty' or search_result.mode == 'error' %}
+    <p class="text-muted">Escribe un ID de usuario, un nombre o una dirección IP.</p>
+
+    {% elif search_result.mode == 'ip' %}
+    <p class="text-muted" style="margin-bottom:12px;">
+        Cuentas que han usado la IP <strong class="text-gold">{{ search_result.ip }}</strong>:
+        <strong>{{ search_result.results|length }}</strong>
+    </p>
+    <table class="data-table">
+        <thead>
+            <tr><th>ID</th><th>Usuario</th><th>Veces</th><th>Último acceso</th><th>Wallet</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            {% for r in search_result.results %}
+            <tr>
+                <td class="text-muted">#{{ r.user_id }}</td>
+                <td><strong>{{ r.name }}</strong></td>
+                <td>{{ r.times_seen }}</td>
+                <td class="text-muted">{{ r.last_seen }}</td>
+                <td class="text-muted" style="font-size:0.72rem;">{{ r.wallet[:14] ~ '…' if r.wallet else '—' }}</td>
+                <td>
+                    {% if r.banned %}<span class="badge badge-danger">BANEADO</span>
+                    {% elif r.blocked %}<span class="badge badge-warning">BLOQUEADO</span>
+                    {% else %}<span class="badge badge-success">OK</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% elif search_result.mode == 'user' %}
+    <div style="margin-bottom:16px; padding:12px; background:var(--surface,#12121a); border:1px solid var(--border,#2a2a3a);">
+        <strong class="text-gold">{{ search_result.user.name }}</strong>
+        <span class="text-muted">· #{{ search_result.user.user_id }}</span>
+        {% if search_result.user.banned %}<span class="badge badge-danger">BANEADO</span>
+        {% elif search_result.user.blocked %}<span class="badge badge-warning">BLOQUEADO</span>{% endif %}
+        {% if search_result.user.wallet %}
+        <div class="text-muted" style="font-size:0.75rem; margin-top:6px;">Wallet: {{ search_result.user.wallet }}</div>
+        {% endif %}
+    </div>
+
+    {% if search_result.ip_details %}
+    {% for ipd in search_result.ip_details %}
+    <div class="card" style="margin-bottom:12px; background:var(--surface,#12121a);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong class="text-gold">IP {{ ipd.ip }}</strong>
+            <span class="text-muted" style="font-size:0.75rem;">{{ ipd.times_seen }} accesos · {{ ipd.last_seen }}</span>
+        </div>
+        {% if ipd.shared_with %}
+        <p class="text-muted" style="font-size:0.78rem; margin-bottom:8px;">
+            ⚠ Compartida con {{ ipd.shared_with|length }} cuenta(s):
+        </p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% for s in ipd.shared_with %}
+            <a href="/admin/multiaccounts?q={{ s.user_id }}"
+               class="badge {% if s.banned %}badge-danger{% elif s.blocked %}badge-warning{% else %}badge-secondary{% endif %}"
+               style="text-decoration:none;">
+                {{ s.name }} #{{ s.user_id }}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-success" style="font-size:0.78rem;">✓ IP no compartida con otras cuentas</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-muted">Este usuario no tiene IPs registradas.</p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endif %}
+
+{# ─────────── WALLETS DUPLICADAS ─────────── #}
+{% if dup_wallets %}
+<div class="card pixel-border">
+    <h2 class="section-title" style="color:#ff3366;">💳 Direcciones de retiro duplicadas ({{ dup_wallets|length }})</h2>
+    <p class="text-muted" style="margin-bottom:12px;">Una dirección usada por más de una cuenta. Investiga antes de aprobar retiros.</p>
+    <table class="data-table">
+        <thead>
+            <tr><th>Dirección</th><th>Cuentas</th><th>User IDs</th></tr>
+        </thead>
+        <tbody>
+            {% for w in dup_wallets %}
+            <tr>
+                <td style="font-size:0.72rem;">{{ w.wallet[:20] }}…</td>
+                <td><span class="badge badge-danger">{{ w.cnt }}</span></td>
+                <td class="text-muted" style="font-size:0.75rem;">
+                    {% for uid in w.user_ids.split(',') %}
+                    <a href="/admin/multiaccounts?q={{ uid }}" style="color:var(--gold,#ffd700); text-decoration:none;">#{{ uid }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ─────────── GRUPOS DE IP COMPARTIDA ─────────── #}
+<div class="card pixel-border">
+    <h2 class="section-title">📡 Grupos de IP compartida ({{ groups|length }})</h2>
+    <p class="text-muted" style="margin-bottom:12px;">
+        IPs usadas por 2+ cuentas, ordenadas por cantidad. Recuerda: un wifi o IP de operador
+        móvil puede ser legítimamente compartido; investiga antes de banear.
+    </p>
+    {% if groups %}
+    <table class="data-table">
+        <thead>
+            <tr><th>IP</th><th>Cuentas</th><th>Usuarios</th></tr>
+        </thead>
+        <tbody>
+            {% for g in groups %}
+            <tr>
+                <td>
+                    <a href="/admin/multiaccounts?q={{ g.ip }}" style="color:var(--gold,#ffd700); text-decoration:none;">
+                        {{ g.ip }}
+                    </a>
+                </td>
+                <td>
+                    <span class="badge {% if g.account_count >= 4 %}badge-danger{% elif g.account_count == 3 %}badge-warning{% else %}badge-secondary{% endif %}">
+                        {{ g.account_count }}
+                    </span>
+                </td>
+                <td style="font-size:0.75rem;">
+                    {% for a in g.accounts %}
+                    <a href="/admin/multiaccounts?q={{ a.user_id }}"
+                       class="{% if a.banned %}text-danger{% elif a.blocked %}text-warning{% else %}text-muted{% endif %}"
+                       style="text-decoration:none;">
+                        {{ a.name }}{% if a.banned %} ⛔{% elif a.blocked %} ⚠{% endif %}</a>{% if not loop.last %} · {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-success">✓ No hay IPs compartidas entre cuentas.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -203,10 +203,23 @@ async function viewUser(userId) {
                     <div class="form-group"><label class="form-label">Total Earned</label><p>${parseFloat(u.total_earned||0).toFixed(8)} TON</p></div>
                     <div class="form-group"><label class="form-label">Check-in Streak</label><p>${u.checkin_streak} days (Best: ${u.longest_streak})</p></div>
                     <div class="form-group"><label class="form-label">Total Check-ins</label><p>${u.total_checkins}</p></div>
-                    <div class="form-group"><label class="form-label">Referrals</label><p>${u.validated_referrals} validated (+${parseFloat(u.referral_earnings||0).toFixed(8)} DOGE)</p></div>
-                    <div class="form-group"><label class="form-label">Wallet</label><p style="word-break:break-all;">${u.wallet_address || 'Not linked'}</p></div>
+                    <div class="form-group"><label class="form-label">Referrals</label><p>${u.validated_referrals} validated (+${parseFloat(u.referral_earnings||0).toFixed(8)} TON)</p></div>
+                    <div class="form-group"><label class="form-label">Wallet de retiro</label>
+                        <p style="word-break:break-all;">${u.ton_wallet || u.wallet_address || 'No vinculada'}
+                        ${(u.wallet_locked ? ' <span class="badge badge-warning">BLOQUEADA</span>' : (u.ton_wallet ? ' <span class="badge badge-success">LIBRE</span>' : ''))}</p></div>
                     <div class="form-group"><label class="form-label">Joined</label><p>${u.created_at}</p></div>
                     <div class="form-group"><label class="form-label">Last Active</label><p>${u.last_active || 'N/A'}</p></div>
+                </div>
+                <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border,#2a2a3a);">
+                    <label class="form-label">Gestionar wallet de retiro</label>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                        <input type="text" id="adminWalletInput" class="form-input" placeholder="Nueva dirección UQ/EQ..." style="flex:1; min-width:200px;">
+                        <button class="btn btn-primary" onclick="adminChangeWallet('${u.user_id}')">CAMBIAR</button>
+                        <button class="btn btn-secondary" onclick="adminUnlockWallet('${u.user_id}')">DESBLOQUEAR</button>
+                    </div>
+                    <p class="text-muted" style="font-size:0.72rem; margin-top:6px;">
+                        CAMBIAR: fija una nueva dirección (queda bloqueada). DESBLOQUEAR: permite al usuario vincular otra desde la app.
+                    </p>
                 </div>`;
             document.getElementById('adjustBalanceBtn').onclick = () => {
                 closeModal('userModal');
@@ -215,6 +228,31 @@ async function viewUser(userId) {
             openModal('userModal');
         } else { showToast(data.message || 'User not found', 'error'); }
     } catch(e) { showToast('Connection error', 'error'); }
+}
+
+async function adminChangeWallet(userId) {
+    const input = document.getElementById('adminWalletInput');
+    const wallet = (input.value || '').trim();
+    if (!wallet) { showToast('Ingresa una dirección', 'error'); return; }
+    try {
+        const res = await fetch(`/admin/api/user/${userId}/wallet/change`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet })
+        });
+        const data = await res.json();
+        showToast(data.message || (data.success ? 'Wallet actualizada' : 'Error'), data.success ? 'success' : 'error');
+        if (data.success) { closeModal('userModal'); }
+    } catch (e) { showToast('Error de conexión', 'error'); }
+}
+
+async function adminUnlockWallet(userId) {
+    if (!confirm('¿Desbloquear la wallet? El usuario podrá vincular una nueva dirección.')) return;
+    try {
+        const res = await fetch(`/admin/api/user/${userId}/wallet/unlock`, { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || (data.success ? 'Desbloqueada' : 'Error'), data.success ? 'success' : 'error');
+        if (data.success) { closeModal('userModal'); }
+    } catch (e) { showToast('Error de conexión', 'error'); }
 }
 
 function openBalanceModal(userId, currentBalance) {
