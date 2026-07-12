@@ -51,6 +51,7 @@ from database import (
     get_or_create_user_deposit_address, create_ton_deposit_pending,
     link_user_wallet, admin_change_user_wallet, admin_unlock_user_wallet,
     get_wallet_owner, get_duplicate_wallets,
+    delete_user_completely,
     # Anti-fraud
     is_withdrawal_blocked, check_and_flag_multi_account, unflag_user_fraud,
     get_shared_ip_accounts, are_accounts_related,
@@ -177,7 +178,7 @@ def _admin_tg_allowed():
         return True  # navegador sin sesión de Telegram → decide la contraseña
     return uid in ADMIN_TELEGRAM_IDS
 APP_URL      = os.environ.get('APP_URL', f'https://t.me/{os.environ.get("BOT_USERNAME","CraftGemsbot")}/app')
-_BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
+_BOT_TITLE   = os.environ.get('BOT_TITLE', 'Aero flex')
 OFFICIAL_CHANNEL = os.environ.get('OFFICIAL_CHANNEL', '@CraftGems')
 
 # ============================================
@@ -729,7 +730,7 @@ def profile(user):
         ref_earnings=ref_stats.get('total_earnings', 0),
         member_since=member_since,
         format_doge=format_doge,
-        support_url=get_config('support_bot_url', '') or 'https://t.me/CraftGemsbotsoportbot',
+        support_url=get_config('support_bot_url', '') or os.environ.get('SUPPORT_BOT_URL', 'https://t.me/CraftGemsbotsoportbot'),
     )
 
 
@@ -2587,6 +2588,31 @@ def admin_api_unlock_wallet(user_id):
     return jsonify({'success': False, 'message': 'No se pudo desbloquear'})
 
 
+@app.route('/admin/api/user/<user_id>/delete', methods=['POST'])
+@require_admin
+def admin_api_delete_user(user_id):
+    """
+    Borra PERMANENTEMENTE una cuenta y todos sus datos.
+    Requiere confirmación explícita en el body: {"confirm": true}.
+    """
+    data = request.get_json() or {}
+    if not data.get('confirm'):
+        return jsonify({'success': False, 'message': 'Confirmación requerida'})
+
+    try:
+        result = delete_user_completely(user_id)
+    except Exception as e:
+        logger.warning(f"delete user error: {e}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
+
+    if result.get('success'):
+        logger.warning(f"[ADMIN] Usuario {user_id} borrado permanentemente. Resumen: {result.get('summary')}")
+        return jsonify({'success': True, 'message': 'Cuenta y todos sus datos borrados permanentemente.'})
+    if result.get('err') == 'user_not_found':
+        return jsonify({'success': False, 'message': 'Usuario no encontrado'})
+    return jsonify({'success': False, 'message': 'No se pudo borrar la cuenta'})
+
+
 # ============================================
 # ADMIN API — User detail, balance & history
 # ============================================
@@ -3151,10 +3177,10 @@ def _handle_callback(cq):
         }
         share_text = {"es":"📤 Compartir link","en":"📤 Share link","pt":"📤 Compartilhar","fr":"📤 Partager"}
         share_msg = {
-            "es": f"💎 ¡Únete a CraftGems y gana TON gratis! Completa misiones, mina recursos y retira TON real.\n\n👇 Entra aquí: {ref_link}",
-            "en": f"💎 Join CraftGems and earn free TON! Complete missions, mine resources and withdraw real TON.\n\n👇 Enter here: {ref_link}",
-            "pt": f"💎 Entre no CraftGems e ganhe TON grátis! Complete missões, mine recursos e retire TON real.\n\n👇 Entre aqui: {ref_link}",
-            "fr": f"💎 Rejoins CraftGems et gagne du TON gratuit ! Complète des missions, mine des ressources et retire du TON réel.\n\n👇 Entre ici : {ref_link}",
+            "es": f"💎 ¡Únete a Aero flex y gana TON gratis! Completa misiones, mina recursos y retira TON real.\n\n👇 Entra aquí: {ref_link}",
+            "en": f"💎 Join Aero flex and earn free TON! Complete missions, mine resources and withdraw real TON.\n\n👇 Enter here: {ref_link}",
+            "pt": f"💎 Entre no Aero flex e ganhe TON grátis! Complete missões, mine recursos e retire TON real.\n\n👇 Entre aqui: {ref_link}",
+            "fr": f"💎 Rejoins Aero flex et gagne du TON gratuit ! Complète des missions, mine des ressources et retire du TON réel.\n\n👇 Entre ici : {ref_link}",
         }
         kb = {"inline_keyboard":[
             [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": share_msg.get(lang, share_msg['en'])}],

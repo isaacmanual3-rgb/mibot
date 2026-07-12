@@ -2011,6 +2011,87 @@ def get_pending_ton_deposits():
     ) or []
 
 
+def delete_user_completely(user_id):
+    """
+    Borra una cuenta y TODOS sus datos asociados de forma permanente:
+    balance, planes de minería, historial, retiros, depósitos, referidos
+    (como referidor y como referido), check-ins, tareas completadas,
+    canjes de promos, IPs, progreso de anuncios, wallet registrada.
+
+    Devuelve un dict con el resumen de lo borrado por tabla.
+    IRREVERSIBLE — usar solo desde el panel admin con confirmación.
+    """
+    uid = str(user_id)
+    user = get_user(uid)
+    if not user:
+        return {'success': False, 'err': 'user_not_found'}
+
+    # Liberar la dirección de retiro del registro global antes de borrar
+    old_wallet = user.get('ton_wallet')
+    if old_wallet:
+        try:
+            execute_query(
+                "DELETE FROM wallet_address_registry WHERE user_id = %s OR wallet_address = %s",
+                (uid, old_wallet)
+            )
+        except Exception:
+            pass
+
+    # (tabla, columna) a limpiar. Se ejecutan con try individual para que
+    # si una tabla no existe (instalación parcial) no aborte el resto.
+    deletions = [
+        ('balance_history',        'user_id'),
+        ('daily_checkins',         'user_id'),
+        ('task_completions',       'user_id'),
+        ('withdrawals',            'user_id'),
+        ('ton_deposits',           'user_id'),
+        ('user_mining_machines',   'user_id'),
+        ('promo_redemptions',      'user_id'),
+        ('user_ips',               'user_id'),
+        ('free_plan_ad_progress',  'user_id'),
+        ('wallet_address_registry','user_id'),
+    ]
+
+    summary = {}
+    for table, col in deletions:
+        try:
+            execute_query(f"DELETE FROM {table} WHERE {col} = %s", (uid,))
+            summary[table] = 'ok'
+        except Exception as e:
+            summary[table] = f'skip ({e})'
+
+    # Referidos: borrar donde el usuario es referidor O referido
+    try:
+        execute_query(
+            "DELETE FROM referrals WHERE referrer_id = %s OR referred_id = %s",
+            (uid, uid)
+        )
+        summary['referrals'] = 'ok'
+    except Exception as e:
+        summary['referrals'] = f'skip ({e})'
+
+    # Desvincular a los usuarios que este usuario había referido
+    # (para que 'referred_by' no apunte a una cuenta inexistente)
+    try:
+        execute_query(
+            "UPDATE users SET referred_by = NULL WHERE referred_by = %s",
+            (uid,)
+        )
+        summary['unlink_referred_by'] = 'ok'
+    except Exception as e:
+        summary['unlink_referred_by'] = f'skip ({e})'
+
+    # Finalmente, borrar el usuario
+    try:
+        execute_query("DELETE FROM users WHERE user_id = %s", (uid,))
+        summary['users'] = 'ok'
+    except Exception as e:
+        summary['users'] = f'error ({e})'
+        return {'success': False, 'err': 'delete_failed', 'summary': summary}
+
+    return {'success': True, 'summary': summary}
+
+
 def save_user_ton_wallet(user_id, ton_wallet):
     """Save user's TON wallet address"""
     execute_query(

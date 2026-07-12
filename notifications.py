@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN    = os.environ.get('BOT_TOKEN', '')
 WEBAPP_URL   = os.environ.get('WEBAPP_URL', '')
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'SallyEbot')
-_BOT_TITLE   = os.environ.get('BOT_TITLE', BOT_USERNAME)
+_BOT_TITLE   = os.environ.get('BOT_TITLE', 'Aero flex')
 
 # ──────────────────────────────────────────────────────────
 # DETECCIÓN DE IDIOMA
@@ -254,44 +254,62 @@ _TEXTS = {
 },
 'referral_fraud_skip':{
   'es':(
-    "⚠️ <b>Tu referido se ha unido — pero no recibiste recompensa</b>\n\n"
-    "👤 <b>Referido:</b> {referred_name}\n\n"
-    "Tu referido se registró correctamente bajo tu enlace, "
-    "sin embargo <b>la recompensa no fue acreditada</b> porque se detectó "
-    "actividad anormal entre las cuentas.\n\n"
-    "✅ <b>Tu cuenta no tiene ninguna restricción por ahora.</b>\n\n"
-    "⛔ Por favor, deja de intentar ganar recompensas con cuentas propias o vinculadas. "
-    "Si este comportamiento continúa, tu cuenta podría ser restringida permanentemente."
+    "🚫 <b>Recompensa de referido no acreditada</b>\n\n"
+    "Registramos que <b>{referred_name}</b> entró con tu enlace, pero el bono "
+    "quedó retenido: nuestro sistema encontró señales de que las cuentas están "
+    "conectadas entre sí.\n\n"
+    "🔓 De momento tu cuenta sigue activa y sin sanciones.\n\n"
+    "Un recordatorio: los bonos son solo para <b>amigos reales que invitas</b>. "
+    "Crear o enlazar cuentas propias para farmear recompensas puede llevar a la "
+    "suspensión definitiva de tu cuenta."
   ),
   'en':(
-    "⚠️ <b>Your referral joined — but no reward was credited</b>\n\n"
-    "👤 <b>Referral:</b> {referred_name}\n\n"
-    "Your referral successfully registered under your link, "
-    "however <b>the reward was not credited</b> because abnormal activity "
-    "was detected between the accounts.\n\n"
-    "✅ <b>Your account has no restrictions at this time.</b>\n\n"
-    "⛔ Please stop attempting to earn rewards using your own or linked accounts. "
-    "If this behavior continues, your account may be permanently restricted."
+    "🚫 <b>Referral reward not credited</b>\n\n"
+    "We saw that <b>{referred_name}</b> joined with your link, but the bonus was "
+    "held back: our system found signs that the accounts are connected to each "
+    "other.\n\n"
+    "🔓 For now your account stays active with no penalties.\n\n"
+    "A reminder: bonuses are only for <b>real friends you invite</b>. Creating or "
+    "linking your own accounts to farm rewards may lead to a permanent suspension "
+    "of your account."
   ),
   'pt':(
-    "⚠️ <b>Seu indicado entrou — mas nenhuma recompensa foi creditada</b>\n\n"
-    "👤 <b>Indicado:</b> {referred_name}\n\n"
-    "Seu indicado se registrou com sucesso pelo seu link, "
-    "porém <b>a recompensa não foi creditada</b> pois foi detectada "
-    "atividade anormal entre as contas.\n\n"
-    "✅ <b>Sua conta não tem nenhuma restrição no momento.</b>\n\n"
-    "⛔ Por favor, pare de tentar ganhar recompensas com suas próprias contas ou contas vinculadas. "
-    "Se esse comportamento continuar, sua conta poderá ser permanentemente restrita."
+    "🚫 <b>Recompensa de indicação não creditada</b>\n\n"
+    "Vimos que <b>{referred_name}</b> entrou com o seu link, mas o bônus ficou "
+    "retido: nosso sistema encontrou sinais de que as contas estão conectadas "
+    "entre si.\n\n"
+    "🔓 Por enquanto sua conta continua ativa e sem sanções.\n\n"
+    "Um lembrete: os bônus são apenas para <b>amigos reais que você convida</b>. "
+    "Criar ou vincular contas próprias para farmar recompensas pode levar à "
+    "suspensão definitiva da sua conta."
   ),
   'fr':(
-    "⚠️ <b>Votre filleul a rejoint — mais aucune récompense n'a été créditée</b>\n\n"
-    "👤 <b>Filleul:</b> {referred_name}\n\n"
-    "Votre filleul s'est inscrit avec succès via votre lien, "
-    "cependant <b>la récompense n'a pas été créditée</b> car une activité "
-    "anormale a été détectée entre les comptes.\n\n"
-    "✅ <b>Votre compte n'a aucune restriction pour le moment.</b>\n\n"
-    "⛔ Veuillez cesser de tenter de gagner des récompenses avec vos propres comptes ou des comptes liés. "
-    "Si ce comportement continue, votre compte pourra être définitivement restreint."
+    "🚫 <b>Récompense de parrainage non créditée</b>\n\n"
+    "Nous avons vu que <b>{referred_name}</b> a rejoint via votre lien, mais le "
+    "bonus a été retenu : notre système a trouvé des signes que les comptes sont "
+    "liés entre eux.\n\n"
+    "🔓 Pour l'instant votre compte reste actif et sans sanctions.\n\n"
+    "Un rappel : les bonus sont réservés aux <b>vrais amis que vous invitez</b>. "
+    "Créer ou lier vos propres comptes pour farmer des récompenses peut entraîner "
+    "la suspension définitive de votre compte."
+  ),
+  'ru':(
+    "🚫 <b>Бонус за приглашение не начислен</b>\n\n"
+    "Мы увидели, что <b>{referred_name}</b> присоединился по вашей ссылке, но бонус "
+    "был удержан: система обнаружила признаки того, что аккаунты связаны между "
+    "собой.\n\n"
+    "🔓 Пока ваш аккаунт активен и без ограничений.\n\n"
+    "Напоминание: бонусы предназначены только для <b>реальных друзей, которых вы "
+    "приглашаете</b>. Создание или связывание собственных аккаунтов для фарма "
+    "наград может привести к окончательной блокировке вашего аккаунта."
+  ),
+  'ar':(
+    "🚫 <b>لم يتم إضافة مكافأة الإحالة</b>\n\n"
+    "لاحظنا أن <b>{referred_name}</b> انضم عبر رابطك، لكن تم حجب المكافأة: "
+    "اكتشف نظامنا مؤشرات على أن الحسابات مرتبطة ببعضها.\n\n"
+    "🔓 حسابك حاليًا نشط وبدون أي عقوبات.\n\n"
+    "تذكير: المكافآت مخصصة فقط <b>للأصدقاء الحقيقيين الذين تدعوهم</b>. "
+    "إنشاء أو ربط حسابات خاصة بك لجمع المكافآت قد يؤدي إلى تعليق حسابك نهائيًا."
   ),
 },
 'generic_reply':{
