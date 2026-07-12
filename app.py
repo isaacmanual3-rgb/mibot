@@ -516,9 +516,9 @@ def _validate_referral_on_purchase(user_id):
             notify_referral_validated(
                 referrer_id=int(referrer_id),
                 referred_name=referred_name,
-                reward=f"{bonus_amount:.2f}",
+                reward=format_ton_clean(bonus_amount),
                 total_refs=total_refs,
-                total_earnings=f"{float(total_earnings):.2f}",
+                total_earnings=format_ton_clean(total_earnings),
                 language_code=lang_code,
             )
         except Exception as _ne:
@@ -535,6 +535,18 @@ def format_ton(amount):
     if amount is None:
         return "0.0000"
     return f"{float(amount):.4f}"
+
+def format_ton_clean(amount):
+    """
+    Formatea un monto TON sin ceros sobrantes al final.
+    Evita el bug de redondeo a 2 decimales (0.005 → '0.01').
+    Ej: 0.005 → '0.005', 0.0050 → '0.005', 0.01 → '0.01', 1.0 → '1'.
+    """
+    if amount is None:
+        return "0"
+    # Hasta 8 decimales (precisión de la BD), luego quitar ceros finales.
+    s = f"{float(amount):.8f}".rstrip('0').rstrip('.')
+    return s if s else "0"
 
 # ============================================
 # DECORATORS
