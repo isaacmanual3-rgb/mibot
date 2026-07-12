@@ -74,6 +74,49 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
 
+# ── RUTA SECRETA DEL PANEL ADMIN ────────────────────────────────
+# El panel admin se accede bajo un segmento secreto configurable con la
+# variable de entorno ADMIN_SECRET_PATH (ej. "36889006432"), quedando en:
+#     /<ADMIN_SECRET_PATH>/admin        (login y dashboard)
+# La ruta /admin normal (sin el secreto) devuelve 404, ocultando el panel.
+# La app pública (home, perfil, wallet, etc.) NO se ve afectada.
+# Si ADMIN_SECRET_PATH está vacío, el panel queda en /admin como siempre.
+ADMIN_SECRET_PATH = os.environ.get('ADMIN_SECRET_PATH', '').strip().strip('/')
+
+class _AdminSecretPathMiddleware:
+    """
+    Middleware WSGI que protege SOLO las rutas /admin con un segmento secreto.
+    - /<SECRET>/admin...  → se reescribe a /admin... (acceso permitido)
+    - /admin... (directo)  → 404 (panel oculto sin el secreto)
+    - cualquier otra ruta  → pasa sin tocar (la app pública no se afecta)
+    """
+    def __init__(self, wsgi_app, secret):
+        self.wsgi_app = wsgi_app
+        self.secret = secret
+        self.secret_admin = '/' + secret + '/admin'
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '') or ''
+
+        # Acceso correcto con el segmento secreto → recortar el secreto
+        if path == self.secret_admin or path.startswith(self.secret_admin + '/'):
+            # Deja SCRIPT_NAME con el prefijo para que url_for genere bien las URLs
+            environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/' + self.secret
+            environ['PATH_INFO'] = path[len('/' + self.secret):] or '/'
+            return self.wsgi_app(environ, start_response)
+
+        # Intento de acceder al panel SIN el secreto → 404
+        if path == '/admin' or path.startswith('/admin/'):
+            start_response('404 Not Found', [('Content-Type', 'text/plain; charset=utf-8')])
+            return [b'404 Not Found']
+
+        # Todo lo demás (app pública) pasa intacto
+        return self.wsgi_app(environ, start_response)
+
+if ADMIN_SECRET_PATH:
+    app.wsgi_app = _AdminSecretPathMiddleware(app.wsgi_app, ADMIN_SECRET_PATH)
+    logger.info(f"[SECURITY] Panel admin oculto bajo: /{ADMIN_SECRET_PATH}/admin")
+
 # ── LANGUAGE / i18n ─────────────────────────────────────────────
 @app.context_processor
 def inject_lang():
@@ -828,10 +871,15 @@ def api_ton_withdraw_init(user):
     """TON withdrawal — deducts DOGE and sends TON automatically via TON Connect / toncenter API"""
     data        = request.get_json() or {}
     doge_amount = float(data.get('doge_amount', 0))
-    ton_wallet  = data.get('ton_wallet', '').strip()
+
+    # ── SEGURIDAD: la dirección de retiro SIEMPRE es la wallet vinculada
+    # del usuario (se registra desde el Perfil). Ignoramos por completo
+    # cualquier dirección enviada desde el cliente para evitar que se
+    # manipule el destino del pago por la API.
+    ton_wallet = (user.get('ton_wallet') or '').strip()
 
     if not ton_wallet:
-        return jsonify({'success': False, 'message': _t('api_no_wallet')})
+        return jsonify({'success': False, 'message': _t('api_no_wallet_profile')})
 
     # ── Anti-fraud: run multi-account check before anything else ──
     check_and_flag_multi_account(user['user_id'])
@@ -1699,8 +1747,17 @@ def admin_auth():
         abort(404)
     username = request.form.get('username', '')
     password = request.form.get('password', '')
-    admin_pass = get_config('admin_password', 'admin123')
-    admin_user = get_config('admin_username', 'admin')
+
+    # SEGURIDAD: las credenciales del panel viven SOLO en variables de entorno,
+    # nunca en el código ni en la base de datos. Si no están configuradas,
+    # el panel queda inaccesible (no hay credenciales por defecto).
+    admin_pass = os.environ.get('ADMIN_PASSWORD', '')
+    admin_user = os.environ.get('ADMIN_USERNAME', '')
+
+    if not admin_pass:
+        logger.warning("[ADMIN] Intento de login pero ADMIN_PASSWORD no está configurada.")
+        return render_template('admin_login.html',
+                               error='Panel no configurado. Define ADMIN_PASSWORD.')
 
     # Telegram-ID gate: solo bloquea si el usuario abrió con una cuenta de
     # Telegram NO autorizada. Desde navegador puro no bloquea (manda la contraseña).
@@ -1708,8 +1765,10 @@ def admin_auth():
         return render_template('admin_login.html',
                                error='Esta cuenta de Telegram no tiene acceso al panel.')
 
-    # Support both username+password login and password-only login
-    if password == admin_pass and (not username or username == admin_user):
+    # Comparación segura contra timing attacks
+    pass_ok = secrets.compare_digest(str(password), str(admin_pass))
+    user_ok = (not admin_user) or (not username) or secrets.compare_digest(str(username), str(admin_user))
+    if pass_ok and user_ok:
         session['admin_authenticated'] = True
         return redirect(url_for('admin_dashboard'))
 
