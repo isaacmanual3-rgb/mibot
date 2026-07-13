@@ -20,6 +20,25 @@
     <!-- CSS Principal -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 
+    <!-- Protección: ocultar URL en long-press / desactivar callout y selección -->
+    <style>
+      * {
+        -webkit-touch-callout: none !important;   /* iOS/Android: no menú al mantener presionado */
+        -webkit-user-drag: none !important;        /* no arrastrar enlaces/imágenes */
+        -webkit-tap-highlight-color: transparent;  /* sin resaltado al tocar */
+      }
+      a, img, button, .bnav-item, [role="button"] {
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+      }
+      /* El texto normal (párrafos, saldos, etc.) sigue siendo legible;
+         solo bloqueamos selección/arrastre en elementos interactivos. */
+    </style>
+
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -357,5 +376,50 @@
     </script>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Protección global: bloquear menú contextual, long-press y arrastre -->
+    <script>
+    (function() {
+        // 1) Bloquear clic derecho / menú contextual (que muestra la URL)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        }, { capture: true });
+
+        // 2) Bloquear arrastre de enlaces e imágenes (revela la URL)
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+            return false;
+        }, { capture: true });
+
+        // 3) Bloquear el menú de long-press en móviles.
+        // Detectamos una pulsación larga y la cancelamos antes de que el
+        // navegador abra su menú con la URL.
+        var pressTimer = null;
+        document.addEventListener('touchstart', function(e) {
+            var target = e.target.closest('a, img, button, [role="button"], .bnav-item');
+            if (!target) return;
+            pressTimer = setTimeout(function() {
+                // Cancelamos cualquier selección/menú que se esté formando
+                if (window.getSelection) {
+                    var sel = window.getSelection();
+                    if (sel && sel.removeAllRanges) sel.removeAllRanges();
+                }
+            }, 300);
+        }, { passive: true, capture: true });
+
+        function clearPress() {
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        }
+        document.addEventListener('touchend', clearPress, { passive: true, capture: true });
+        document.addEventListener('touchmove', clearPress, { passive: true, capture: true });
+
+        // 4) Evitar selección larga que muestre el bocadillo con "copiar enlace"
+        document.addEventListener('selectstart', function(e) {
+            var target = e.target.closest && e.target.closest('a, img, button, [role="button"], .bnav-item');
+            if (target) { e.preventDefault(); return false; }
+        }, { capture: true });
+    })();
+    </script>
 </body>
 </html>
