@@ -362,7 +362,7 @@
         </div>
       </div>
       {% if not plan_name %}
-      <a href="{{ url_for('mining') }}" class="pf-plan-cta">{{ t.pf_plan_go }}</a>
+      <div role="button" data-nav="{{ url_for('mining') }}" class="pf-plan-cta">{{ t.pf_plan_go }}</div>
       {% endif %}
     </div>
 
