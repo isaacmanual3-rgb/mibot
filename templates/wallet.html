@@ -670,15 +670,18 @@
         <input type="text" id="ton-wd-address-input" class="form-input"
                placeholder="{{ t.wl_ton_addr_placeholder }}"
                value="{{ user_saved_wallet }}"
+               readonly disabled
+               tabindex="-1" aria-readonly="true"
                autocomplete="off" spellcheck="false"
-               style="font-size:0.72rem;letter-spacing:0.02em">
+               onfocus="this.blur()"
+               style="font-size:0.72rem;letter-spacing:0.02em;opacity:0.7;cursor:not-allowed;pointer-events:none;user-select:none;background:rgba(255,255,255,0.03)">
         {% if user_saved_wallet %}
         <div class="form-hint" style="color:#00e676;display:flex;align-items:center;gap:5px">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           {{ t.wl_wallet_from_profile }}
         </div>
         {% else %}
-        <div class="form-hint">{{ t.wl_ton_addr_placeholder }}</div>
+        <div class="form-hint" style="color:#ff9800">{{ t.wl_link_in_profile }}</div>
         {% endif %}
       </div>
 
@@ -909,7 +912,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
     var addr    = (el('ton-wd-address-input').value || '').trim();
     var dogeAmt = parseFloat(el('ton-wd-amount-input').value || '0');
 
-    if (!addr) { DogeQuest.showToast('{{ t.wl_enter_address }}', 'error'); return; }
+    if (!addr) { DogeQuest.showToast('{{ t.wl_link_in_profile }}', 'error'); return; }
     if (!isValidTonAddr(addr)) { DogeQuest.showToast('{{ t.wl_invalid_addr }}', 'error'); return; }
     if (isNaN(dogeAmt) || dogeAmt < MIN_DOGE) { DogeQuest.showToast('{{ t.wl_min_amount }} ' + MIN_DOGE + ' TON', 'error'); return; }
     if (dogeAmt > MAX_DOGE) { DogeQuest.showToast('{{ t.wl_insufficient }}', 'error'); return; }

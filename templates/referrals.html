@@ -333,8 +333,7 @@
   background: var(--surface3);
   border: 2px solid var(--border);
   box-shadow: 2px 2px 0 0 #020205;
-  display: flex; align-items: flex-start; gap: 10px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 10px;
   padding: 12px 14px;
   position: relative;
 }
@@ -346,12 +345,12 @@
 
 .rf-avatar {
   flex-shrink: 0;
-  width: 38px; height: 38px;
+  width: 34px; height: 34px;
   background: var(--surface);
   border: 2px solid var(--border);
   box-shadow: 2px 2px 0 0 #020205;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-px); font-size: 0.7rem;
+  font-family: var(--font-px); font-size: 0.6rem;
   color: var(--gold);
   text-shadow: 1px 1px 0 var(--gold-dark);
 }
@@ -361,29 +360,30 @@
   color: var(--green); text-shadow: none;
 }
 
-.rf-item-body { flex: 1 1 120px; min-width: 0; }
+.rf-item-body { flex: 1 1 auto; min-width: 0; }
 .rf-item-name {
   display: block; font-family: var(--font-px);
-  font-size: 0.44rem; color: var(--text);
-  letter-spacing: 0.04em; margin-bottom: 5px;
+  font-size: 0.4rem; color: var(--text);
+  letter-spacing: 0.03em; margin-bottom: 4px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.rf-item-date { font-size: 0.65rem; color: var(--muted); }
+.rf-item-date { font-size: 0.62rem; color: var(--muted); }
 
-/* Zona de estado: si no cabe al lado, baja a una fila completa */
+/* Zona de estado a la derecha, tamaño compacto y fijo */
 .rf-item-status {
-  flex: 0 0 auto; margin-left: auto;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  text-align: right;
 }
 
 .rf-badge {
-  max-width: 100%;
-  font-family: var(--font-px); font-size: 0.36rem;
-  letter-spacing: 0.04em; padding: 5px 8px;
-  border: 2px solid; display: inline-flex; align-items: center; gap: 5px;
-  white-space: normal; text-align: right; line-height: 1.25;
+  font-family: var(--font-px); font-size: 0.34rem;
+  letter-spacing: 0.03em; padding: 4px 7px;
+  border: 2px solid; display: inline-flex; align-items: center; gap: 4px;
+  white-space: nowrap; line-height: 1.2;
 }
-.rf-badge .px-icon { flex-shrink: 0; }
+.rf-badge .px-icon { flex-shrink: 0; width: 11px; height: 11px; }
+.rf-badge .px-icon svg { width: 11px; height: 11px; }
 .rf-badge.validated {
   color: var(--green); border-color: rgba(0,230,118,0.35);
   background: rgba(0,230,118,0.06);
