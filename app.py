@@ -74,6 +74,25 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
 
+# (El panel admin usa login con usuario/contraseña + dominio autorizado.)
+
+# ── RUTA SECRETA DEL PANEL ADMIN (?key=...) ─────────────────────
+# El panel admin solo aparece si se accede con la clave secreta correcta
+# en la URL: /admin?key=TU_CLAVE (configurable con ADMIN_SECRET_KEY).
+# Sin la clave correcta, /admin devuelve 404 como si no existiera.
+# Una vez validada, la clave se guarda en la sesión para no repetirla.
+ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', '').strip()
+
+def _admin_key_ok():
+    """True si el acceso al panel está autorizado por la clave secreta."""
+    if not ADMIN_SECRET_KEY:
+        return True  # sin clave configurada, el panel está en /admin normal
+    url_key = request.args.get('key', '')
+    if url_key and secrets.compare_digest(str(url_key), ADMIN_SECRET_KEY):
+        session['admin_key_ok'] = True
+        return True
+    return bool(session.get('admin_key_ok'))
+
 # ── LANGUAGE / i18n ─────────────────────────────────────────────
 @app.context_processor
 def inject_lang():
@@ -152,7 +171,15 @@ _ADMIN_TG_RAW = os.environ.get('ADMIN_TELEGRAM_IDS', '').strip()
 ADMIN_TELEGRAM_IDS = [i.strip() for i in _ADMIN_TG_RAW.split(',') if i.strip()]
 
 def _admin_host_allowed():
-    """True si la petición actual llega por un dominio autorizado para el panel."""
+    """True si la petición actual llega por un dominio autorizado para el panel.
+
+    Si hay ADMIN_SECRET_KEY configurada, la clave secreta ya protege el panel,
+    así que NO restringimos por dominio (funciona en cualquier dominio con la
+    clave correcta). Solo aplicamos la restricción de dominio cuando NO hay
+    clave secreta configurada.
+    """
+    if ADMIN_SECRET_KEY:
+        return True  # la clave secreta es suficiente protección
     if not _ADMIN_PANEL_HOSTS:
         return True  # sin restricción configurada
     host = _clean_host(request.host or '')
@@ -591,13 +618,12 @@ def require_admin(f):
     """Decorator to require admin access (domain-isolated + Telegram-ID gated)."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        # 1) El panel solo existe en el dominio autorizado. Fuera de él: 404.
         if not _admin_host_allowed():
             abort(404)
-        # 2) Requiere sesión autenticada.
+        if not _admin_key_ok():
+            abort(404)
         if not session.get('admin_authenticated'):
             return redirect(url_for('admin_login'))
-        # 3) Requiere Telegram ID en la lista blanca (si está configurada).
         if not _admin_tg_allowed():
             session.pop('admin_authenticated', None)
             abort(404)
@@ -828,10 +854,15 @@ def api_ton_withdraw_init(user):
     """TON withdrawal — deducts DOGE and sends TON automatically via TON Connect / toncenter API"""
     data        = request.get_json() or {}
     doge_amount = float(data.get('doge_amount', 0))
-    ton_wallet  = data.get('ton_wallet', '').strip()
+
+    # ── SEGURIDAD: la dirección de retiro SIEMPRE es la wallet vinculada
+    # del usuario (se registra desde el Perfil). Ignoramos por completo
+    # cualquier dirección enviada desde el cliente para evitar que se
+    # manipule el destino del pago por la API.
+    ton_wallet = (user.get('ton_wallet') or '').strip()
 
     if not ton_wallet:
-        return jsonify({'success': False, 'message': _t('api_no_wallet')})
+        return jsonify({'success': False, 'message': _t('api_no_wallet_profile')})
 
     # ── Anti-fraud: run multi-account check before anything else ──
     check_and_flag_multi_account(user['user_id'])
@@ -1687,6 +1718,8 @@ def admin_login():
     """Admin login page"""
     if not _admin_host_allowed():
         abort(404)
+    if not _admin_key_ok():
+        abort(404)
     if session.get('admin_authenticated') and _admin_tg_allowed():
         return redirect(url_for('admin_dashboard'))
     return render_template('admin_login.html')
@@ -1697,10 +1730,21 @@ def admin_auth():
     """Admin authentication"""
     if not _admin_host_allowed():
         abort(404)
+    if not _admin_key_ok():
+        abort(404)
     username = request.form.get('username', '')
     password = request.form.get('password', '')
-    admin_pass = get_config('admin_password', 'admin123')
-    admin_user = get_config('admin_username', 'admin')
+
+    # SEGURIDAD: las credenciales del panel viven SOLO en variables de entorno,
+    # nunca en el código ni en la base de datos. Si no están configuradas,
+    # el panel queda inaccesible (no hay credenciales por defecto).
+    admin_pass = os.environ.get('ADMIN_PASSWORD', '')
+    admin_user = os.environ.get('ADMIN_USERNAME', '')
+
+    if not admin_pass:
+        logger.warning("[ADMIN] Intento de login pero ADMIN_PASSWORD no está configurada.")
+        return render_template('admin_login.html',
+                               error='Panel no configurado. Define ADMIN_PASSWORD.')
 
     # Telegram-ID gate: solo bloquea si el usuario abrió con una cuenta de
     # Telegram NO autorizada. Desde navegador puro no bloquea (manda la contraseña).
@@ -1708,8 +1752,10 @@ def admin_auth():
         return render_template('admin_login.html',
                                error='Esta cuenta de Telegram no tiene acceso al panel.')
 
-    # Support both username+password login and password-only login
-    if password == admin_pass and (not username or username == admin_user):
+    # Comparación segura contra timing attacks
+    pass_ok = secrets.compare_digest(str(password), str(admin_pass))
+    user_ok = (not admin_user) or (not username) or secrets.compare_digest(str(username), str(admin_user))
+    if pass_ok and user_ok:
         session['admin_authenticated'] = True
         return redirect(url_for('admin_dashboard'))
 
