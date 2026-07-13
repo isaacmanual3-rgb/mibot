@@ -504,46 +504,6 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <script>
-    // ── Prefijo secreto del panel ──────────────────────────────
-    // request.script_root trae el prefijo (ej. /3214567522355) cuando el
-    // panel se sirve bajo ruta secreta. Reescribimos automáticamente todos
-    // los enlaces y llamadas fetch a /admin para que incluyan el prefijo,
-    // así no hay que tocar cada href/fetch del panel manualmente.
-    (function() {
-        var PREFIX = "{{ request.script_root }}";
-        if (!PREFIX) return; // sin prefijo, todo funciona como siempre
-
-        // 1) Reescribir href de enlaces que empiecen con /admin
-        function fixLinks() {
-            document.querySelectorAll('a[href^="/admin"]').forEach(function(a) {
-                var h = a.getAttribute('href');
-                if (h && !h.startsWith(PREFIX)) a.setAttribute('href', PREFIX + h);
-            });
-            document.querySelectorAll('form[action^="/admin"]').forEach(function(f) {
-                var ac = f.getAttribute('action');
-                if (ac && !ac.startsWith(PREFIX)) f.setAttribute('action', PREFIX + ac);
-            });
-        }
-        document.addEventListener('DOMContentLoaded', fixLinks);
-
-        // 2) Interceptar fetch() a rutas /admin (absolutas)
-        var _fetch = window.fetch;
-        window.fetch = function(input, init) {
-            try {
-                if (typeof input === 'string' && input.startsWith('/admin') && !input.startsWith(PREFIX)) {
-                    input = PREFIX + input;
-                } else if (input && input.url && input.url.startsWith('/admin') && !input.url.startsWith(PREFIX)) {
-                    input = new Request(PREFIX + input.url, input);
-                }
-            } catch (e) {}
-            return _fetch(input, init);
-        };
-
-        // 3) Exponer helper por si algún script lo necesita
-        window.ADMIN_PREFIX = PREFIX;
-    })();
-    </script>
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
