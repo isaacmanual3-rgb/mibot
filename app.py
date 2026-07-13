@@ -84,14 +84,16 @@ app.permanent_session_lifetime = timedelta(days=7)
 ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', '').strip()
 
 def _admin_key_ok():
-    """True si el acceso al panel está autorizado por la clave secreta."""
+    """
+    True si la clave secreta viene correcta EN LA URL (?key=...).
+    No se recuerda en sesión: la página de login siempre exige la clave.
+    Las páginas internas del panel no dependen de esto, sino de
+    'admin_authenticated' (requieren haber iniciado sesión).
+    """
     if not ADMIN_SECRET_KEY:
         return True  # sin clave configurada, el panel está en /admin normal
     url_key = request.args.get('key', '')
-    if url_key and secrets.compare_digest(str(url_key), ADMIN_SECRET_KEY):
-        session['admin_key_ok'] = True
-        return True
-    return bool(session.get('admin_key_ok'))
+    return bool(url_key) and secrets.compare_digest(str(url_key), ADMIN_SECRET_KEY)
 
 # ── LANGUAGE / i18n ─────────────────────────────────────────────
 @app.context_processor
@@ -620,10 +622,10 @@ def require_admin(f):
     def decorated(*args, **kwargs):
         if not _admin_host_allowed():
             abort(404)
-        if not _admin_key_ok():
-            abort(404)
+        # Las páginas internas NO exigen ?key= (eso solo lo pide el login).
+        # Aquí basta con haber iniciado sesión.
         if not session.get('admin_authenticated'):
-            return redirect(url_for('admin_login'))
+            abort(404)
         if not _admin_tg_allowed():
             session.pop('admin_authenticated', None)
             abort(404)
@@ -1715,11 +1717,37 @@ def api_update_icon():
 
 @app.route('/admin')
 def admin_login():
-    """Admin login page"""
+    """
+    Página de login del panel. Solo accesible por la ruta secreta aislada
+    (/<ADMIN_SECRET_KEY>). El /admin directo queda oculto (404) cuando hay
+    una clave secreta configurada.
+    """
     if not _admin_host_allowed():
         abort(404)
-    if not _admin_key_ok():
+    # Si hay ruta secreta configurada, /admin directo no existe.
+    # Solo se entra por /<ADMIN_SECRET_KEY> (que marca la sesión).
+    if ADMIN_SECRET_KEY and not session.get('admin_gate_ok'):
         abort(404)
+    if session.get('admin_authenticated') and _admin_tg_allowed():
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin_login.html')
+
+
+@app.route('/<secret_gate>')
+def admin_secret_gate(secret_gate):
+    """
+    Puerta de entrada AISLADA al panel: game.helixverse.site/<ADMIN_SECRET_KEY>
+    Si el segmento coincide con la clave secreta, abre el login del panel.
+    Si no coincide, deja que el manejo normal de 404 actúe (no revela nada).
+    """
+    if not ADMIN_SECRET_KEY:
+        abort(404)
+    if not _admin_host_allowed():
+        abort(404)
+    if not secrets.compare_digest(str(secret_gate), ADMIN_SECRET_KEY):
+        abort(404)  # segmento incorrecto → 404 normal
+    # Clave correcta → marca la sesión y muestra el login del panel
+    session['admin_gate_ok'] = True
     if session.get('admin_authenticated') and _admin_tg_allowed():
         return redirect(url_for('admin_dashboard'))
     return render_template('admin_login.html')
@@ -1730,8 +1758,8 @@ def admin_auth():
     """Admin authentication"""
     if not _admin_host_allowed():
         abort(404)
-    if not _admin_key_ok():
-        abort(404)
+    # El POST no exige ?key= en la URL (el GET del login ya la validó para
+    # mostrar el formulario). Aquí protege la contraseña.
     username = request.form.get('username', '')
     password = request.form.get('password', '')
 
