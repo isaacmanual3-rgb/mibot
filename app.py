@@ -2907,9 +2907,9 @@ def server_error(e):
     tb = traceback.format_exc()
     logger.error(f"[500] Error interno: {e}")
     logger.error(tb)
-    # Modo diagnóstico: si DEBUG_ERRORS=1, muestra el traceback en el navegador.
-    if os.environ.get('DEBUG_ERRORS') == '1':
-        return f"<pre style='background:#111;color:#0f0;padding:20px;font-size:11px;overflow:auto'>{tb}</pre>", 500
+    # Diagnóstico: en rutas /admin o con DEBUG_ERRORS=1, muestra el traceback.
+    if os.environ.get('DEBUG_ERRORS') == '1' or request.path.startswith('/admin'):
+        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap;overflow:auto'>500 ERROR:\n\n{tb}</pre>", 500
     return render_template('error.html', code=500, message='Server error'), 500
 
 @app.errorhandler(Exception)
@@ -2921,8 +2921,8 @@ def unhandled_exception(e):
     tb = traceback.format_exc()
     logger.error(f"[EXCEPTION] {type(e).__name__}: {e}")
     logger.error(tb)
-    if os.environ.get('DEBUG_ERRORS') == '1':
-        return f"<pre style='background:#111;color:#0f0;padding:20px;font-size:11px;overflow:auto'>{tb}</pre>", 500
+    if os.environ.get('DEBUG_ERRORS') == '1' or (request.path or '').startswith('/admin'):
+        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap;overflow:auto'>EXCEPTION:\n\n{tb}</pre>", 500
     try:
         return render_template('error.html', code=500, message='Server error'), 500
     except Exception:
