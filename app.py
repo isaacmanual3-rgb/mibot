@@ -74,55 +74,29 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
 
-# ── RUTA SECRETA DEL PANEL ADMIN ────────────────────────────────
-# El panel admin se accede bajo un segmento secreto configurable con la
-# variable de entorno ADMIN_SECRET_PATH (ej. "36889006432"), quedando en:
-#     /<ADMIN_SECRET_PATH>/admin        (login y dashboard)
-# La ruta /admin normal (sin el secreto) devuelve 404, ocultando el panel.
-# La app pública (home, perfil, wallet, etc.) NO se ve afectada.
-# Si ADMIN_SECRET_PATH está vacío, el panel queda en /admin como siempre.
-ADMIN_SECRET_PATH = os.environ.get('ADMIN_SECRET_PATH', '').strip().strip('/')
+# ── RUTA SECRETA DEL PANEL ADMIN (?key=...) ─────────────────────
+# El panel admin solo aparece si se accede con la clave secreta correcta
+# en la URL: /admin?key=TU_CLAVE (configurable con ADMIN_SECRET_KEY).
+# Sin la clave correcta, /admin devuelve 404 como si no existiera.
+# Una vez validada, la clave se guarda en la sesión para no repetirla.
+# La app pública NO se ve afectada (no hay middleware).
+ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', '').strip()
 
-class _AdminSecretPathMiddleware:
+def _admin_key_ok():
     """
-    Middleware WSGI que protege SOLO las rutas /admin con un segmento secreto.
-    - /<SECRET>/admin...  → se reescribe a /admin... (acceso permitido)
-    - /admin... (directo)  → 404 (panel oculto sin el secreto)
-    - cualquier otra ruta  → pasa sin tocar (la app pública no se afecta)
+    True si el acceso al panel está autorizado por la clave secreta.
+    - Si ADMIN_SECRET_KEY no está configurada → siempre True (sin ruta secreta).
+    - Acepta la clave por ?key=... o por sesión (una vez validada).
     """
-    def __init__(self, wsgi_app, secret):
-        self.wsgi_app = wsgi_app
-        self.secret = secret
-        self.secret_admin = '/' + secret + '/admin'
-
-    def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '') or ''
-
-        # Acceso correcto con el segmento secreto → recortar el secreto
-        if path == self.secret_admin or path.startswith(self.secret_admin + '/'):
-            # Deja SCRIPT_NAME con el prefijo para que url_for genere bien las URLs
-            environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/' + self.secret
-            environ['PATH_INFO'] = path[len('/' + self.secret):] or '/'
-            try:
-                return self.wsgi_app(environ, start_response)
-            except Exception:
-                import traceback, sys
-                sys.stderr.write("[MIDDLEWARE-ERROR] Error procesando ruta admin:\n")
-                sys.stderr.write(traceback.format_exc())
-                sys.stderr.flush()
-                raise
-
-        # Intento de acceder al panel SIN el secreto → 404
-        if path == '/admin' or path.startswith('/admin/'):
-            start_response('404 Not Found', [('Content-Type', 'text/plain; charset=utf-8')])
-            return [b'404 Not Found']
-
-        # Todo lo demás (app pública) pasa intacto
-        return self.wsgi_app(environ, start_response)
-
-if ADMIN_SECRET_PATH:
-    app.wsgi_app = _AdminSecretPathMiddleware(app.wsgi_app, ADMIN_SECRET_PATH)
-    logger.info(f"[SECURITY] Panel admin oculto bajo: /{ADMIN_SECRET_PATH}/admin")
+    if not ADMIN_SECRET_KEY:
+        return True  # sin clave configurada, el panel está en /admin normal
+    # Clave en la URL
+    url_key = request.args.get('key', '')
+    if url_key and secrets.compare_digest(str(url_key), ADMIN_SECRET_KEY):
+        session['admin_key_ok'] = True
+        return True
+    # Clave ya validada en esta sesión
+    return bool(session.get('admin_key_ok'))
 
 # ── LANGUAGE / i18n ─────────────────────────────────────────────
 @app.context_processor
@@ -644,10 +618,13 @@ def require_admin(f):
         # 1) El panel solo existe en el dominio autorizado. Fuera de él: 404.
         if not _admin_host_allowed():
             abort(404)
-        # 2) Requiere sesión autenticada.
+        # 2) Requiere la clave secreta (por URL o sesión). Sin ella: 404.
+        if not _admin_key_ok():
+            abort(404)
+        # 3) Requiere sesión autenticada.
         if not session.get('admin_authenticated'):
             return redirect(url_for('admin_login'))
-        # 3) Requiere Telegram ID en la lista blanca (si está configurada).
+        # 4) Requiere Telegram ID en la lista blanca (si está configurada).
         if not _admin_tg_allowed():
             session.pop('admin_authenticated', None)
             abort(404)
@@ -1742,6 +1719,9 @@ def admin_login():
     """Admin login page"""
     if not _admin_host_allowed():
         abort(404)
+    # Sin la clave secreta correcta en la URL, el panel no existe (404).
+    if not _admin_key_ok():
+        abort(404)
     if session.get('admin_authenticated') and _admin_tg_allowed():
         return redirect(url_for('admin_dashboard'))
     return render_template('admin_login.html')
@@ -1751,6 +1731,8 @@ def admin_login():
 def admin_auth():
     """Admin authentication"""
     if not _admin_host_allowed():
+        abort(404)
+    if not _admin_key_ok():
         abort(404)
     username = request.form.get('username', '')
     password = request.form.get('password', '')
@@ -2891,6 +2873,9 @@ def admin_api_fraud_status(user_id):
 def admin_logout():
     """Admin logout"""
     session.pop('admin_authenticated', None)
+    # Mantenemos admin_key_ok en sesión para que el usuario pueda volver a
+    # loguearse sin reponer ?key= en la URL. Para revocar el acceso por
+    # completo, cierra el navegador o cambia ADMIN_SECRET_KEY.
     return redirect(url_for('admin_login'))
 
 # ============================================
