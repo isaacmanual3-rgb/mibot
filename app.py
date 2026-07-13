@@ -74,29 +74,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.permanent_session_lifetime = timedelta(days=7)
 
-# ── RUTA SECRETA DEL PANEL ADMIN (?key=...) ─────────────────────
-# El panel admin solo aparece si se accede con la clave secreta correcta
-# en la URL: /admin?key=TU_CLAVE (configurable con ADMIN_SECRET_KEY).
-# Sin la clave correcta, /admin devuelve 404 como si no existiera.
-# Una vez validada, la clave se guarda en la sesión para no repetirla.
-# La app pública NO se ve afectada (no hay middleware).
-ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', '').strip()
-
-def _admin_key_ok():
-    """
-    True si el acceso al panel está autorizado por la clave secreta.
-    - Si ADMIN_SECRET_KEY no está configurada → siempre True (sin ruta secreta).
-    - Acepta la clave por ?key=... o por sesión (una vez validada).
-    """
-    if not ADMIN_SECRET_KEY:
-        return True  # sin clave configurada, el panel está en /admin normal
-    # Clave en la URL
-    url_key = request.args.get('key', '')
-    if url_key and secrets.compare_digest(str(url_key), ADMIN_SECRET_KEY):
-        session['admin_key_ok'] = True
-        return True
-    # Clave ya validada en esta sesión
-    return bool(session.get('admin_key_ok'))
+# (El panel admin usa login con usuario/contraseña + dominio autorizado.)
 
 # ── LANGUAGE / i18n ─────────────────────────────────────────────
 @app.context_processor
@@ -618,13 +596,10 @@ def require_admin(f):
         # 1) El panel solo existe en el dominio autorizado. Fuera de él: 404.
         if not _admin_host_allowed():
             abort(404)
-        # 2) Requiere la clave secreta (por URL o sesión). Sin ella: 404.
-        if not _admin_key_ok():
-            abort(404)
-        # 3) Requiere sesión autenticada.
+        # 2) Requiere sesión autenticada.
         if not session.get('admin_authenticated'):
             return redirect(url_for('admin_login'))
-        # 4) Requiere Telegram ID en la lista blanca (si está configurada).
+        # 3) Requiere Telegram ID en la lista blanca (si está configurada).
         if not _admin_tg_allowed():
             session.pop('admin_authenticated', None)
             abort(404)
@@ -1717,31 +1692,17 @@ def api_update_icon():
 @app.route('/admin')
 def admin_login():
     """Admin login page"""
-    try:
-        if not _admin_host_allowed():
-            abort(404)
-        # Sin la clave secreta correcta en la URL, el panel no existe (404).
-        if not _admin_key_ok():
-            abort(404)
-        if session.get('admin_authenticated') and _admin_tg_allowed():
-            return redirect(url_for('admin_dashboard'))
-        return render_template('admin_login.html')
-    except Exception as _e:
-        from werkzeug.exceptions import HTTPException
-        if isinstance(_e, HTTPException):
-            raise
-        import traceback
-        tb = traceback.format_exc()
-        logger.error("[ADMIN-LOGIN-ERROR]\n" + tb)
-        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap'>ADMIN LOGIN ERROR:\n\n{tb}</pre>", 500
+    if not _admin_host_allowed():
+        abort(404)
+    if session.get('admin_authenticated') and _admin_tg_allowed():
+        return redirect(url_for('admin_dashboard'))
+    return render_template('admin_login.html')
 
 @app.route('/admin/auth', methods=['POST'])
 @app.route('/admin/login', methods=['POST'])
 def admin_auth():
     """Admin authentication"""
     if not _admin_host_allowed():
-        abort(404)
-    if not _admin_key_ok():
         abort(404)
     username = request.form.get('username', '')
     password = request.form.get('password', '')
@@ -1834,31 +1795,25 @@ def admin_dashboard():
     except Exception as _e:
         logger.warning(f"active_tasks failed: {_e}"); active_tasks = []
     
-    try:
-        return render_template("admin_dashboard.html",
-            stats=stats,
-            config=config,
-            users_count=total_users,
-            total_users=total_users,
-            active_today=active_today,
-            total_distributed=total_distributed,
-            pending_withdrawals=pending_withdrawals,
-            pending_withdrawal_list=pending_withdrawal_list,
-            total_checkins=total_checkins,
-            checkins_today=checkins_today,
-            total_tasks_completed=total_tasks_completed,
-            total_referrals=total_referrals,
-            recent_users=recent_users,
-            top_earners=top_earners,
-            active_tasks=active_tasks,
-            now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-            format_doge=format_doge,
-        )
-    except Exception as _e:
-        import traceback
-        tb = traceback.format_exc()
-        logger.error("[ADMIN-DASHBOARD-ERROR]\n" + tb)
-        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap'>ADMIN DASHBOARD ERROR:\n\n{tb}</pre>", 500
+    return render_template("admin_dashboard.html",
+        stats=stats,
+        config=config,
+        users_count=total_users,
+        total_users=total_users,
+        active_today=active_today,
+        total_distributed=total_distributed,
+        pending_withdrawals=pending_withdrawals,
+        pending_withdrawal_list=pending_withdrawal_list,
+        total_checkins=total_checkins,
+        checkins_today=checkins_today,
+        total_tasks_completed=total_tasks_completed,
+        total_referrals=total_referrals,
+        recent_users=recent_users,
+        top_earners=top_earners,
+        active_tasks=active_tasks,
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        format_doge=format_doge,
+    )
 
 @app.route('/admin/users')
 @require_admin
@@ -2888,9 +2843,6 @@ def admin_api_fraud_status(user_id):
 def admin_logout():
     """Admin logout"""
     session.pop('admin_authenticated', None)
-    # Mantenemos admin_key_ok en sesión para que el usuario pueda volver a
-    # loguearse sin reponer ?key= en la URL. Para revocar el acceso por
-    # completo, cierra el navegador o cambia ADMIN_SECRET_KEY.
     return redirect(url_for('admin_login'))
 
 # ============================================
@@ -2903,30 +2855,7 @@ def not_found(e):
 
 @app.errorhandler(500)
 def server_error(e):
-    import traceback
-    tb = traceback.format_exc()
-    logger.error(f"[500] Error interno: {e}")
-    logger.error(tb)
-    # Diagnóstico: en rutas /admin o con DEBUG_ERRORS=1, muestra el traceback.
-    if os.environ.get('DEBUG_ERRORS') == '1' or request.path.startswith('/admin'):
-        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap;overflow:auto'>500 ERROR:\n\n{tb}</pre>", 500
     return render_template('error.html', code=500, message='Server error'), 500
-
-@app.errorhandler(Exception)
-def unhandled_exception(e):
-    import traceback
-    from werkzeug.exceptions import HTTPException
-    if isinstance(e, HTTPException):
-        return e
-    tb = traceback.format_exc()
-    logger.error(f"[EXCEPTION] {type(e).__name__}: {e}")
-    logger.error(tb)
-    if os.environ.get('DEBUG_ERRORS') == '1' or (request.path or '').startswith('/admin'):
-        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap;overflow:auto'>EXCEPTION:\n\n{tb}</pre>", 500
-    try:
-        return render_template('error.html', code=500, message='Server error'), 500
-    except Exception:
-        return "500 Server Error", 500
 
 # ============================================
 # TEMPLATE FILTERS
