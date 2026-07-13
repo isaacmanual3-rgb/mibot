@@ -1717,14 +1717,23 @@ def api_update_icon():
 @app.route('/admin')
 def admin_login():
     """Admin login page"""
-    if not _admin_host_allowed():
-        abort(404)
-    # Sin la clave secreta correcta en la URL, el panel no existe (404).
-    if not _admin_key_ok():
-        abort(404)
-    if session.get('admin_authenticated') and _admin_tg_allowed():
-        return redirect(url_for('admin_dashboard'))
-    return render_template('admin_login.html')
+    try:
+        if not _admin_host_allowed():
+            abort(404)
+        # Sin la clave secreta correcta en la URL, el panel no existe (404).
+        if not _admin_key_ok():
+            abort(404)
+        if session.get('admin_authenticated') and _admin_tg_allowed():
+            return redirect(url_for('admin_dashboard'))
+        return render_template('admin_login.html')
+    except Exception as _e:
+        from werkzeug.exceptions import HTTPException
+        if isinstance(_e, HTTPException):
+            raise
+        import traceback
+        tb = traceback.format_exc()
+        logger.error("[ADMIN-LOGIN-ERROR]\n" + tb)
+        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap'>ADMIN LOGIN ERROR:\n\n{tb}</pre>", 500
 
 @app.route('/admin/auth', methods=['POST'])
 @app.route('/admin/login', methods=['POST'])
@@ -1825,25 +1834,31 @@ def admin_dashboard():
     except Exception as _e:
         logger.warning(f"active_tasks failed: {_e}"); active_tasks = []
     
-    return render_template("admin_dashboard.html",
-        stats=stats,
-        config=config,
-        users_count=total_users,
-        total_users=total_users,
-        active_today=active_today,
-        total_distributed=total_distributed,
-        pending_withdrawals=pending_withdrawals,
-        pending_withdrawal_list=pending_withdrawal_list,
-        total_checkins=total_checkins,
-        checkins_today=checkins_today,
-        total_tasks_completed=total_tasks_completed,
-        total_referrals=total_referrals,
-        recent_users=recent_users,
-        top_earners=top_earners,
-        active_tasks=active_tasks,
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-        format_doge=format_doge,
-    )
+    try:
+        return render_template("admin_dashboard.html",
+            stats=stats,
+            config=config,
+            users_count=total_users,
+            total_users=total_users,
+            active_today=active_today,
+            total_distributed=total_distributed,
+            pending_withdrawals=pending_withdrawals,
+            pending_withdrawal_list=pending_withdrawal_list,
+            total_checkins=total_checkins,
+            checkins_today=checkins_today,
+            total_tasks_completed=total_tasks_completed,
+            total_referrals=total_referrals,
+            recent_users=recent_users,
+            top_earners=top_earners,
+            active_tasks=active_tasks,
+            now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            format_doge=format_doge,
+        )
+    except Exception as _e:
+        import traceback
+        tb = traceback.format_exc()
+        logger.error("[ADMIN-DASHBOARD-ERROR]\n" + tb)
+        return f"<pre style='background:#000;color:#0f0;padding:20px;font-size:11px;white-space:pre-wrap'>ADMIN DASHBOARD ERROR:\n\n{tb}</pre>", 500
 
 @app.route('/admin/users')
 @require_admin
