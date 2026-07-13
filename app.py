@@ -103,7 +103,14 @@ class _AdminSecretPathMiddleware:
             # Deja SCRIPT_NAME con el prefijo para que url_for genere bien las URLs
             environ['SCRIPT_NAME'] = environ.get('SCRIPT_NAME', '') + '/' + self.secret
             environ['PATH_INFO'] = path[len('/' + self.secret):] or '/'
-            return self.wsgi_app(environ, start_response)
+            try:
+                return self.wsgi_app(environ, start_response)
+            except Exception:
+                import traceback, sys
+                sys.stderr.write("[MIDDLEWARE-ERROR] Error procesando ruta admin:\n")
+                sys.stderr.write(traceback.format_exc())
+                sys.stderr.flush()
+                raise
 
         # Intento de acceder al panel SIN el secreto → 404
         if path == '/admin' or path.startswith('/admin/'):
