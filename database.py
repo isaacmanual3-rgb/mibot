@@ -1856,7 +1856,6 @@ def init_all_tables():
         ('min_withdrawal',           '1.0'),
         ('withdrawal_fee',           '0.5'),
         ('withdrawal_mode',          'manual'),
-        ('admin_password',           'admin123'),
         ('bot_token',                os.environ.get('BOT_TOKEN', '')),
         ('bot_username',             os.environ.get('BOT_USERNAME', 'DogePixelBot')),
         ('official_channel',         '@DogePixel'),
@@ -2393,6 +2392,13 @@ def _run_migrations():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (wallet_address)
         )"""
+    )
+
+    # SEGURIDAD: eliminar credenciales del panel que pudieran haber quedado
+    # guardadas en la tabla config en versiones anteriores. Ahora las
+    # credenciales viven SOLO en variables de entorno.
+    safe_run("purge_admin_credentials_from_db",
+        "DELETE FROM config WHERE config_key IN ('admin_password', 'admin_username')"
     )
 
     log.info("[migrations] ✅ All migrations checked.")

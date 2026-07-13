@@ -2897,19 +2897,25 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     import traceback
+    tb = traceback.format_exc()
     logger.error(f"[500] Error interno: {e}")
-    logger.error(traceback.format_exc())
+    logger.error(tb)
+    # Modo diagnóstico: si DEBUG_ERRORS=1, muestra el traceback en el navegador.
+    if os.environ.get('DEBUG_ERRORS') == '1':
+        return f"<pre style='background:#111;color:#0f0;padding:20px;font-size:11px;overflow:auto'>{tb}</pre>", 500
     return render_template('error.html', code=500, message='Server error'), 500
 
 @app.errorhandler(Exception)
 def unhandled_exception(e):
     import traceback
     from werkzeug.exceptions import HTTPException
-    # Dejar que los errores HTTP normales (404, etc.) sigan su curso
     if isinstance(e, HTTPException):
         return e
+    tb = traceback.format_exc()
     logger.error(f"[EXCEPTION] {type(e).__name__}: {e}")
-    logger.error(traceback.format_exc())
+    logger.error(tb)
+    if os.environ.get('DEBUG_ERRORS') == '1':
+        return f"<pre style='background:#111;color:#0f0;padding:20px;font-size:11px;overflow:auto'>{tb}</pre>", 500
     try:
         return render_template('error.html', code=500, message='Server error'), 500
     except Exception:
