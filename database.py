@@ -1201,17 +1201,56 @@ def get_free_plan_ad_progress(user_id, plan_id):
     return int(row['ads_watched']) if row else 0
 
 
-def increment_free_plan_ad_progress(user_id, plan_id, ads_required):
-    """Suma 1 anuncio visto (con tope en ads_required) y devuelve el total actual."""
+def get_ad_cooldown_remaining(user_id, plan_id):
+    """
+    Devuelve cuántos segundos faltan del cooldown entre anuncios.
+    0 si no hay cooldown activo. Se calcula contra la hora del servidor.
+    """
+    row = execute_query(
+        """SELECT TIMESTAMPDIFF(SECOND, NOW(), cooldown_until) AS remaining
+           FROM free_plan_ad_progress
+           WHERE user_id=%s AND plan_id=%s AND cooldown_until IS NOT NULL""",
+        (str(user_id), plan_id), fetch_one=True
+    )
+    if row and row.get('remaining') is not None:
+        rem = int(row['remaining'])
+        return rem if rem > 0 else 0
+    return 0
+
+
+def increment_free_plan_ad_progress(user_id, plan_id, ads_required, cooldown_seconds=30):
+    """
+    Suma 1 anuncio visto (con tope en ads_required) y arranca el cooldown.
+    Valida en el servidor que el cooldown anterior haya terminado.
+    Devuelve dict {'ads_watched', 'cooldown', 'ok'}.
+    """
+    # Seguridad: si aún hay cooldown activo, no contar el anuncio.
+    remaining = get_ad_cooldown_remaining(user_id, plan_id)
+    if remaining > 0:
+        return {'ads_watched': get_free_plan_ad_progress(user_id, plan_id),
+                'cooldown': remaining, 'ok': False}
+
     current = get_free_plan_ad_progress(user_id, plan_id)
     new_val = min(current + 1, int(ads_required))
+    # Solo aplicar cooldown si aún faltan anuncios
+    apply_cd = new_val < int(ads_required)
     execute_query(
-        """INSERT INTO free_plan_ad_progress (user_id, plan_id, ads_watched)
-           VALUES (%s, %s, %s)
-           ON DUPLICATE KEY UPDATE ads_watched = %s""",
-        (str(user_id), plan_id, new_val, new_val)
+        """INSERT INTO free_plan_ad_progress (user_id, plan_id, ads_watched, cooldown_until)
+           VALUES (%s, %s, %s, %s)
+           ON DUPLICATE KEY UPDATE ads_watched = %s, cooldown_until = %s""",
+        (str(user_id), plan_id, new_val,
+         None,  # placeholder, se setea abajo con DATE_ADD si aplica
+         new_val, None)
     )
-    return new_val
+    # Establecer el cooldown con la hora del servidor (DATE_ADD)
+    if apply_cd:
+        execute_query(
+            """UPDATE free_plan_ad_progress
+               SET cooldown_until = DATE_ADD(NOW(), INTERVAL %s SECOND)
+               WHERE user_id=%s AND plan_id=%s""",
+            (int(cooldown_seconds), str(user_id), plan_id)
+        )
+    return {'ads_watched': new_val, 'cooldown': cooldown_seconds if apply_cd else 0, 'ok': True}
 
 
 def reset_free_plan_ad_progress(user_id, plan_id):
@@ -2386,6 +2425,11 @@ def _run_migrations():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, plan_id)
         )"""
+    )
+
+    # Cooldown entre anuncios: guarda hasta cuándo debe esperar el usuario.
+    safe_run("add_ad_progress_cooldown",
+        "ALTER TABLE free_plan_ad_progress ADD COLUMN cooldown_until DATETIME DEFAULT NULL"
     )
 
     # Wallet de retiro: bloqueo tras vincular una vez.

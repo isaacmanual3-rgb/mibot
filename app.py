@@ -44,6 +44,7 @@ from database import (
     claim_mining_rewards, process_mining_rewards, create_mining_plan,
     delete_mining_plan, update_mining_plan, get_mining_stats,
     get_free_plan_ad_progress, increment_free_plan_ad_progress, reset_free_plan_ad_progress,
+    get_ad_cooldown_remaining,
     # TON Deposit functions
     create_ton_deposit, confirm_ton_deposit, get_user_ton_deposits,
     create_ton_withdrawal,
@@ -1522,19 +1523,25 @@ def api_verify_channel(user):
 @app.route('/api/mining/ad-progress', methods=['GET'])
 @require_user
 def api_mining_ad_progress(user):
-    """Devuelve el progreso de anuncios guardado para el plan gratis."""
+    """Devuelve el progreso de anuncios guardado + cooldown restante."""
     plan_id = request.args.get('plan_id', type=int)
     if not plan_id:
         return jsonify({'success': False, 'message': 'Plan ID required'})
     ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
     watched = get_free_plan_ad_progress(user['user_id'], plan_id)
-    return jsonify({'success': True, 'ads_watched': watched, 'ads_required': ADS_REQUIRED})
+    cooldown = get_ad_cooldown_remaining(user['user_id'], plan_id)
+    return jsonify({
+        'success': True,
+        'ads_watched': watched,
+        'ads_required': ADS_REQUIRED,
+        'cooldown': cooldown
+    })
 
 
 @app.route('/api/mining/ad-watched', methods=['POST'])
 @require_user
 def api_mining_ad_watched(user):
-    """Registra que el usuario vio un anuncio (persistente en servidor)."""
+    """Registra que el usuario vio un anuncio (persistente + cooldown en servidor)."""
     data = request.get_json() or {}
     plan_id = data.get('plan_id')
     if not plan_id:
@@ -1550,12 +1557,26 @@ def api_mining_ad_watched(user):
         return jsonify({'success': False, 'message': 'No es un plan gratis'})
 
     ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
-    watched = increment_free_plan_ad_progress(user['user_id'], plan_id, ADS_REQUIRED)
+    COOLDOWN = int(get_config('free_plan_ad_cooldown', '30') or 30)
+    result = increment_free_plan_ad_progress(user['user_id'], plan_id, ADS_REQUIRED, COOLDOWN)
+
+    # Si el servidor rechazó por cooldown activo, avisar
+    if not result.get('ok'):
+        return jsonify({
+            'success': False,
+            'reason': 'cooldown',
+            'ads_watched': result.get('ads_watched', 0),
+            'ads_required': ADS_REQUIRED,
+            'cooldown': result.get('cooldown', 0),
+            'message': f'Espera {result.get("cooldown", 0)}s antes del siguiente anuncio.'
+        })
+
     return jsonify({
         'success': True,
-        'ads_watched': watched,
+        'ads_watched': result.get('ads_watched', 0),
         'ads_required': ADS_REQUIRED,
-        'complete': watched >= ADS_REQUIRED
+        'cooldown': result.get('cooldown', 0),
+        'complete': result.get('ads_watched', 0) >= ADS_REQUIRED
     })
 
 
