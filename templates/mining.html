@@ -1073,6 +1073,9 @@ function setAdsStatus(msg, type) {
 function openAdsModal(planName) {
   adsWatched = 0;
   adsInProgress = false;
+  // Resetear cualquier cooldown previo
+  adCooldownActive = false;
+  if (adCooldownTimer) { clearInterval(adCooldownTimer); adCooldownTimer = null; }
   document.getElementById('adsPlanName').textContent = planName;
   const wl = document.getElementById('adsWatchLabel');
   wl.textContent = (window.I18N?.mn_ads_watch || '{{ t.mn_ads_watch }}');
@@ -1104,7 +1107,7 @@ function closeAdsModal() {
 }
 
 async function watchAd() {
-  if (adsInProgress || adsWatched >= ADS_REQUIRED) return;
+  if (adsInProgress || adCooldownActive || adsWatched >= ADS_REQUIRED) return;
   const btn = document.getElementById('adsWatchBtn');
 
   if (!initAdsgram()) {
@@ -1157,18 +1160,28 @@ async function watchAd() {
 
 // Cooldown entre anuncios: deshabilita el botón X segundos con cuenta regresiva
 let adCooldownTimer = null;
+let adCooldownActive = false;
 function startAdCooldown(seconds) {
   const btn = document.getElementById('adsWatchBtn');
   const lbl = document.getElementById('adsWatchLabel');
   adsInProgress = false;
+  adCooldownActive = true;
   btn.disabled = true;
+  // Bloqueo visual robusto (algunos navegadores/Telegram ignoran disabled)
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '0.55';
+  btn.style.cursor = 'not-allowed';
   let remaining = seconds;
 
   function tick() {
     if (remaining <= 0) {
       clearInterval(adCooldownTimer);
       adCooldownTimer = null;
+      adCooldownActive = false;
       btn.disabled = false;
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+      btn.style.cursor = '';
       lbl.textContent = (window.I18N?.mn_ads_watch || '{{ t.mn_ads_watch }}');
       return;
     }
