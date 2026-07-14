@@ -1097,6 +1097,10 @@ async function loadAdProgress() {
     if (data.success && typeof data.ads_watched === 'number') {
       adsWatched = Math.min(data.ads_watched, ADS_REQUIRED);
       renderAdsProgress();
+      // Reanudar el cooldown si el servidor dice que aún falta tiempo
+      if (data.cooldown && data.cooldown > 0 && adsWatched < ADS_REQUIRED) {
+        startAdCooldown(data.cooldown);
+      }
     }
   } catch (e) { /* si falla, empieza en 0 */ }
 }
@@ -1125,15 +1129,24 @@ async function watchAd() {
   try {
     // Adsgram muestra el rewarded; resuelve solo si el usuario lo ve completo
     await AdController.show();
-    // Registrar en el servidor (persistente). El servidor es la fuente de verdad.
+    // Registrar en el servidor (persistente + cooldown). El servidor manda.
+    let serverCooldown = 30;
     try {
       const res = await fetch('/api/mining/ad-watched', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan_id: currentPlanId })
       });
       const data = await res.json();
+      if (data.reason === 'cooldown') {
+        // El servidor rechazó porque el cooldown seguía activo
+        adsWatched = data.ads_watched || adsWatched;
+        renderAdsProgress();
+        if (data.cooldown > 0) startAdCooldown(data.cooldown);
+        return;
+      }
       if (data.success && typeof data.ads_watched === 'number') {
         adsWatched = data.ads_watched;
+        serverCooldown = data.cooldown || 30;
       } else {
         adsWatched++; // fallback local si el servidor no responde bien
       }
@@ -1144,8 +1157,8 @@ async function watchAd() {
     createPixelExplosion(window.innerWidth / 2, window.innerHeight / 2, '#00ff66');
     if (adsWatched < ADS_REQUIRED) {
       setAdsStatus((window.I18N?.mn_ads_counted || '{{ t.mn_ads_counted }}').replace('{n}', ADS_REQUIRED - adsWatched), 'ok');
-      // Cooldown de 30 segundos antes de poder ver el siguiente anuncio
-      startAdCooldown(30);
+      // Cooldown antes de poder ver el siguiente anuncio (según el servidor)
+      if (serverCooldown > 0) startAdCooldown(serverCooldown);
       return; // el cooldown maneja el estado del botón
     }
   } catch (err) {
@@ -1153,8 +1166,10 @@ async function watchAd() {
     setAdsStatus((window.I18N?.mn_ads_incomplete || '{{ t.mn_ads_incomplete }}'), 'error');
   } finally {
     adsInProgress = false;
-    btn.disabled = false;
-    if (adsWatched < ADS_REQUIRED) lbl.textContent = prevLbl;
+    if (!adCooldownActive) {
+      btn.disabled = false;
+      if (adsWatched < ADS_REQUIRED) lbl.textContent = prevLbl;
+    }
   }
 }
 
