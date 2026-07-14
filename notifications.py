@@ -116,7 +116,7 @@ _TEXTS = {
     "🕐 <b>Fecha:</b> {date}\n"
     "🆔 <b>ID Retiro:</b> <code>{withdrawal_id}</code>\n"
     "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
-    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verificar en Tonscan</a>\n\n"
+    "🔍 <a href=\"https://tonscan.org/address/{wallet}\">Verificar en Tonscan</a>\n\n"
     "Tus TON están en camino. ¡Gracias por confiar en nosotros! 🚀"
   ),
   'en':(
@@ -126,7 +126,7 @@ _TEXTS = {
     "🕐 <b>Date:</b> {date}\n"
     "🆔 <b>Withdrawal ID:</b> <code>{withdrawal_id}</code>\n"
     "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
-    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verify on Tonscan</a>\n\n"
+    "🔍 <a href=\"https://tonscan.org/address/{wallet}\">Verify on Tonscan</a>\n\n"
     "Your TON is on its way. Thank you for trusting us! 🚀"
   ),
   'pt':(
@@ -136,7 +136,7 @@ _TEXTS = {
     "🕐 <b>Data:</b> {date}\n"
     "🆔 <b>ID Saque:</b> <code>{withdrawal_id}</code>\n"
     "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
-    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Verificar no Tonscan</a>\n\n"
+    "🔍 <a href=\"https://tonscan.org/address/{wallet}\">Verificar no Tonscan</a>\n\n"
     "Seu TON está a caminho. Obrigado por confiar em nós! 🚀"
   ),
   'fr':(
@@ -146,7 +146,7 @@ _TEXTS = {
     "🕐 <b>Date:</b> {date}\n"
     "🆔 <b>ID Retrait:</b> <code>{withdrawal_id}</code>\n"
     "🔗 <b>TX Hash:</b> <code>{tx_hash}</code>\n\n"
-    "🔍 <a href=\"https://tonscan.org/tx/{tx_hash}\">Vérifier sur Tonscan</a>\n\n"
+    "🔍 <a href=\"https://tonscan.org/address/{wallet}\">Vérifier sur Tonscan</a>\n\n"
     "Votre TON est en route. Merci de votre confiance! 🚀"
   ),
 },

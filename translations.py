@@ -177,6 +177,7 @@ TRANSLATIONS = {
     'mn_ads_sub_2':      {'en': 'plan.',                    'es': '.'},
     'mn_ads_progress':   {'en': 'Ads watched',              'es': 'Anuncios vistos'},
     'mn_ads_watch':      {'en': 'WATCH AD',                 'es': 'VER ANUNCIO'},
+    'mn_ads_wait':       {'en': 'WAIT {s}s',               'es': 'ESPERA {s}s'},
     'mn_ads_loading':    {'en': 'LOADING AD...',            'es': 'CARGANDO...'},
     'mn_ads_activate':   {'en': 'ACTIVATE PLAN',            'es': 'ACTIVAR PLAN'},
     'mn_ads_hint':       {'en': 'Watch all ads to unlock activation',      'es': 'Mira todos los anuncios para desbloquear'},

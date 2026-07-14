@@ -2554,24 +2554,31 @@ def admin_api_approve_withdrawal():
 def admin_api_reject_withdrawal():
     """Reject a withdrawal and refund the user"""
     from database import execute_query
-    data = request.get_json(force=True) or {}
-    withdrawal_id = data.get('withdrawal_id')
-    reason = data.get('reason', 'Rejected by admin')
-    if not withdrawal_id:
-        return jsonify({'success': False, 'message': 'Missing withdrawal_id'})
-    # Get the withdrawal to refund
-    w = execute_query(
-        "SELECT * FROM withdrawals WHERE withdrawal_id = %s OR id = %s",
-        (str(withdrawal_id), str(withdrawal_id)), fetch_one=True
-    )
-    if w and w.get('status') == 'pending':
+    try:
+        data = request.get_json(force=True) or {}
+        withdrawal_id = data.get('withdrawal_id')
+        reason = data.get('reason', 'Rejected by admin')
+        if not withdrawal_id:
+            return jsonify({'success': False, 'message': 'Missing withdrawal_id'})
+        # Get the withdrawal to refund
+        w = execute_query(
+            "SELECT * FROM withdrawals WHERE withdrawal_id = %s OR id = %s",
+            (str(withdrawal_id), str(withdrawal_id)), fetch_one=True
+        )
+        if not w:
+            return jsonify({'success': False, 'message': 'Retiro no encontrado'})
+        if w.get('status') != 'pending':
+            return jsonify({'success': False, 'message': f'El retiro ya está {w.get("status")}, no se puede rechazar'})
+
+        # Marcar como rechazado
         update_withdrawal(w['withdrawal_id'], 'rejected', None, reason)
-        # Refund: return amount (including fee) to user
+
+        # Refund: devolver el monto (incluida la comisión) al usuario
         refund = float(w.get('amount', 0))
         if refund > 0:
             update_balance(w['user_id'], refund, 'withdrawal_refund', f'Withdrawal rejected: {reason}')
 
-        # ── Notificación al usuario ──
+        # Notificación al usuario (no debe tumbar el rechazo si falla)
         if _NOTIF_OK:
             try:
                 user_obj = get_user(w['user_id'])
@@ -2579,14 +2586,19 @@ def admin_api_reject_withdrawal():
                 notify_withdrawal_rejected(
                     user_id=int(w['user_id']),
                     amount=w.get('amount', '?'),
-                    currency=w.get('currency', 'DOGE'),
+                    currency=w.get('currency', 'TON'),
                     withdrawal_id=str(w['withdrawal_id']),
                     reason=reason,
                     language_code=lang_code,
                 )
             except Exception as _ne:
                 logger.warning(f"Withdrawal reject notification error: {_ne}")
-    return jsonify({'success': True})
+
+        return jsonify({'success': True, 'message': 'Retiro rechazado y reembolsado'})
+    except Exception as e:
+        import traceback
+        logger.error(f"[REJECT-ERROR] {e}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
 
 
 # ============================================
