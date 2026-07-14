@@ -2560,11 +2560,20 @@ def admin_api_reject_withdrawal():
         reason = data.get('reason', 'Rejected by admin')
         if not withdrawal_id:
             return jsonify({'success': False, 'message': 'Missing withdrawal_id'})
-        # Get the withdrawal to refund
-        w = execute_query(
-            "SELECT * FROM withdrawals WHERE withdrawal_id = %s OR id = %s",
-            (str(withdrawal_id), str(withdrawal_id)), fetch_one=True
-        )
+        # Buscar el retiro: si el valor es numérico, por id; si es texto, por withdrawal_id.
+        # (Evita el error 'Truncated incorrect DOUBLE value' de MySQL al comparar
+        #  un withdrawal_id de texto contra la columna id numérica.)
+        wid_str = str(withdrawal_id)
+        if wid_str.isdigit():
+            w = execute_query(
+                "SELECT * FROM withdrawals WHERE id = %s OR withdrawal_id = %s",
+                (int(wid_str), wid_str), fetch_one=True
+            )
+        else:
+            w = execute_query(
+                "SELECT * FROM withdrawals WHERE withdrawal_id = %s",
+                (wid_str,), fetch_one=True
+            )
         if not w:
             return jsonify({'success': False, 'message': 'Retiro no encontrado'})
         if w.get('status') != 'pending':

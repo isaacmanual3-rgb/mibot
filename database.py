@@ -863,12 +863,23 @@ def get_pending_withdrawals():
 
 def update_withdrawal(withdrawal_id, status, tx_hash=None, admin_note=None):
     """Update withdrawal status. Acepta tanto el id numérico como el withdrawal_id de texto."""
-    execute_query("""
-        UPDATE withdrawals
-        SET status = %s, tx_hash = %s, ton_tx_hash = COALESCE(%s, ton_tx_hash),
-            admin_note = %s, processed_at = NOW()
-        WHERE withdrawal_id = %s OR id = %s
-    """, (status, tx_hash, tx_hash, admin_note, str(withdrawal_id), str(withdrawal_id)))
+    wid = str(withdrawal_id)
+    if wid.isdigit():
+        # Valor numérico: puede coincidir con id o con withdrawal_id
+        execute_query("""
+            UPDATE withdrawals
+            SET status = %s, tx_hash = %s, ton_tx_hash = COALESCE(%s, ton_tx_hash),
+                admin_note = %s, processed_at = NOW()
+            WHERE id = %s OR withdrawal_id = %s
+        """, (status, tx_hash, tx_hash, admin_note, int(wid), wid))
+    else:
+        # Valor de texto: solo puede ser withdrawal_id (evita truncar contra id numérico)
+        execute_query("""
+            UPDATE withdrawals
+            SET status = %s, tx_hash = %s, ton_tx_hash = COALESCE(%s, ton_tx_hash),
+                admin_note = %s, processed_at = NOW()
+            WHERE withdrawal_id = %s
+        """, (status, tx_hash, tx_hash, admin_note, wid))
 
 # ============================================
 # PROMO CODE OPERATIONS
