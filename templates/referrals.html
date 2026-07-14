@@ -372,15 +372,18 @@
 /* Zona de estado a la derecha, tamaño compacto y fijo */
 .rf-item-status {
   flex-shrink: 0;
+  max-width: 48%;
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
   text-align: right;
 }
 
 .rf-badge {
+  max-width: 100%;
   font-family: var(--font-px); font-size: 0.34rem;
   letter-spacing: 0.03em; padding: 4px 7px;
   border: 2px solid; display: inline-flex; align-items: center; gap: 4px;
   white-space: nowrap; line-height: 1.2;
+  overflow: hidden;
 }
 .rf-badge .px-icon { flex-shrink: 0; width: 11px; height: 11px; }
 .rf-badge .px-icon svg { width: 11px; height: 11px; }
