@@ -1141,6 +1141,9 @@ async function watchAd() {
     createPixelExplosion(window.innerWidth / 2, window.innerHeight / 2, '#00ff66');
     if (adsWatched < ADS_REQUIRED) {
       setAdsStatus((window.I18N?.mn_ads_counted || '{{ t.mn_ads_counted }}').replace('{n}', ADS_REQUIRED - adsWatched), 'ok');
+      // Cooldown de 30 segundos antes de poder ver el siguiente anuncio
+      startAdCooldown(30);
+      return; // el cooldown maneja el estado del botón
     }
   } catch (err) {
     // El usuario cerró el anuncio antes de tiempo o hubo un error
@@ -1150,6 +1153,30 @@ async function watchAd() {
     btn.disabled = false;
     if (adsWatched < ADS_REQUIRED) lbl.textContent = prevLbl;
   }
+}
+
+// Cooldown entre anuncios: deshabilita el botón X segundos con cuenta regresiva
+let adCooldownTimer = null;
+function startAdCooldown(seconds) {
+  const btn = document.getElementById('adsWatchBtn');
+  const lbl = document.getElementById('adsWatchLabel');
+  adsInProgress = false;
+  btn.disabled = true;
+  let remaining = seconds;
+
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(adCooldownTimer);
+      adCooldownTimer = null;
+      btn.disabled = false;
+      lbl.textContent = (window.I18N?.mn_ads_watch || '{{ t.mn_ads_watch }}');
+      return;
+    }
+    lbl.textContent = (window.I18N?.mn_ads_wait || '{{ t.mn_ads_wait }}').replace('{s}', remaining);
+    remaining--;
+  }
+  tick();
+  adCooldownTimer = setInterval(tick, 1000);
 }
 
 async function activateFreePlan() {
