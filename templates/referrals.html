@@ -334,8 +334,7 @@
   border: 2px solid var(--border);
   box-shadow: 2px 2px 0 0 #020205;
   display: flex; align-items: center; gap: 10px;
-  flex-wrap: wrap;
-  padding: 12px 14px;
+  padding: 10px 12px;
   position: relative;
 }
 .rf-item::before {
@@ -361,7 +360,8 @@
   color: var(--green); text-shadow: none;
 }
 
-.rf-item-body { flex: 1 1 45%; min-width: 0; }
+/* Columna central: nombre, fecha y (si aplica) la nota de multicuenta */
+.rf-item-body { flex: 1 1 auto; min-width: 0; }
 .rf-item-name {
   display: block; font-family: var(--font-px);
   font-size: 0.4rem; color: var(--text);
@@ -369,17 +369,22 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rf-item-date { font-size: 0.62rem; color: var(--muted); }
+.rf-fraud-note {
+  display: block;
+  font-family: var(--font-px); font-size: 0.3rem;
+  color: #ff3366; letter-spacing: 0.02em; opacity: 0.9;
+  line-height: 1.2; margin-top: 5px;
+}
 
-/* Zona de estado a la derecha, tamaño compacto y fijo */
+/* Zona de estado a la derecha, compacta */
 .rf-item-status {
   flex-shrink: 0;
-  max-width: 48%;
-  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
   text-align: right;
 }
 
 .rf-badge {
-  max-width: 100%;
+  max-width: 130px;
   font-family: var(--font-px); font-size: 0.34rem;
   letter-spacing: 0.03em; padding: 4px 7px;
   border: 2px solid; display: inline-flex; align-items: center; gap: 4px;
@@ -405,11 +410,9 @@
   border-color: rgba(255,51,102,0.4);
   color: #ff3366;
 }
-.rf-fraud-note {
-  flex: 1 1 100%;
+.rf-commission-note {
   font-family: var(--font-px); font-size: 0.3rem;
-  color: #ff3366; letter-spacing: 0.03em; opacity: 0.85;
-  line-height: 1.3; margin-top: 2px;
+  color: #ffd700; letter-spacing: 0.04em; line-height: 1.2;
 }
 
 
@@ -668,6 +671,9 @@
           <div class="rf-item-body">
             <span class="rf-item-name">{{ ref.referred_username or ref.referred_first_name or ('#' ~ ref.referred_user_id if ref.referred_user_id else 'Usuario') }}</span>
             <span class="rf-item-date">Joined {{ ref.created_at.strftime('%b %d') if ref.created_at else 'Recently' }}</span>
+            {% if ref.referred_fraud %}
+            <span class="rf-fraud-note">{{ t.rf_fraud_hint }}</span>
+            {% endif %}
           </div>
           <div class="rf-item-status">
             {% if ref.validated %}
@@ -681,7 +687,7 @@
                 <span class="px-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                 +{{ format_ton(referral_bonus) }}
               </span>
-              <span style="font-family:var(--font-px); font-size:0.32rem; color:#ffd700; letter-spacing:0.06em;">{{ t.rf_commission_badge }}</span>
+              <span class="rf-commission-note">{{ t.rf_commission_badge }}</span>
               {% endif %}
             {% else %}
             <span class="rf-badge pending">
@@ -690,9 +696,6 @@
             </span>
             {% endif %}
           </div>
-          {% if ref.referred_fraud %}
-          <div class="rf-fraud-note">{{ t.rf_fraud_hint }}</div>
-          {% endif %}
         </div>
         {% endfor %}
       </div>
