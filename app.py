@@ -1262,7 +1262,7 @@ def tasks(user):
 @require_user
 def referrals(user):
     """Referrals page"""
-    refs = get_referrals(user['user_id'])
+    refs = get_referrals(user['user_id'], limit=500)
     stats = get_referral_stats(user['user_id'])
 
     # Get referral bonus from config
@@ -1277,10 +1277,10 @@ def referrals(user):
                     str(user['user_id']), str(ref['referred_id'])
                 )
 
-    # Calculate stats
-    total_referrals = len(refs) if refs else 0
-    validated_referrals = sum(1 for r in refs if r.get('validated')) if refs else 0
-    pending_referrals = total_referrals - validated_referrals
+    # Totales reales desde la tabla (no del número de filas cargadas)
+    total_referrals = stats.get('total_referrals', 0) if stats else 0
+    validated_referrals = stats.get('validated_referrals', 0) if stats else 0
+    pending_referrals = stats.get('pending_referrals', total_referrals - validated_referrals) if stats else 0
     referral_earnings = float(user.get('referral_earnings', 0))
     
     # Generate referral links — Telegram bot link + direct web link

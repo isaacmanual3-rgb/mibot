@@ -617,14 +617,27 @@ def get_referrals(user_id, limit=50):
     return execute_query(query, (str(user_id), limit), fetch_all=True) or []
 
 def get_referral_stats(user_id):
-    """Get referral statistics"""
+    """Get referral statistics — cuenta real desde la tabla referrals."""
     user = get_user(user_id)
     if not user:
         return None
 
+    # Conteo real desde la tabla (no del campo del usuario, que puede estar desfasado)
+    total = execute_query(
+        "SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = %s",
+        (str(user_id),), fetch_one=True
+    )
+    validated = execute_query(
+        "SELECT COUNT(*) AS c FROM referrals WHERE referrer_id = %s AND validated = 1",
+        (str(user_id),), fetch_one=True
+    )
+    total_count = total.get('c', 0) if total else 0
+    validated_count = validated.get('c', 0) if validated else 0
+
     return {
-        'total_referrals': user.get('referral_count', 0),
-        'validated_referrals': user.get('validated_referrals', 0),
+        'total_referrals': total_count,
+        'validated_referrals': validated_count,
+        'pending_referrals': total_count - validated_count,
         'total_earnings': float(user.get('referral_earnings', 0))
     }
 
