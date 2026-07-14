@@ -238,6 +238,7 @@ TRANSLATIONS = {
     'wl_deposit_title':  {'en': 'DEPOSIT TON',               'es': 'DEPOSITAR TON'},
     'wl_deposit_addr_lbl':{'en': 'Deposit Address',          'es': 'Dirección de Depósito'},
     'wl_wallet_from_profile': {'en': 'Wallet loaded from your profile', 'es': 'Wallet cargada desde tu perfil'},
+    'wl_link_in_profile':    {'en': '⚠ Link your wallet from your Profile first', 'es': '⚠ Primero vincula tu wallet desde tu Perfil'},
     'wl_deposit_from_any':{'en': 'Send TON from any wallet or exchange.', 'es': 'Envía TON desde cualquier billetera o exchange.'},
     'wl_insufficient':   {'en': 'Insufficient balance',      'es': 'Saldo insuficiente'},
     'wl_invalid_addr':   {'en': 'Invalid TON address',       'es': 'Dirección TON inválida'},
@@ -347,7 +348,7 @@ TRANSLATIONS = {
     'rf_friend_visits':  {'en': 'Friend joins',            'es': 'Tu amigo se une'},
     'rf_friend_buys':    {'en': 'Activates any plan',      'es': 'Activa cualquier plan'},
     'rf_you_earn':       {'en': 'Earn reward + 5% forever!','es': '¡Recompensa + 5% para siempre!'},
-    'rf_pending_hint':   {'en': 'Needs plan activation',   'es': 'Pendiente de activación'},
+    'rf_pending_hint':   {'en': 'Pending',   'es': 'Pendiente'},
     'rf_plan_required':  {
         'en': 'Unlocks when friend activates any plan (free or paid). Then earn 5% of their mining + deposits forever.',
         'es': 'Se activa cuando tu amigo activa cualquier plan (gratuito o de pago). Luego ganas el 5% de su minería + depósitos para siempre.'
@@ -468,6 +469,7 @@ TRANSLATIONS = {
         'es': '¡Plan {name} activado por {price} TON! Empieza a ganar TON.'
     },
     'api_no_wallet':         {'en': 'Connect your TON wallet first', 'es': 'Conecta tu wallet TON primero'},
+    'api_no_wallet_profile': {'en': 'Link your TON wallet from your Profile first.', 'es': 'Primero vincula tu wallet TON desde tu Perfil.'},
     'api_wd_disabled':       {'en': 'TON withdrawals temporarily disabled', 'es': 'Retiros TON temporalmente deshabilitados'},
     'api_dep_disabled':      {'en': 'TON deposits disabled',        'es': 'Depósitos TON deshabilitados'},
     'api_bot_addr_missing':  {'en': 'Bot address not configured. Contact admin.', 'es': 'Dirección del bot no configurada. Contacta al admin.'},
