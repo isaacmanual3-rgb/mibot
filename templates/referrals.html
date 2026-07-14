@@ -334,6 +334,7 @@
   border: 2px solid var(--border);
   box-shadow: 2px 2px 0 0 #020205;
   display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
   padding: 12px 14px;
   position: relative;
 }
@@ -360,7 +361,7 @@
   color: var(--green); text-shadow: none;
 }
 
-.rf-item-body { flex: 1 1 auto; min-width: 0; }
+.rf-item-body { flex: 1 1 45%; min-width: 0; }
 .rf-item-name {
   display: block; font-family: var(--font-px);
   font-size: 0.4rem; color: var(--text);
@@ -801,7 +802,7 @@ function initPagination(listId, pageSize) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  initPagination('rf-list', 5);
+  initPagination('rf-list', 100);
 });
 </script>
 {% endblock %}
