@@ -975,6 +975,42 @@
   </div>
 </div>
 
+<!-- ── MODAL: advertencia de click en anuncio ── -->
+<div id="adClickWarningModal" class="mn-modal-bg">
+  <div class="mn-ads-modal" style="max-width:360px">
+    <div class="mn-ads-close" onclick="closeAdClickWarning()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </div>
+    <div class="mn-ads-head">
+      <div class="mn-ads-head-glow" aria-hidden="true" style="background:radial-gradient(circle,rgba(255,152,0,0.25),transparent 70%)"></div>
+      <div class="mn-ads-icon" style="border-color:rgba(255,152,0,0.4)">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#ff9800" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 3.5 6M12 2v3M2 12h3M15.5 6 21 2M8 13l3.5 8.5L14 15l6.5-2.5z"/></svg>
+      </div>
+      <div class="mn-ads-title" style="color:#ff9800">{{ t.mn_ads_click_title }}</div>
+      <div class="mn-ads-sub">{{ t.mn_ads_click_desc }}</div>
+    </div>
+    <div class="mn-ads-body">
+      <div style="background:rgba(255,255,255,0.03);border:2px solid rgba(255,152,0,0.2);padding:14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-px);font-size:0.5rem">1</div>
+          <span style="font-size:0.72rem;color:#a0a0c0">{{ t.mn_ads_click_step1 }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-px);font-size:0.5rem">2</div>
+          <span style="font-size:0.72rem;color:#a0a0c0">{{ t.mn_ads_click_step2 }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-px);font-size:0.5rem">3</div>
+          <span style="font-size:0.72rem;color:#a0a0c0">{{ t.mn_ads_click_step3 }}</span>
+        </div>
+      </div>
+      <button class="mn-ads-watch" onclick="closeAdClickWarning()">
+        <span>{{ t.mn_ads_click_understood }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── PURCHASE MODAL ── -->
 <div id="purchaseModal" class="mn-modal-bg">
   <div class="mn-modal">
@@ -1110,6 +1146,13 @@ function closeAdsModal() {
   document.getElementById('adsModal').classList.remove('show');
 }
 
+function showAdClickWarning() {
+  document.getElementById('adClickWarningModal').classList.add('show');
+}
+function closeAdClickWarning() {
+  document.getElementById('adClickWarningModal').classList.remove('show');
+}
+
 async function watchAd() {
   if (adsInProgress || adCooldownActive || adsWatched >= ADS_REQUIRED) return;
   const btn = document.getElementById('adsWatchBtn');
@@ -1127,8 +1170,57 @@ async function watchAd() {
   setAdsStatus('', '');
 
   try {
+    // ── Detección de CLICK obligatorio en el anuncio ──
+    // Interceptamos las peticiones de red mientras el anuncio está abierto.
+    // Cuando el usuario hace click, Adsgram llama a una URL con type=Click.
+    let ctaClicked = false;
+    const isClickUrl = (url) => !!url && String(url).includes('adsgram.ai') && /[?&]type=Click/i.test(String(url));
+    const _origFetch = window.fetch.bind(window);
+    const _origOpen = XMLHttpRequest.prototype.open;
+    const _origBeacon = navigator.sendBeacon ? navigator.sendBeacon.bind(navigator) : null;
+    window.fetch = function (...args) {
+      const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+      if (isClickUrl(url)) ctaClicked = true;
+      return _origFetch(...args);
+    };
+    XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+      if (isClickUrl(url)) ctaClicked = true;
+      return _origOpen.call(this, method, url, ...rest);
+    };
+    if (_origBeacon) {
+      navigator.sendBeacon = function (url, data) {
+        if (isClickUrl(url)) ctaClicked = true;
+        return _origBeacon(url, data);
+      };
+    }
+    const restoreNet = () => {
+      window.fetch = _origFetch;
+      XMLHttpRequest.prototype.open = _origOpen;
+      if (_origBeacon) navigator.sendBeacon = _origBeacon;
+    };
+
     // Adsgram muestra el rewarded; resuelve solo si el usuario lo ve completo
-    await AdController.show();
+    let adDone = false;
+    const startedAt = Date.now();
+    try {
+      const result = await AdController.show();
+      adDone = true;
+    } finally {
+      restoreNet();
+    }
+
+    // Si cerró antes de 14s, no cuenta (cerró el anuncio muy rápido)
+    const closedEarly = Date.now() - startedAt < 14000;
+    if (closedEarly) {
+      setAdsStatus((window.I18N?.mn_ads_closed_early || '{{ t.mn_ads_closed_early }}'), 'error');
+      return;
+    }
+    // Vio el anuncio completo PERO no hizo click → advertencia, no cuenta
+    if (!ctaClicked) {
+      showAdClickWarning();
+      return;
+    }
+
     // Registrar en el servidor (persistente + cooldown). El servidor manda.
     let serverCooldown = 30;
     try {
