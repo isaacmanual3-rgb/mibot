@@ -2798,9 +2798,14 @@ def admin_api_adjust_balance():
 @require_admin
 def admin_api_ban_user(user_id):
     """Ban a user via API"""
-    reason = (request.get_json(force=True) or {}).get('reason', 'Admin action')
-    ban_user(user_id, reason)
-    return jsonify({'success': True})
+    try:
+        reason = (request.get_json(silent=True) or {}).get('reason', 'Admin action')
+        ban_user(user_id, reason)
+        return jsonify({'success': True, 'message': 'Usuario baneado'})
+    except Exception as e:
+        import traceback
+        logger.error(f"[BAN-ERROR] {e}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
 
 
 @app.route('/admin/diag/ton')

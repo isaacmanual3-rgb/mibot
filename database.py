@@ -284,18 +284,24 @@ def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
             })
 
     else:  # all — combinar todo, ordenado por fecha
-        movements = execute_query(
+        def _safe_query(sql, params):
+            try:
+                return execute_query(sql, params, fetch_all=True) or []
+            except Exception as _qe:
+                log.warning(f"[history] consulta falló (se omite): {_qe}")
+                return []
+        movements = _safe_query(
             "SELECT 'movement' as _t, amount, action, description, balance_after, NULL as status, NULL as wallet_address, NULL as ton_tx_hash, NULL as currency, created_at FROM balance_history WHERE user_id=%s",
-            (uid,), fetch_all=True) or []
-        withdrawals = execute_query(
+            (uid,))
+        withdrawals = _safe_query(
             "SELECT 'withdrawal' as _t, amount, NULL as action, NULL as description, NULL as balance_after, status, wallet_address, ton_tx_hash, currency, created_at FROM withdrawals WHERE user_id=%s",
-            (uid,), fetch_all=True) or []
-        deposits = execute_query(
+            (uid,))
+        deposits = _safe_query(
             "SELECT 'deposit' as _t, ton_amount as amount, NULL as action, NULL as description, doge_credited as balance_after, status, NULL as wallet_address, NULL as ton_tx_hash, 'TON' as currency, created_at FROM ton_deposits WHERE user_id=%s",
-            (uid,), fetch_all=True) or []
-        referrals = execute_query(
+            (uid,))
+        referrals = _safe_query(
             "SELECT 'referral' as _t, NULL as amount, NULL as action, referred_first_name as description, NULL as balance_after, NULL as status, referred_username as wallet_address, referred_id as ton_tx_hash, NULL as currency, created_at FROM referrals WHERE referrer_id=%s",
-            (uid,), fetch_all=True) or []
+            (uid,))
 
         combined = []
         for r in movements:
