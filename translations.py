@@ -184,6 +184,13 @@ TRANSLATIONS = {
     'mn_ads_complete':   {'en': '✓ ALL ADS COMPLETED',      'es': '✓ ANUNCIOS COMPLETADOS'},
     'mn_ads_counted':    {'en': '✓ Ad counted · {n} left',  'es': '✓ Anuncio contado · faltan {n}'},
     'mn_ads_incomplete': {'en': 'Ad not completed. Try again.',             'es': 'Anuncio no completado. Inténtalo de nuevo.'},
+    'mn_ads_closed_early': {'en': '⚠ You closed the ad too soon. Not counted.', 'es': '⚠ Cerraste el anuncio muy pronto. No contó.'},
+    'mn_ads_click_title': {'en': 'You must click the ad!',                   'es': '¡Debes hacer click en el anuncio!'},
+    'mn_ads_click_desc': {'en': 'You watched the ad but didn\'t interact with it. To get credit you must click and open the advertised app.', 'es': 'Viste el anuncio pero no interactuaste con él. Para que cuente debes hacer click y abrir la app anunciada.'},
+    'mn_ads_click_step1': {'en': 'Watch the full ad',                        'es': 'Mira el anuncio completo'},
+    'mn_ads_click_step2': {'en': 'Tap / click on the ad',                    'es': 'Toca / haz click en el anuncio'},
+    'mn_ads_click_step3': {'en': 'Open the advertised app briefly',          'es': 'Abre la app anunciada un momento'},
+    'mn_ads_click_understood': {'en': 'GOT IT',                              'es': 'ENTENDIDO'},
     'mn_ads_unavailable':{'en': 'No ad available. Try again shortly.',      'es': 'No hay anuncio disponible. Intenta en un momento.'},
 
     'mn_processing':     {'en': 'PROCESSING...',            'es': 'PROCESANDO...'},
