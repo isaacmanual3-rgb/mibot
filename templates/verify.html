@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box;
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    body {
+      background: #05050a;
+      color: #e0e0f0;
+      font-family: 'VT323', monospace;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      background-image:
+        linear-gradient(rgba(0,152,234,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,152,234,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .card {
+      background: #0a0a14;
+      border: 2px solid #1a2a4a;
+      box-shadow: 4px 4px 0 0 #020208, 0 0 40px rgba(0,152,234,0.1);
+      max-width: 380px; width: 100%;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .card::before {
+      content: ''; position: absolute; top: -2px; left: -2px; right: -2px;
+      height: 3px; background: #0098EA;
+    }
+    .icon {
+      width: 64px; height: 64px; margin: 0 auto 20px;
+      background: rgba(0,152,234,0.08);
+      border: 2px solid rgba(0,152,234,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon svg { width: 34px; height: 34px; }
+    .title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.85rem; color: #0098EA;
+      letter-spacing: 0.05em; margin-bottom: 14px;
+      text-shadow: 2px 2px 0 rgba(0,152,234,0.2);
+      line-height: 1.5;
+    }
+    .subtitle {
+      font-size: 1.05rem; color: #8a8ab0;
+      letter-spacing: 0.03em; margin-bottom: 24px; line-height: 1.4;
+    }
+    .recaptcha-wrap {
+      display: flex; justify-content: center; margin-bottom: 20px;
+      min-height: 78px;
+    }
+    .btn {
+      width: 100%; padding: 14px;
+      background: #0098EA; color: #041020;
+      border: 2px solid #0098EA;
+      box-shadow: 3px 3px 0 0 #013a5a;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem; letter-spacing: 0.05em;
+      cursor: pointer; text-transform: uppercase;
+      transition: transform 0.1s;
+    }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 0 #013a5a; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .error {
+      color: #ff4466; font-size: 1rem;
+      margin-bottom: 16px; letter-spacing: 0.03em;
+      border: 2px solid rgba(255,68,102,0.3);
+      background: rgba(255,68,102,0.05);
+      padding: 10px;
+    }
+    .footer-note {
+      margin-top: 18px; font-size: 0.85rem; color: #4a4a6e;
+      letter-spacing: 0.02em; line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="title">VERIFICATION</div>
+    <div class="subtitle">Please confirm you're human to continue</div>
+
+    {% if error %}
+    <div class="error">⚠ Verification failed. Please try again.</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('verify_captcha') }}" id="verifyForm">
+      <div class="recaptcha-wrap">
+        <div class="g-recaptcha"
+             data-sitekey="{{ site_key }}"
+             data-callback="onCaptchaSolved"
+             data-theme="dark"></div>
+      </div>
+      <button type="submit" class="btn" id="continueBtn" disabled>CONTINUE</button>
+    </form>
+
+    <div class="footer-note">Protected by reCAPTCHA</div>
+  </div>
+
+  <script>
+    // Habilitar el botón solo cuando el captcha se resuelve
+    function onCaptchaSolved() {
+      document.getElementById('continueBtn').disabled = false;
+    }
+    // Auto-enviar al resolver (más fluido)
+    // function onCaptchaSolved() { document.getElementById('verifyForm').submit(); }
+  </script>
+</body>
+</html>
