@@ -191,6 +191,13 @@ TRANSLATIONS = {
     'mn_ads_click_step2': {'en': 'Tap / click on the ad',                    'es': 'Toca / haz click en el anuncio'},
     'mn_ads_click_step3': {'en': 'Open the advertised app briefly',          'es': 'Abre la app anunciada un momento'},
     'mn_ads_click_understood': {'en': 'GOT IT',                              'es': 'ENTENDIDO'},
+
+    # ── Captcha de verificación (verify.html) ──
+    'vf_title':          {'en': 'VERIFICATION',                    'es': 'VERIFICACIÓN'},
+    'vf_subtitle':       {'en': "Please confirm you're human to continue", 'es': 'Confirma que eres humano para continuar'},
+    'vf_error':          {'en': '⚠ Verification failed. Please try again.', 'es': '⚠ Verificación fallida. Inténtalo de nuevo.'},
+    'vf_continue':       {'en': 'CONTINUE',                        'es': 'CONTINUAR'},
+    'vf_protected':      {'en': 'Protected by reCAPTCHA',          'es': 'Protegido por reCAPTCHA'},
     'mn_ads_unavailable':{'en': 'No ad available. Try again shortly.',      'es': 'No hay anuncio disponible. Intenta en un momento.'},
 
     'mn_processing':     {'en': 'PROCESSING...',            'es': 'PROCESANDO...'},

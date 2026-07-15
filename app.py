@@ -736,14 +736,17 @@ def verify_captcha():
     if session.get('captcha_ok'):
         return redirect(url_for('index'))
 
+    lang = session.get('lang', 'en')
+    t = get_t(lang)
+
     if request.method == 'POST':
         token = request.form.get('g-recaptcha-response', '')
         if _verify_recaptcha(token):
             session['captcha_ok'] = True
             return redirect(url_for('index'))
-        return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=True)
+        return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=True, t=t)
 
-    return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=False)
+    return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=False, t=t)
 
 
 @app.route('/')
@@ -2636,6 +2639,83 @@ def admin_api_approve_withdrawal():
         'tx_hash': tx_hash or '',
         'message': (f'✅ Enviado automáticamente: {ton_amount:.4f} TON' if auto_sent
                     else '✅ Retiro aprobado y marcado como completado')
+    })
+
+
+@app.route('/admin/api/withdrawals/process-all', methods=['POST'])
+@require_admin
+def admin_api_process_all_withdrawals():
+    """Procesa TODOS los retiros pendientes de una vez (envío automático de TON)."""
+    from database import execute_query as _eq
+    from datetime import datetime as _dt
+    try:
+        pendientes = _eq(
+            "SELECT * FROM withdrawals WHERE status = 'pending' ORDER BY created_at ASC",
+            fetch_all=True
+        ) or []
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error leyendo pendientes: {e}'})
+
+    processed = 0
+    failed = 0
+    errors = []
+
+    for w in pendientes:
+        wid = str(w.get('withdrawal_id') or w.get('id'))
+        try:
+            dest_wallet = w.get('wallet_address', '')
+            currency = (w.get('currency', 'TON') or 'TON').upper()
+            ton_amount = float(w.get('net_amount', 0) or w.get('amount', 0) or 0)
+
+            # Anti-doble-pago: si ya tiene tx_hash, solo completar (no reenviar)
+            existing_tx = w.get('ton_tx_hash') or w.get('tx_hash')
+            if existing_tx:
+                update_withdrawal(wid, 'completed', existing_tx, 'Ya enviado previamente')
+                processed += 1
+                continue
+
+            # Envío automático de TON
+            if currency == 'TON' and dest_wallet:
+                ok, tx_hash_auto, send_err = _auto_send_ton(dest_wallet, ton_amount, wid)
+                if not ok:
+                    failed += 1
+                    errors.append(f'{wid}: {send_err}')
+                    continue
+                update_withdrawal(wid, 'completed', tx_hash_auto, 'Procesado en lote')
+
+                # Notificar al usuario
+                if _NOTIF_OK:
+                    try:
+                        user_obj = get_user(w['user_id'])
+                        lang_code = user_obj.get('language_code') if user_obj else None
+                        notify_withdrawal_approved(
+                            user_id=int(w['user_id']),
+                            amount=f"{ton_amount:.4f}",
+                            currency=currency,
+                            wallet=dest_wallet or '?',
+                            withdrawal_id=wid,
+                            date=_dt.now().strftime('%Y-%m-%d %H:%M'),
+                            tx_hash=tx_hash_auto or '—',
+                            language_code=lang_code,
+                        )
+                    except Exception as _ne:
+                        logger.warning(f"Batch notify error {wid}: {_ne}")
+                processed += 1
+            else:
+                # No es TON o sin wallet — no se puede enviar automáticamente
+                failed += 1
+                errors.append(f'{wid}: sin wallet o no es TON')
+        except Exception as _we:
+            failed += 1
+            errors.append(f'{wid}: {_we}')
+            logger.warning(f"[process-all] error en {wid}: {_we}")
+
+    logger.info(f"[process-all] procesados={processed} fallidos={failed}")
+    return jsonify({
+        'success': True,
+        'processed': processed,
+        'failed': failed,
+        'errors': errors[:10]  # primeros 10 errores para no saturar
     })
 
 
