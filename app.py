@@ -77,6 +77,35 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 # (El panel admin usa login con usuario/contraseña + dominio autorizado.)
 
+# ── reCAPTCHA v2 (checkbox al inicio) ───────────────────────────
+# Claves desde variables de entorno (nunca en el código).
+# Si no están configuradas, el captcha se desactiva (la app funciona normal).
+RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '').strip()
+RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '').strip()
+RECAPTCHA_ENABLED = bool(RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY)
+
+def _verify_recaptcha(token):
+    """Valida el token del captcha con Google. True si es humano."""
+    if not RECAPTCHA_ENABLED:
+        return True  # sin claves configuradas, no se exige captcha
+    if not token:
+        return False
+    try:
+        import urllib.request, urllib.parse, json as _json
+        data = urllib.parse.urlencode({
+            'secret': RECAPTCHA_SECRET_KEY,
+            'response': token,
+        }).encode()
+        req = urllib.request.Request(
+            'https://www.google.com/recaptcha/api/siteverify', data=data)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = _json.loads(resp.read().decode())
+        return bool(result.get('success'))
+    except Exception as _e:
+        logger.warning(f"reCAPTCHA verify error: {_e}")
+        # Si Google no responde, dejamos pasar para no bloquear a usuarios reales
+        return True
+
 # ── RUTA SECRETA DEL PANEL ADMIN (?key=...) ─────────────────────
 # El panel admin solo aparece si se accede con la clave secreta correcta
 # en la URL: /admin?key=TU_CLAVE (configurable con ADMIN_SECRET_KEY).
@@ -699,6 +728,24 @@ def referral_landing(ref_id):
         session['pending_ref'] = str(ref_id)
     return redirect(url_for('index'))
 
+@app.route('/verify', methods=['GET', 'POST'])
+def verify_captcha():
+    """Pantalla de reCAPTCHA v2 al inicio. No pierde el referido (ya en sesión)."""
+    if not RECAPTCHA_ENABLED:
+        return redirect(url_for('index'))
+    if session.get('captcha_ok'):
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        token = request.form.get('g-recaptcha-response', '')
+        if _verify_recaptcha(token):
+            session['captcha_ok'] = True
+            return redirect(url_for('index'))
+        return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=True)
+
+    return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=False)
+
+
 @app.route('/')
 def index():
     """Main dashboard - Home with Daily Check-In"""
@@ -708,7 +755,12 @@ def index():
     ref = request.args.get('ref') or request.args.get('start') or request.args.get('referral')
     if ref:
         session['pending_ref'] = str(ref)
-    
+
+    # reCAPTCHA: si está activo y el usuario no lo ha resuelto, mostrar el captcha.
+    # (El ref ya quedó guardado arriba, así que la invitación NO se pierde.)
+    if RECAPTCHA_ENABLED and not session.get('captcha_ok'):
+        return redirect(url_for('verify_captcha'))
+
     if not user_id:
         return render_template('telegram_required.html')
     
@@ -2043,10 +2095,27 @@ def admin_api_user_history(user_id):
             'ton_wallet': u.get('ton_wallet', '') or '',
             'banned': bool(u.get('banned', 0)),
         }
+        # Diagnóstico: contar registros crudos en cada tabla para este usuario
+        from database import execute_query
+        uid = str(user_id)
+        def _c(sql, p):
+            try:
+                r = execute_query(sql, p, fetch_one=True)
+                return int(r['c']) if r and r.get('c') is not None else 0
+            except Exception as _e:
+                return f'ERR: {_e}'
+        debug = {
+            'balance_history': _c("SELECT COUNT(*) c FROM balance_history WHERE user_id=%s", (uid,)),
+            'withdrawals': _c("SELECT COUNT(*) c FROM withdrawals WHERE user_id=%s", (uid,)),
+            'ton_deposits': _c("SELECT COUNT(*) c FROM ton_deposits WHERE user_id=%s", (uid,)),
+            'referrals': _c("SELECT COUNT(*) c FROM referrals WHERE referrer_id=%s", (uid,)),
+        }
+        logger.info(f"[history-debug] user={uid} counts={debug} items={len(data.get('items', []))}")
         # 'history' es un alias de 'items' para compatibilidad con admin_users.html
-        return jsonify({'success': True, 'summary': summary, 'history': data.get('items', []), **data})
+        return jsonify({'success': True, 'summary': summary, 'history': data.get('items', []), 'debug': debug, **data})
     except Exception as e:
-        logger.warning(f"user history error: {e}")
+        import traceback
+        logger.warning(f"user history error: {e}\n{traceback.format_exc()}")
         return jsonify({'success': False, 'message': str(e), 'history': [], 'items': []})
 
 
