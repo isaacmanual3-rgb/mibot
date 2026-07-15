@@ -158,15 +158,28 @@
 
 <!-- History Modal -->
 <div id="historyModal" class="modal">
-    <div class="modal-content pixel-border" style="max-width:750px;width:95%;">
-        <div class="modal-header">
-            <h3 class="modal-title">BALANCE HISTORY</h3>
+    <div class="modal-content pixel-border" style="max-width:640px;width:94%;max-height:88vh;display:flex;flex-direction:column">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center">
+            <h3 class="modal-title">📋 HISTORIAL DEL USUARIO</h3>
+            <button class="btn btn-secondary" onclick="closeModal('historyModal')" style="padding:4px 10px">✕</button>
         </div>
-        <div id="historyContent" style="max-height:400px;overflow-y:auto;">
-            <p class="text-muted">Loading...</p>
+        <div id="histSummary" style="background:#0a0e18;border:1px solid #1e2a3a;padding:12px;margin-bottom:12px;font-size:0.9rem">
+            <div style="color:#888">Cargando...</div>
         </div>
-        <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeModal('historyModal')">CLOSE</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="hist-filter btn btn-primary" data-cat="all"        onclick="setHistFilter('all')">TODO</button>
+            <button class="hist-filter btn btn-secondary" data-cat="movements"   onclick="setHistFilter('movements')">MOVIMIENTOS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="withdrawals" onclick="setHistFilter('withdrawals')">RETIROS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="deposits"    onclick="setHistFilter('deposits')">DEPÓSITOS</button>
+            <button class="hist-filter btn btn-secondary" data-cat="referrals"   onclick="setHistFilter('referrals')">REFERIDOS</button>
+        </div>
+        <div id="histList" style="flex:1;overflow-y:auto;min-height:200px;max-height:48vh;border:1px solid #1e2a3a;background:#06090f">
+            <div style="padding:20px;text-align:center;color:#666">Cargando historial...</div>
+        </div>
+        <div id="histPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px">
+            <button class="btn btn-secondary" id="histPrev" onclick="histPage(-1)" style="padding:6px 12px">← PREV</button>
+            <span id="histPageInfo" style="font-size:0.85rem;color:#888">—</span>
+            <button class="btn btn-secondary" id="histNext" onclick="histPage(1)" style="padding:6px 12px">NEXT →</button>
         </div>
     </div>
 </div>
@@ -282,37 +295,107 @@ async function submitBalanceAdjustment() {
     } catch(e) { showToast('Connection error', 'error'); }
 }
 
-async function viewHistory(userId) {
-    _currentUserId = userId;
-    document.getElementById('historyContent').innerHTML = '<p class="text-muted">Loading...</p>';
+// ── HISTORIAL COMPLETO (mismo sistema que el panel de retiros) ──
+let histUserId = null;
+let histCategory = 'all';
+let histCurrentPage = 1;
+let histTotalPages = 1;
+
+function viewHistory(userId) {
+    histUserId = userId;
+    histCategory = 'all';
+    histCurrentPage = 1;
+    document.querySelectorAll('.hist-filter').forEach(b => {
+        b.className = 'hist-filter btn ' + (b.dataset.cat === 'all' ? 'btn-primary' : 'btn-secondary');
+    });
     openModal('historyModal');
+    loadHistory();
+}
+
+function setHistFilter(cat) {
+    histCategory = cat;
+    histCurrentPage = 1;
+    document.querySelectorAll('.hist-filter').forEach(b => {
+        b.className = 'hist-filter btn ' + (b.dataset.cat === cat ? 'btn-primary' : 'btn-secondary');
+    });
+    loadHistory();
+}
+
+function histPage(delta) {
+    const next = histCurrentPage + delta;
+    if (next < 1 || next > histTotalPages) return;
+    histCurrentPage = next;
+    loadHistory();
+}
+
+function fmtNum(n) { return Number(n).toLocaleString(undefined, {maximumFractionDigits: 4}); }
+
+async function loadHistory() {
+    const list = document.getElementById('histList');
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#666">Cargando...</div>';
     try {
-        const res  = await fetch(`/admin/api/user/${userId}/history?limit=100`);
+        const res = await fetch(`/admin/api/user/${histUserId}/history?category=${histCategory}&page=${histCurrentPage}`);
         const data = await res.json();
-        if (data.success && data.history.length > 0) {
-            const rows = data.history.map(h => {
-                const sign  = h.amount >= 0 ? '+' : '';
-                const color = h.amount >= 0 ? '#ffd700' : '#ff4466';
-                return `<tr>
-                    <td class="text-muted" style="font-size:.85rem;">${h.created_at}</td>
-                    <td><span class="badge badge-info">${h.action}</span></td>
-                    <td style="color:${color};font-weight:bold;">${sign}${parseFloat(h.amount).toFixed(8)}</td>
-                    <td class="text-muted" style="font-size:.85rem;">${parseFloat(h.balance_after).toFixed(8)}</td>
-                    <td style="font-size:.85rem;">${h.description || ''}</td>
-                </tr>`;
-            }).join('');
-            document.getElementById('historyContent').innerHTML = `
-                <table class="data-table" style="font-size:.9rem;">
-                    <thead><tr><th>Date</th><th>Action</th><th>Amount</th><th>Balance After</th><th>Description</th></tr></thead>
-                    <tbody>${rows}</tbody>
-                </table>`;
-        } else {
-            var dbg = data.debug ? JSON.stringify(data.debug) : 'sin debug';
-            document.getElementById('historyContent').innerHTML = '<p class="text-muted" style="padding:20px;">No history found.<br><br><span style="font-size:0.7rem;color:#888;">Debug: ' + dbg + '</span></p>';
+        if (!data.success) {
+            list.innerHTML = `<div style="padding:20px;text-align:center;color:#f66">${data.message || 'Error'}</div>`;
+            return;
         }
-    } catch(e) {
-        document.getElementById('historyContent').innerHTML = '<p style="color:red;">Error loading history.</p>';
+        const s = data.summary || {};
+        document.getElementById('histSummary').innerHTML = `
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+                <div><strong style="color:#fff">${s.first_name || ''}</strong> ${s.username ? '@'+s.username : ''} ${s.banned ? '<span style="color:#f66">⛔ BANEADO</span>' : ''}</div>
+                <div style="color:#888">ID: ${s.user_id || ''}</div>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:0.82rem">
+                <span>💰 Saldo: <strong style="color:#ffd700">${fmtNum(s.balance || 0)}</strong></span>
+                <span>📈 Ganado: <strong style="color:#00e676">${fmtNum(s.total_earned || 0)}</strong></span>
+                <span>👥 Referidos: <strong style="color:#40c4ff">${s.referral_count || 0}</strong></span>
+            </div>
+            ${s.ton_wallet ? `<div style="margin-top:6px;font-size:0.78rem;color:#0098EA;word-break:break-all">Wallet: ${s.ton_wallet}</div>` : ''}
+        `;
+        const items = data.items || data.history || [];
+        if (!items.length) {
+            list.innerHTML = '<div style="padding:24px;text-align:center;color:#666">Sin registros</div>';
+        } else {
+            list.innerHTML = items.map(it => renderHistItem(it)).join('');
+        }
+        histTotalPages = data.total_pages || 1;
+        document.getElementById('histPageInfo').textContent = `Página ${data.page || 1}/${data.total_pages || 1} · ${data.total || items.length} registros`;
+        document.getElementById('histPrev').disabled = ((data.page || 1) <= 1);
+        document.getElementById('histNext').disabled = ((data.page || 1) >= (data.total_pages || 1));
+        document.getElementById('histPrev').style.opacity = ((data.page || 1) <= 1) ? '0.4' : '1';
+        document.getElementById('histNext').style.opacity = ((data.page || 1) >= (data.total_pages || 1)) ? '0.4' : '1';
+    } catch (e) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:#f66">Error de conexión</div>';
     }
+}
+
+function renderHistItem(it) {
+    let icon = '•', color = '#888', right = '';
+    if (it.type === 'movement') {
+        const pos = it.amount >= 0;
+        icon = pos ? '➕' : '➖'; color = pos ? '#00e676' : '#f66';
+        right = `<span style="color:${color}">${pos ? '+' : ''}${fmtNum(it.amount)} TON</span>`;
+    } else if (it.type === 'withdrawal') {
+        icon = '📤'; color = '#ffb300';
+        const st = it.status === 'completed' ? '#00e676' : (it.status === 'rejected' ? '#f66' : '#ffb300');
+        right = `<span style="color:${color}">-${fmtNum(it.amount)} ${it.currency || 'TON'}</span> <span style="color:${st};font-size:0.72rem">[${it.status}]</span>`;
+    } else if (it.type === 'deposit') {
+        icon = '📥'; color = '#40c4ff';
+        right = `<span style="color:${color}">+${fmtNum(it.amount)} TON</span>`;
+    } else if (it.type === 'referral') {
+        icon = '👤'; color = '#ce93d8';
+        right = `<span style="color:${color}">ref</span>`;
+    }
+    return `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #131a26">
+            <div style="min-width:0;flex:1">
+                <div style="color:#ddd;font-size:0.86rem">${icon} ${it.detail || it.description || it.type}</div>
+                <div style="color:#666;font-size:0.72rem">${it.created_at || ''}</div>
+            </div>
+            <div style="text-align:right;font-size:0.82rem;white-space:nowrap">${right}</div>
+        </div>
+    `;
 }
 
 async function banUser(userId) {
