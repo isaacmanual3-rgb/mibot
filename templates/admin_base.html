@@ -500,13 +500,110 @@
         .gap-4 { gap: 16px; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
+        /* ═══════════════ RESPONSIVE / MÓVIL ═══════════════ */
+        /* Botón hamburguesa (oculto en escritorio) */
+        .admin-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 12px; left: 12px;
+            z-index: 1002;
+            width: 44px; height: 44px;
+            background: var(--blue-primary);
+            border: 2px solid #013a5a;
+            color: #041020;
+            align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 0 #020208;
+        }
+        .admin-menu-toggle svg { width: 24px; height: 24px; }
+        .admin-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+        }
+
+        @media (max-width: 820px) {
+            /* Sidebar se convierte en menú deslizable */
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                z-index: 1001;
+                width: 250px;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            }
+            .admin-sidebar.open {
+                transform: translateX(0);
+            }
+            .admin-overlay.show {
+                display: block;
+            }
+            .admin-menu-toggle {
+                display: flex;
+            }
+            /* El contenido ocupa todo el ancho */
+            .admin-main {
+                margin-left: 0;
+                padding: 16px 12px;
+                padding-top: 64px; /* espacio para el botón hamburguesa */
+            }
+            /* Header apilado */
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .page-title {
+                font-size: 0.75rem !important;
+            }
+            /* Tablas con scroll horizontal para que no se corten */
+            .table-container, .card {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .data-table {
+                min-width: 640px; /* fuerza scroll horizontal en vez de aplastar */
+            }
+            /* Filtros y botones más compactos */
+            .filter-bar, .filters {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .btn {
+                font-size: 0.5rem;
+                padding: 8px 10px;
+            }
+            /* Cards de estadísticas apiladas */
+            .stats-grid, .stat-cards {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px;
+            }
+            /* Modales ocupan casi toda la pantalla */
+            .modal, .modal-content {
+                width: 94% !important;
+                max-width: 94% !important;
+                margin: 20px auto !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid, .stat-cards {
+                grid-template-columns: 1fr !important;
+            }
+            .sidebar-logo { font-size: 0.6rem; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Botón hamburguesa (solo móvil) -->
+    <button class="admin-menu-toggle" id="adminMenuToggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="admin-overlay" id="adminOverlay"></div>
     <div class="admin-layout">
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">DOGEQUEST</div>
                 <div class="sidebar-subtitle">Admin Panel</div>
@@ -620,5 +717,32 @@
         }
     </script>
     {% block extra_js %}{% endblock %}
+    <script>
+    // Menú hamburguesa del panel (móvil)
+    (function() {
+        var toggle = document.getElementById('adminMenuToggle');
+        var sidebar = document.getElementById('adminSidebar');
+        var overlay = document.getElementById('adminOverlay');
+        if (!toggle || !sidebar || !overlay) return;
+
+        function openMenu() {
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+        }
+        function closeMenu() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+        toggle.addEventListener('click', function() {
+            if (sidebar.classList.contains('open')) closeMenu();
+            else openMenu();
+        });
+        overlay.addEventListener('click', closeMenu);
+        // Cerrar el menú al tocar un enlace de navegación
+        sidebar.querySelectorAll('a, .nav-link').forEach(function(link) {
+            link.addEventListener('click', closeMenu);
+        });
+    })();
+    </script>
 </body>
 </html>

@@ -8,6 +8,11 @@
         <h1 class="page-title">WITHDRAWAL MANAGEMENT</h1>
         <p class="page-subtitle">Process and track withdrawal requests</p>
     </div>
+    {% if pending_count and pending_count > 0 %}
+    <button class="btn btn-success" onclick="processAllWithdrawals()" id="processAllBtn" style="white-space:nowrap">
+        ⚡ PROCESAR TODOS ({{ pending_count }})
+    </button>
+    {% endif %}
 </div>
 
 <!-- Stats -->
@@ -268,6 +273,30 @@ function approveWithdrawal(id) {
 function rejectWithdrawal(id) {
     document.getElementById('rejectId').value = id;
     openModal('rejectModal');
+}
+
+async function processAllWithdrawals() {
+    if (!confirm('¿Procesar TODOS los retiros pendientes de una vez? Esta acción enviará el pago a cada usuario.')) return;
+    const btn = document.getElementById('processAllBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ PROCESANDO...'; }
+    try {
+        const response = await fetch('/admin/api/withdrawals/process-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast(`✅ Procesados: ${data.processed} · Fallidos: ${data.failed}`, 'success');
+            setTimeout(() => location.reload(), 1800);
+        } else {
+            showToast(data.message || 'Error al procesar', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = '⚡ PROCESAR TODOS'; }
+        }
+    } catch (e) {
+        showToast('Error de conexión', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ PROCESAR TODOS'; }
+    }
 }
 
 async function submitApproval() {

@@ -307,7 +307,8 @@ async function viewHistory(userId) {
                     <tbody>${rows}</tbody>
                 </table>`;
         } else {
-            document.getElementById('historyContent').innerHTML = '<p class="text-muted" style="padding:20px;">No history found.</p>';
+            var dbg = data.debug ? JSON.stringify(data.debug) : 'sin debug';
+            document.getElementById('historyContent').innerHTML = '<p class="text-muted" style="padding:20px;">No history found.<br><br><span style="font-size:0.7rem;color:#888;">Debug: ' + dbg + '</span></p>';
         }
     } catch(e) {
         document.getElementById('historyContent').innerHTML = '<p style="color:red;">Error loading history.</p>';

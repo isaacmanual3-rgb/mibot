@@ -90,11 +90,11 @@
         <path d="M9 12l2 2 4-4"/>
       </svg>
     </div>
-    <div class="title">VERIFICATION</div>
-    <div class="subtitle">Please confirm you're human to continue</div>
+    <div class="title">{{ t.vf_title }}</div>
+    <div class="subtitle">{{ t.vf_subtitle }}</div>
 
     {% if error %}
-    <div class="error">⚠ Verification failed. Please try again.</div>
+    <div class="error">{{ t.vf_error }}</div>
     {% endif %}
 
     <form method="POST" action="{{ url_for('verify_captcha') }}" id="verifyForm">
@@ -104,10 +104,10 @@
              data-callback="onCaptchaSolved"
              data-theme="dark"></div>
       </div>
-      <button type="submit" class="btn" id="continueBtn" disabled>CONTINUE</button>
+      <button type="submit" class="btn" id="continueBtn" disabled>{{ t.vf_continue }}</button>
     </form>
 
-    <div class="footer-note">Protected by reCAPTCHA</div>
+    <div class="footer-note">{{ t.vf_protected }}</div>
   </div>
 
   <script>
