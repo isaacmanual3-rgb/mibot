@@ -28,6 +28,7 @@ TRANSLATIONS = {
 
     # ── Profile page ──
     'pf_wallet_title':     {'en': 'Withdrawal Wallet',    'es': 'Wallet de Retiro'},
+    'pf_language':         {'en': 'Language',              'es': 'Idioma'},
     'pf_wallet_linked':    {'en': 'Wallet linked',         'es': 'Wallet vinculada'},
     'pf_wallet_not_linked':{'en': 'No wallet linked',      'es': 'Sin wallet vinculada'},
     'pf_wallet_none':      {'en': 'Add your TON address to withdraw', 'es': 'Añade tu dirección TON para retirar'},
