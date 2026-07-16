@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join Channel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box;
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    body {
+      background: #05050a;
+      color: #e0e0f0;
+      font-family: 'VT323', monospace;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      background-image:
+        linear-gradient(rgba(0,152,234,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,152,234,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .card {
+      background: #0a0a14;
+      border: 2px solid #1a2a4a;
+      box-shadow: 4px 4px 0 0 #020208, 0 0 40px rgba(0,152,234,0.1);
+      max-width: 380px; width: 100%;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .card::before {
+      content: ''; position: absolute; top: -2px; left: -2px; right: -2px;
+      height: 3px; background: #0098EA;
+    }
+    .icon {
+      width: 70px; height: 70px; margin: 0 auto 20px;
+      background: rgba(0,152,234,0.08);
+      border: 2px solid rgba(0,152,234,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon svg { width: 38px; height: 38px; }
+    .title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.85rem; color: #0098EA;
+      letter-spacing: 0.05em; margin-bottom: 14px;
+      text-shadow: 2px 2px 0 rgba(0,152,234,0.2);
+      line-height: 1.5;
+    }
+    .subtitle {
+      font-size: 1.05rem; color: #8a8ab0;
+      letter-spacing: 0.03em; margin-bottom: 8px; line-height: 1.4;
+    }
+    .channel-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.7rem; color: #40c4ff;
+      margin: 16px 0 24px; letter-spacing: 0.03em;
+      word-break: break-all;
+    }
+    .btn {
+      display: block; width: 100%; padding: 15px;
+      border: 2px solid; text-decoration: none;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem; letter-spacing: 0.05em;
+      cursor: pointer; text-transform: uppercase;
+      transition: transform 0.1s; margin-bottom: 12px;
+      text-align: center;
+    }
+    .btn-join {
+      background: #0098EA; color: #041020;
+      border-color: #0098EA;
+      box-shadow: 3px 3px 0 0 #013a5a;
+    }
+    .btn-join:active { transform: translate(3px, 3px); box-shadow: 0 0 0 0 #013a5a; }
+    .btn-check {
+      background: transparent; color: #00e676;
+      border-color: #00e676;
+      box-shadow: 3px 3px 0 0 #014a2a;
+    }
+    .btn-check:active { transform: translate(3px, 3px); box-shadow: 0 0 0 0 #014a2a; }
+    .error {
+      color: #ff9800; font-size: 0.95rem;
+      margin-bottom: 16px; letter-spacing: 0.02em;
+      border: 2px solid rgba(255,152,0,0.3);
+      background: rgba(255,152,0,0.05);
+      padding: 10px; display: none;
+    }
+    .error.show { display: block; }
+    .footer-note {
+      margin-top: 12px; font-size: 0.9rem; color: #4a4a6e;
+      letter-spacing: 0.02em; line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.5 2l-19 7.5 6 2.5 2.5 6L21.5 2z"/>
+        <path d="M9.5 12.5l3.5-3.5"/>
+      </svg>
+    </div>
+    <div class="title">{{ t.jc_title if t.jc_title != 'jc_title' else 'JOIN OUR CHANNEL' }}</div>
+    <div class="subtitle">{{ t.jc_subtitle if t.jc_subtitle != 'jc_subtitle' else 'You must join our channel to use the app' }}</div>
+    <div class="channel-name">{{ channel }}</div>
+
+    <div class="error" id="errorMsg">{{ t.jc_not_yet if t.jc_not_yet != 'jc_not_yet' else 'You have not joined yet. Please join the channel first.' }}</div>
+
+    <a href="{{ channel_url }}" target="_blank" rel="noopener" class="btn btn-join">
+      {{ t.jc_join_btn if t.jc_join_btn != 'jc_join_btn' else '📢 JOIN CHANNEL' }}
+    </a>
+    <button class="btn btn-check" onclick="checkJoined()">
+      {{ t.jc_check_btn if t.jc_check_btn != 'jc_check_btn' else "✓ I'VE JOINED" }}
+    </button>
+
+    <div class="footer-note">{{ t.jc_footer if t.jc_footer != 'jc_footer' else 'Join the channel, then tap "I have joined"' }}</div>
+  </div>
+
+  <script>
+    function checkJoined() {
+      // Recargar con rejoin=1: el servidor limpia el cache y verifica en vivo.
+      // Si ya se unió, entra a la app; si no, vuelve a mostrar esta pantalla.
+      window.location.href = '/?rejoin=1';
+    }
+    // Si venimos de un intento fallido (?retry=1), mostrar el aviso
+    if (new URLSearchParams(window.location.search).get('retry') === '1') {
+      document.getElementById('errorMsg').classList.add('show');
+    }
+  </script>
+</body>
+</html>
