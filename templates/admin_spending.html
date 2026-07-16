@@ -1,0 +1,76 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Gastos TON{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">💸 GASTOS EN TON</h1>
+        <p class="page-subtitle">TON pagado a usuarios en retiros completados</p>
+    </div>
+</div>
+
+<!-- Tarjetas resumen -->
+<div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px">
+
+    <div class="stat-card" style="background:#0a0e18;border:2px solid #1e3a5a;box-shadow:3px 3px 0 0 #020208;padding:18px">
+        <div style="font-size:0.72rem;color:#40c4ff;letter-spacing:0.05em;margin-bottom:8px">HOY</div>
+        <div style="font-size:1.6rem;color:#fff;font-weight:bold">{{ "%.4f"|format(stats.today.total) }}</div>
+        <div style="font-size:0.7rem;color:#666;margin-top:4px">TON · {{ stats.today.count }} retiros</div>
+    </div>
+
+    <div class="stat-card" style="background:#0a0e18;border:2px solid #3a2e5a;box-shadow:3px 3px 0 0 #020208;padding:18px">
+        <div style="font-size:0.72rem;color:#b388ff;letter-spacing:0.05em;margin-bottom:8px">AYER</div>
+        <div style="font-size:1.6rem;color:#fff;font-weight:bold">{{ "%.4f"|format(stats.yesterday.total) }}</div>
+        <div style="font-size:0.7rem;color:#666;margin-top:4px">TON · {{ stats.yesterday.count }} retiros</div>
+    </div>
+
+    <div class="stat-card" style="background:#0a0e18;border:2px solid #1e5a3a;box-shadow:3px 3px 0 0 #020208;padding:18px">
+        <div style="font-size:0.72rem;color:#00e676;letter-spacing:0.05em;margin-bottom:8px">ESTA SEMANA</div>
+        <div style="font-size:1.6rem;color:#fff;font-weight:bold">{{ "%.4f"|format(stats.this_week.total) }}</div>
+        <div style="font-size:0.7rem;color:#666;margin-top:4px">TON · {{ stats.this_week.count }} retiros</div>
+    </div>
+
+    <div class="stat-card" style="background:#0a0e18;border:2px solid #5a4a1e;box-shadow:3px 3px 0 0 #020208;padding:18px">
+        <div style="font-size:0.72rem;color:#ffd700;letter-spacing:0.05em;margin-bottom:8px">ESTE MES</div>
+        <div style="font-size:1.6rem;color:#fff;font-weight:bold">{{ "%.4f"|format(stats.this_month.total) }}</div>
+        <div style="font-size:0.7rem;color:#666;margin-top:4px">TON · {{ stats.this_month.count }} retiros</div>
+    </div>
+
+    <div class="stat-card" style="background:#12081a;border:2px solid #5a1e4a;box-shadow:3px 3px 0 0 #020208;padding:18px">
+        <div style="font-size:0.72rem;color:#ff4db8;letter-spacing:0.05em;margin-bottom:8px">TOTAL HISTÓRICO</div>
+        <div style="font-size:1.6rem;color:#fff;font-weight:bold">{{ "%.4f"|format(stats.all_time.total) }}</div>
+        <div style="font-size:0.7rem;color:#666;margin-top:4px">TON · {{ stats.all_time.count }} retiros</div>
+    </div>
+
+</div>
+
+<!-- Historial diario -->
+<div class="card" style="background:#06090f;border:2px solid #1e2a3a;box-shadow:3px 3px 0 0 #020208;padding:0;overflow-x:auto">
+    <div style="padding:14px 18px;border-bottom:2px solid #1e2a3a">
+        <h2 style="font-size:0.85rem;color:#40c4ff;letter-spacing:0.04em">📅 HISTORIAL DIARIO (últimos 30 días)</h2>
+    </div>
+    {% if history %}
+    <table class="data-table" style="width:100%;min-width:420px">
+        <thead>
+            <tr>
+                <th style="text-align:left;padding:12px 18px">FECHA</th>
+                <th style="text-align:right;padding:12px 18px">TON PAGADO</th>
+                <th style="text-align:right;padding:12px 18px">RETIROS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in history %}
+            <tr style="border-bottom:1px solid #131a26">
+                <td style="padding:12px 18px;color:#ddd">{{ d.day }}</td>
+                <td style="padding:12px 18px;text-align:right;color:#00e676;font-weight:bold">{{ "%.4f"|format(d.total) }}</td>
+                <td style="padding:12px 18px;text-align:right;color:#888">{{ d.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding:30px;text-align:center;color:#666">Aún no hay retiros pagados.</div>
+    {% endif %}
+</div>
+{% endblock %}
