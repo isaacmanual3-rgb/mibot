@@ -84,6 +84,20 @@ RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '').strip()
 RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '').strip()
 RECAPTCHA_ENABLED = bool(RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY)
 
+# El captcha se vuelve a pedir cada 24 horas.
+CAPTCHA_VALID_SECONDS = 24 * 60 * 60  # 86400
+
+def _captcha_still_valid():
+    """True si el usuario resolvió el captcha hace menos de 24 horas."""
+    ts = session.get('captcha_ts')
+    if not ts:
+        return False
+    try:
+        import time
+        return (time.time() - float(ts)) < CAPTCHA_VALID_SECONDS
+    except Exception:
+        return False
+
 def _verify_recaptcha(token):
     """Valida el token del captcha con Google. True si es humano."""
     if not RECAPTCHA_ENABLED:
@@ -733,7 +747,7 @@ def verify_captcha():
     """Pantalla de reCAPTCHA v2 al inicio. No pierde el referido (ya en sesión)."""
     if not RECAPTCHA_ENABLED:
         return redirect(url_for('index'))
-    if session.get('captcha_ok'):
+    if _captcha_still_valid():
         return redirect(url_for('index'))
 
     lang = session.get('lang', 'en')
@@ -742,7 +756,8 @@ def verify_captcha():
     if request.method == 'POST':
         token = request.form.get('g-recaptcha-response', '')
         if _verify_recaptcha(token):
-            session['captcha_ok'] = True
+            import time
+            session['captcha_ts'] = time.time()  # marca la hora de resolución
             return redirect(url_for('index'))
         return render_template('verify.html', site_key=RECAPTCHA_SITE_KEY, error=True, t=t)
 
@@ -759,9 +774,9 @@ def index():
     if ref:
         session['pending_ref'] = str(ref)
 
-    # reCAPTCHA: si está activo y el usuario no lo ha resuelto, mostrar el captcha.
+    # reCAPTCHA: si está activo y el captcha caducó (o nunca se resolvió), pedirlo.
     # (El ref ya quedó guardado arriba, así que la invitación NO se pierde.)
-    if RECAPTCHA_ENABLED and not session.get('captcha_ok'):
+    if RECAPTCHA_ENABLED and not _captcha_still_valid():
         return redirect(url_for('verify_captcha'))
 
     if not user_id:

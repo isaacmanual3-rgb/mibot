@@ -288,7 +288,7 @@ def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
             try:
                 return execute_query(sql, params, fetch_all=True) or []
             except Exception as _qe:
-                log.warning(f"[history] consulta falló (se omite): {_qe}")
+                logger.warning(f"[history] consulta falló (se omite): {_qe}")
                 return []
         movements = _safe_query(
             "SELECT 'movement' as _t, amount, action, description, balance_after, NULL as status, NULL as wallet_address, NULL as ton_tx_hash, NULL as currency, created_at FROM balance_history WHERE user_id=%s",
