@@ -8,6 +8,17 @@
 
     <!-- Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      // Inicializar Telegram INMEDIATAMENTE, antes de cargar Adsgram.
+      // Adsgram necesita que Telegram.WebApp esté listo para obtener los
+      // "launch parameters"; si no, falla con "Unable to retrieve launch parameters".
+      try {
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
+      } catch (e) { /* ignora */ }
+    </script>
 
     <!-- Adsgram SDK (rewarded ads) -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
