@@ -2197,6 +2197,21 @@ def admin_withdrawals():
         format_doge=format_doge,
     )
 
+
+@app.route('/admin/spending')
+@require_admin
+def admin_spending():
+    """Panel de gastos en TON (retiros pagados): hoy, ayer, semana, mes, total."""
+    from database import get_spending_stats, get_spending_history
+    stats = get_spending_stats()
+    history = get_spending_history(days=30)
+    return render_template('admin_spending.html',
+        stats=stats,
+        history=history,
+        format_doge=format_doge,
+        active_page='spending',
+    )
+
 @app.route('/admin/withdrawal/<withdrawal_id>/process', methods=['POST'])
 @require_admin
 def admin_process_withdrawal(withdrawal_id):

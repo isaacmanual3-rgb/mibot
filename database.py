@@ -1038,6 +1038,61 @@ def increment_stat(key, amount=1):
         ON DUPLICATE KEY UPDATE stat_value = stat_value + VALUES(stat_value)
     """, (key, amount))
 
+def get_spending_stats():
+    """
+    Estadísticas de gastos en TON (retiros completados).
+    Devuelve montos pagados: hoy, ayer, esta semana, este mes, y total histórico.
+    Usa net_amount (lo realmente enviado al usuario) y processed_at (fecha de pago).
+    """
+    def _sum(where_sql, params=()):
+        try:
+            row = execute_query(
+                f"""SELECT COALESCE(SUM(net_amount), 0) AS total, COUNT(*) AS cnt
+                    FROM withdrawals
+                    WHERE status = 'completed' {where_sql}""",
+                params, fetch_one=True
+            )
+            return {
+                'total': float(row['total']) if row and row.get('total') is not None else 0.0,
+                'count': int(row['cnt']) if row and row.get('cnt') is not None else 0
+            }
+        except Exception as e:
+            logger.warning(f"[spending] query falló: {e}")
+            return {'total': 0.0, 'count': 0}
+
+    return {
+        'today':      _sum("AND DATE(processed_at) = CURDATE()"),
+        'yesterday':  _sum("AND DATE(processed_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)"),
+        'this_week':  _sum("AND YEARWEEK(processed_at, 1) = YEARWEEK(CURDATE(), 1)"),
+        'this_month': _sum("AND YEAR(processed_at) = YEAR(CURDATE()) AND MONTH(processed_at) = MONTH(CURDATE())"),
+        'all_time':   _sum(""),
+    }
+
+
+def get_spending_history(days=30):
+    """Gasto diario en TON de los últimos N días (para la lista del historial)."""
+    try:
+        rows = execute_query(
+            """SELECT DATE(processed_at) AS day,
+                      COALESCE(SUM(net_amount), 0) AS total,
+                      COUNT(*) AS cnt
+               FROM withdrawals
+               WHERE status = 'completed'
+                 AND processed_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+               GROUP BY DATE(processed_at)
+               ORDER BY day DESC""",
+            (int(days),), fetch_all=True
+        ) or []
+        return [{
+            'day': str(r['day']),
+            'total': float(r['total']) if r.get('total') is not None else 0.0,
+            'count': int(r['cnt']) if r.get('cnt') is not None else 0
+        } for r in rows]
+    except Exception as e:
+        logger.warning(f"[spending-history] query falló: {e}")
+        return []
+
+
 def get_all_stats():
     """Get all stats"""
     results = execute_query("SELECT * FROM stats", fetch_all=True) or []
