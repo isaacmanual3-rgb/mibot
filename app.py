@@ -84,6 +84,14 @@ RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY', '').strip()
 RECAPTCHA_SECRET_KEY = os.environ.get('RECAPTCHA_SECRET_KEY', '').strip()
 RECAPTCHA_ENABLED = bool(RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY)
 
+# ── Canal obligatorio ───────────────────────────────────────────
+# Si se define, el usuario DEBE estar unido a este canal para usar la app.
+# Ej: REQUIRED_CHANNEL=@MiCanal
+# El bot debe ser administrador del canal para poder verificar miembros.
+REQUIRED_CHANNEL = os.environ.get('REQUIRED_CHANNEL', '').strip()
+# Enlace del canal para el botón "Unirse" (si el @usuario no basta).
+REQUIRED_CHANNEL_URL = os.environ.get('REQUIRED_CHANNEL_URL', '').strip()
+
 # El captcha se vuelve a pedir cada 24 horas.
 CAPTCHA_VALID_SECONDS = 24 * 60 * 60  # 86400
 
@@ -785,7 +793,22 @@ def index():
     user = ensure_user(user_id)
     if user.get('banned'):
         return render_template('banned.html', reason=user.get('ban_reason'))
-    
+
+    # ── Canal obligatorio: el usuario debe estar unido para usar la app ──
+    if REQUIRED_CHANNEL:
+        # Si viene de tocar "Ya me uní", limpiar el cache para verificar en vivo
+        if request.args.get('rejoin') == '1':
+            _channel_cache.pop(f"{user_id}:{REQUIRED_CHANNEL if REQUIRED_CHANNEL.startswith('@') else '@'+REQUIRED_CHANNEL}", None)
+        is_member, _ = verify_channel_membership(user_id, REQUIRED_CHANNEL)
+        if not is_member:
+            lang = session.get('lang', 'en')
+            channel_clean = REQUIRED_CHANNEL.lstrip('@')
+            channel_url = REQUIRED_CHANNEL_URL or f"https://t.me/{channel_clean}"
+            return render_template('join_channel.html',
+                t=get_t(lang),
+                channel=REQUIRED_CHANNEL,
+                channel_url=channel_url)
+
     record_user_ip(user_id, get_client_ip())
     
     # Get check-in status
