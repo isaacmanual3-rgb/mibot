@@ -102,6 +102,19 @@ def _should_ask_language(user):
     - Pasaron más de 7 días desde la última vez que se le preguntó.
     """
     from datetime import datetime, timedelta
+    import time
+    # Respaldo por sesión: si acaba de elegir idioma (aunque la BD no se
+    # haya actualizado, p.ej. si get_user_id fue None), no repreguntar.
+    ts = session.get('lang_asked_ts')
+    if ts:
+        try:
+            if (time.time() - float(ts)) < 7 * 24 * 60 * 60:
+                return False
+        except Exception:
+            pass
+    # Si ya hay idioma elegido en la sesión, tampoco preguntar de nuevo
+    if session.get('lang') and session.get('lang_chosen'):
+        return False
     if not user:
         return False
     asked_at = user.get('lang_asked_at')
@@ -211,6 +224,8 @@ def setlang_initial(code):
     if code in get_supported_langs():
         session['lang'] = code
         session['lang_asked_ts'] = time.time()
+        session['lang_chosen'] = True
+        session.permanent = True
         uid = get_user_id()
         if uid:
             try:
