@@ -243,15 +243,21 @@ def setlang_initial(code):
 @app.route('/lang/<code>')
 def set_lang(code):
     """Switch UI language and redirect back."""
+    from datetime import datetime
     if code in get_supported_langs():
         session['lang'] = code
-        # Guardar también en la BD para que las notificaciones usen este idioma
-        uid = get_user_id()
+        # Guardar en BD para que notificaciones y bot usen este idioma.
+        # user_id de varias fuentes (get_user_id da None dentro de Telegram).
+        uid = request.args.get('u') or get_user_id() or session.get('user_id') or session.get('tg_user_id')
         if uid:
+            session['user_id'] = str(uid)
             try:
-                update_user(uid, language=code)
+                update_user(uid, language=code, lang_asked_at=datetime.utcnow())
+                logger.info(f"[lang] idioma '{code}' guardado (perfil) para user {uid}")
             except Exception as _e:
                 logger.warning(f"No se pudo guardar el idioma: {_e}")
+        else:
+            logger.warning(f"[lang] sin user_id al cambiar idioma a '{code}'")
     return redirect(request.referrer or url_for('index'))
 
 
