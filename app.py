@@ -226,8 +226,8 @@ def setlang_initial(code):
         session['lang_asked_ts'] = time.time()
         session['lang_chosen'] = True
         session.permanent = True
-        # Obtener user_id de varias fuentes (dentro de Telegram a veces get_user_id da None)
-        uid = get_user_id() or session.get('user_id') or session.get('tg_user_id')
+        # user_id: de la URL (?u=), o get_user_id(), o sesión
+        uid = request.args.get('u') or get_user_id() or session.get('user_id') or session.get('tg_user_id')
         if uid:
             session['user_id'] = str(uid)  # recordar para próximas navegaciones
             try:
@@ -861,7 +861,7 @@ def index():
 
     # ── Selección de idioma: se pregunta al inicio y cada 7 días ──
     if _should_ask_language(user):
-        return render_template('select_language.html')
+        return render_template('select_language.html', uid=user_id)
 
     # ── Canal obligatorio: el usuario debe estar unido para usar la app ──
     if REQUIRED_CHANNEL:
@@ -3631,6 +3631,18 @@ def _process_update(update):
         try:
             if cmd in ('/start', 'start'):
                 _handle_start(msg)
+            elif cmd == '/debug':
+                # Diagnóstico: muestra el idioma guardado del usuario
+                user = msg['from']
+                uid = user['id']
+                try:
+                    u = get_user(uid)
+                    saved = u.get('language') if u else 'NO USER'
+                    tg_lc = user.get('language_code')
+                    resolved = _detect_lang_from_update(user)
+                    _bot_send(uid, f"🔍 DEBUG\nuser_id: {uid}\nlanguage (BD): {saved}\nTelegram lc: {tg_lc}\nidioma resuelto: {resolved}")
+                except Exception as _e:
+                    _bot_send(uid, f"debug error: {_e}")
             elif cmd == '/help':
                 user = msg['from']
                 lang = _detect_lang_from_update(user)
