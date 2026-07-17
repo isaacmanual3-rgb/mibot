@@ -226,12 +226,17 @@ def setlang_initial(code):
         session['lang_asked_ts'] = time.time()
         session['lang_chosen'] = True
         session.permanent = True
-        uid = get_user_id()
+        # Obtener user_id de varias fuentes (dentro de Telegram a veces get_user_id da None)
+        uid = get_user_id() or session.get('user_id') or session.get('tg_user_id')
         if uid:
+            session['user_id'] = str(uid)  # recordar para próximas navegaciones
             try:
                 update_user(uid, language=code, lang_asked_at=datetime.utcnow())
+                logger.info(f"[lang] idioma '{code}' guardado para user {uid}")
             except Exception as _e:
                 logger.warning(f"No se pudo guardar idioma inicial: {_e}")
+        else:
+            logger.warning(f"[lang] no se pudo obtener user_id al elegir idioma '{code}'")
     return redirect(url_for('index'))
 
 
