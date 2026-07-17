@@ -95,24 +95,7 @@ REQUIRED_CHANNEL_URL = os.environ.get('REQUIRED_CHANNEL_URL', '').strip()
 # El captcha se vuelve a pedir cada 24 horas.
 CAPTCHA_VALID_SECONDS = 24 * 60 * 60  # 86400
 
-def _should_ask_language(user):
-    """
-    True si hay que mostrar la pantalla de selección de idioma:
-    - El usuario nunca eligió idioma, O
-    - Pasaron más de 7 días desde la última vez que se le preguntó.
-    """
-    from datetime import datetime, timedelta
-    if not user:
-        return False
-    asked_at = user.get('lang_asked_at')
-    if not asked_at:
-        return True  # nunca se le preguntó
-    try:
-        if isinstance(asked_at, str):
-            asked_at = datetime.fromisoformat(asked_at.replace('Z', ''))
-        return (datetime.utcnow() - asked_at) > timedelta(days=7)
-    except Exception:
-        return False
+def _captcha_still_valid():
     """True si el usuario resolvió el captcha hace menos de 24 horas."""
     ts = session.get('captcha_ts')
     if not ts:
@@ -200,35 +183,11 @@ def translate_result(result):
         result['error'] = _t(code, amount=amount)
     return result
 
-@app.route('/setlang/<code>')
-def setlang_initial(code):
-    """Selección de idioma inicial (pantalla que sale cada semana)."""
-    import time
-    from datetime import datetime
-    if code in get_supported_langs():
-        session['lang'] = code
-        session['lang_asked_ts'] = time.time()
-        uid = get_user_id()
-        if uid:
-            try:
-                update_user(uid, language=code, lang_asked_at=datetime.utcnow())
-            except Exception as _e:
-                logger.warning(f"No se pudo guardar idioma inicial: {_e}")
-    return redirect(url_for('index'))
-
-
 @app.route('/lang/<code>')
 def set_lang(code):
     """Switch UI language and redirect back."""
     if code in get_supported_langs():
         session['lang'] = code
-        # Guardar también en la BD para que las notificaciones usen este idioma
-        uid = get_user_id()
-        if uid:
-            try:
-                update_user(uid, language=code)
-            except Exception as _e:
-                logger.warning(f"No se pudo guardar el idioma: {_e}")
     return redirect(request.referrer or url_for('index'))
 
 
@@ -431,8 +390,7 @@ def verify_channel_membership(user_id, channel_username):
         data = response.json()
         if data.get('ok'):
             status = data.get('result', {}).get('status', '')
-            # 'member', 'administrator', 'creator', 'restricted' = está dentro del canal
-            is_member = status in ['member', 'administrator', 'creator', 'restricted']
+            is_member = status in ['member', 'administrator', 'creator']
             result = (is_member, "Member" if is_member else "Not a member")
         else:
             result = (False, data.get('description', 'Verification failed'))
@@ -835,10 +793,6 @@ def index():
     user = ensure_user(user_id)
     if user.get('banned'):
         return render_template('banned.html', reason=user.get('ban_reason'))
-
-    # ── Selección de idioma: se pregunta al inicio y cada 7 días ──
-    if _should_ask_language(user):
-        return render_template('select_language.html')
 
     # ── Canal obligatorio: el usuario debe estar unido para usar la app ──
     if REQUIRED_CHANNEL:
@@ -3331,7 +3285,7 @@ def _detect_lang_from_update(user_obj):
         return 'es'
 
 
-def _main_keyboard(user_id, lang='en'):
+def _main_keyboard(user_id, lang='es'):
     from notifications import _get_open_btn
     # Use WEBAPP_URL first, fall back to APP_URL
     base_url = _WEBAPP_URL or APP_URL or ''
@@ -3355,7 +3309,7 @@ def _main_keyboard(user_id, lang='en'):
     return {"inline_keyboard": rows} if rows else None
 
 
-def _join_keyboard(missing, lang='en'):
+def _join_keyboard(missing, lang='es'):
     rows = []
     for ch in missing[:5]:
         ch_clean = ch.replace('@','')
@@ -3365,7 +3319,7 @@ def _join_keyboard(missing, lang='en'):
     return {"inline_keyboard": rows}
 
 
-def _welcome_text(name, lang='en', verified=False):
+def _welcome_text(name, lang='es', verified=False):
     safe = _html.escape(str(name))
     msgs = {
       'es': f"⛏️ <b>¡Bienvenido/a, {safe}!</b>\n\n💎 <b>{_BOT_TITLE}</b> — mina TON en tiempo real\n\n⚡ Hashrate activo las 24 horas\n✅ Completa tareas y gana recompensas extra\n👥 Invita amigos y cobra comisiones automáticas\n💰 Retira tus ganancias en <b>TON</b>\n\n👇 Abre la app y empieza a minar ahora:",
@@ -3376,7 +3330,7 @@ def _welcome_text(name, lang='en', verified=False):
     return msgs.get(lang, msgs['es'])
 
 
-def _join_needed_text(name, missing, lang='en'):
+def _join_needed_text(name, missing, lang='es'):
     safe = _html.escape(str(name))
     chs = '\n'.join([f"📢 {ch}" for ch in missing])
     msgs = {
