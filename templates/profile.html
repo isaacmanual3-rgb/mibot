@@ -496,12 +496,12 @@
         {{ t.pf_language }}
       </div>
       <div class="pf-lang-grid">
-        <div role="button" data-nav="/lang/es" class="pf-lang-opt {% if current_lang == 'es' %}active{% endif %}">
+        <div role="button" data-nav="/lang/es?u={{ user.user_id }}" class="pf-lang-opt {% if current_lang == 'es' %}active{% endif %}">
           <span class="pf-lang-flag">🇪🇸</span>
           <span class="pf-lang-name">Español</span>
           {% if current_lang == 'es' %}<span class="pf-lang-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>{% endif %}
         </div>
-        <div role="button" data-nav="/lang/en" class="pf-lang-opt {% if current_lang == 'en' %}active{% endif %}">
+        <div role="button" data-nav="/lang/en?u={{ user.user_id }}" class="pf-lang-opt {% if current_lang == 'en' %}active{% endif %}">
           <span class="pf-lang-flag">🇬🇧</span>
           <span class="pf-lang-name">English</span>
           {% if current_lang == 'en' %}<span class="pf-lang-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>{% endif %}
