@@ -28,9 +28,30 @@ _LANG_MAP = {
 }
 
 def detect_lang(language_code):
-    if not language_code: return 'es'
+    if not language_code: return 'en'
     lc = str(language_code).lower().strip()
+    # Si ya es un idioma soportado ('es'/'en'), usarlo directo
+    if lc in ('es', 'en'):
+        return lc
     return _LANG_MAP.get(lc) or _LANG_MAP.get(lc[:2]) or 'en'
+
+def _resolve_lang(user_id, language_code=None):
+    """
+    Determina el idioma de la notificación:
+    1. El idioma que el usuario SELECCIONÓ en la app (guardado en BD).
+    2. Si no tiene, el language_code de Telegram que se pasó.
+    3. Por defecto, español.
+    """
+    try:
+        from database import get_user
+        u = get_user(user_id)
+        if u:
+            saved = u.get('language')
+            if saved and str(saved).lower() in ('es', 'en'):
+                return str(saved).lower()
+    except Exception:
+        pass
+    return detect_lang(language_code)
 
 # ──────────────────────────────────────────────────────────
 # TEXTOS
@@ -401,31 +422,31 @@ def _send(chat_id, notif_type, lang, user_id=None, **kwargs):
 # ──────────────────────────────────────────────────────────
 
 def notify_welcome(user_id, first_name, language_code=None):
-    _send(user_id,'welcome',detect_lang(language_code),user_id=user_id,name=first_name)
+    _send(user_id,'welcome',_resolve_lang(user_id, language_code),user_id=user_id,name=first_name)
 
 def notify_deposit(user_id, amount, currency, credited, deposit_id, date, language_code=None):
-    _send(user_id,'deposit_confirmed',detect_lang(language_code),user_id=user_id,
+    _send(user_id,'deposit_confirmed',_resolve_lang(user_id, language_code),user_id=user_id,
           amount=amount,currency=currency,credited=credited,deposit_id=deposit_id,date=date)
 
 def notify_withdrawal_approved(user_id, amount, currency, wallet, withdrawal_id, date, tx_hash='', language_code=None):
-    _send(user_id,'withdrawal_approved',detect_lang(language_code),user_id=user_id,
+    _send(user_id,'withdrawal_approved',_resolve_lang(user_id, language_code),user_id=user_id,
           amount=amount,currency=currency,wallet=wallet,withdrawal_id=withdrawal_id,date=date,tx_hash=tx_hash or '—')
 
 def notify_withdrawal_rejected(user_id, amount, currency, withdrawal_id, reason='N/A', language_code=None):
-    _send(user_id,'withdrawal_rejected',detect_lang(language_code),user_id=user_id,
+    _send(user_id,'withdrawal_rejected',_resolve_lang(user_id, language_code),user_id=user_id,
           amount=amount,currency=currency,withdrawal_id=withdrawal_id,reason=reason)
 
 def notify_plan_activated(user_id, plan_name, ton_per_hour, expires, language_code=None):
-    _send(user_id,'plan_activated',detect_lang(language_code),user_id=user_id,
+    _send(user_id,'plan_activated',_resolve_lang(user_id, language_code),user_id=user_id,
           plan_name=plan_name,ton_per_hour=ton_per_hour,expires=expires)
 
 def notify_referral_validated(referrer_id, referred_name, reward, total_refs=0, total_earnings=0, language_code=None):
-    _send(referrer_id,'referral_validated',detect_lang(language_code),user_id=referrer_id,
+    _send(referrer_id,'referral_validated',_resolve_lang(referrer_id, language_code),user_id=referrer_id,
           referred_name=referred_name,reward=reward,total_refs=total_refs,total_earnings=total_earnings)
 
 def notify_referral_fraud_skip(referrer_id, referred_name, language_code=None):
     """Notify referrer that the referral joined but no reward was given due to multi-account detection."""
-    _send(referrer_id, 'referral_fraud_skip', detect_lang(language_code), user_id=referrer_id,
+    _send(referrer_id, 'referral_fraud_skip', _resolve_lang(referrer_id, language_code), user_id=referrer_id,
           referred_name=referred_name)
 
 def notify_generic(user_id, first_name, language_code=None):
