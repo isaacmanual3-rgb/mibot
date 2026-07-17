@@ -85,12 +85,12 @@
     <div class="title">SELECT LANGUAGE</div>
     <div class="subtitle">Choose your language to continue</div>
 
-    <a href="/setlang/es" class="lang-btn">
+    <a href="/setlang/es{% if uid %}?u={{ uid }}{% endif %}" class="lang-btn">
       <span class="lang-flag">🇪🇸</span>
       <span class="lang-label">Español</span>
       <span class="lang-arrow">→</span>
     </a>
-    <a href="/setlang/en" class="lang-btn">
+    <a href="/setlang/en{% if uid %}?u={{ uid }}{% endif %}" class="lang-btn">
       <span class="lang-flag">🇬🇧</span>
       <span class="lang-label">English</span>
       <span class="lang-arrow">→</span>
