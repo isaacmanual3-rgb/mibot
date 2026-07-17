@@ -3346,12 +3346,26 @@ def _check_all_channels(user_id):
 
 
 def _detect_lang_from_update(user_obj):
+    """Idioma para los mensajes del bot: primero el guardado por el usuario,
+    luego el language_code de Telegram, luego inglés por defecto."""
+    uid = user_obj.get('id')
+    # 1. Idioma guardado por el usuario en la app
+    if uid:
+        try:
+            u = get_user(uid)
+            if u:
+                saved = u.get('language')
+                if saved and str(saved).lower() in ('es', 'en'):
+                    return str(saved).lower()
+        except Exception:
+            pass
+    # 2. language_code de Telegram
     lc = user_obj.get('language_code')
     try:
         from notifications import detect_lang
         return detect_lang(lc)
     except Exception:
-        return 'es'
+        return 'en'
 
 
 def _main_keyboard(user_id, lang='en'):
