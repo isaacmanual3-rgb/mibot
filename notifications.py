@@ -37,10 +37,10 @@ def detect_lang(language_code):
 
 def _resolve_lang(user_id, language_code=None):
     """
-    Determina el idioma de la notificación:
+    Idioma de la notificación:
     1. El idioma que el usuario SELECCIONÓ en la app (guardado en BD).
-    2. Si no tiene, el language_code de Telegram que se pasó.
-    3. Por defecto, español.
+    2. Si no tiene ninguno, INGLÉS por defecto.
+    (Telegram NUNCA decide el idioma.)
     """
     try:
         from database import get_user
@@ -51,7 +51,7 @@ def _resolve_lang(user_id, language_code=None):
                 return str(saved).lower()
     except Exception:
         pass
-    return detect_lang(language_code)
+    return 'en'
 
 # ──────────────────────────────────────────────────────────
 # TEXTOS

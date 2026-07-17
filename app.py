@@ -848,6 +848,17 @@ def index():
     """Main dashboard - Home with Daily Check-In"""
     user_id = get_user_id()
 
+    # Sincronizar idioma elegido (sesión) → BD, ahora que el user_id es confiable.
+    # Así el idioma queda guardado aunque /lang o /setlang no pudieran hacerlo.
+    if user_id and session.get('lang') and session.get('lang_chosen'):
+        try:
+            u = get_user(user_id)
+            if u and (u.get('language') or '').lower() != session['lang']:
+                update_user(user_id, language=session['lang'])
+                logger.info(f"[lang-sync] guardado '{session['lang']}' para {user_id}")
+        except Exception as _e:
+            logger.warning(f"[lang-sync] error: {_e}")
+
     # Save ref param to session if present
     ref = request.args.get('ref') or request.args.get('start') or request.args.get('referral')
     if ref:
@@ -3352,10 +3363,9 @@ def _check_all_channels(user_id):
 
 
 def _detect_lang_from_update(user_obj):
-    """Idioma para los mensajes del bot: primero el guardado por el usuario,
-    luego el language_code de Telegram, luego inglés por defecto."""
+    """Idioma de los mensajes del bot: SOLO el guardado por el usuario en la app.
+    Si no tiene ninguno, inglés. Telegram NUNCA decide el idioma."""
     uid = user_obj.get('id')
-    # 1. Idioma guardado por el usuario en la app
     if uid:
         try:
             u = get_user(uid)
@@ -3365,13 +3375,7 @@ def _detect_lang_from_update(user_obj):
                     return str(saved).lower()
         except Exception:
             pass
-    # 2. language_code de Telegram
-    lc = user_obj.get('language_code')
-    try:
-        from notifications import detect_lang
-        return detect_lang(lc)
-    except Exception:
-        return 'en'
+    return 'en'
 
 
 def _main_keyboard(user_id, lang='en'):
@@ -3646,7 +3650,15 @@ def _process_update(update):
                     saved = u.get('language') if u else 'NO USER'
                     tg_lc = user.get('language_code')
                     resolved = _detect_lang_from_update(user)
-                    _bot_send(uid, f"🔍 DEBUG\nuser_id: {uid}\nlanguage (BD): {saved}\nTelegram lc: {tg_lc}\nidioma resuelto: {resolved}")
+                    # Probar guardar 'en' directamente y releer
+                    test_result = "?"
+                    try:
+                        update_user(uid, language='en')
+                        u2 = get_user(uid)
+                        test_result = u2.get('language') if u2 else 'NO USER'
+                    except Exception as _te:
+                        test_result = f"ERROR: {_te}"
+                    _bot_send(uid, f"🔍 DEBUG\nuser_id: {uid}\nlanguage antes: {saved}\nTelegram lc: {tg_lc}\nresuelto: {resolved}\n\n➡️ Probé guardar 'en':\nlanguage ahora: {test_result}")
                 except Exception as _e:
                     _bot_send(uid, f"debug error: {_e}")
             elif cmd == '/help':
