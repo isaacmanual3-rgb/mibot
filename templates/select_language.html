@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box;
+        -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    body {
+      background: #05050a;
+      color: #e0e0f0;
+      font-family: 'VT323', monospace;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      background-image:
+        linear-gradient(rgba(0,152,234,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,152,234,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .card {
+      background: #0a0a14;
+      border: 2px solid #1a2a4a;
+      box-shadow: 4px 4px 0 0 #020208, 0 0 40px rgba(0,152,234,0.1);
+      max-width: 380px; width: 100%;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .card::before {
+      content: ''; position: absolute; top: -2px; left: -2px; right: -2px;
+      height: 3px; background: #0098EA;
+    }
+    .icon {
+      width: 70px; height: 70px; margin: 0 auto 20px;
+      background: rgba(0,152,234,0.08);
+      border: 2px solid rgba(0,152,234,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon svg { width: 38px; height: 38px; }
+    .title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.8rem; color: #0098EA;
+      letter-spacing: 0.05em; margin-bottom: 10px;
+      text-shadow: 2px 2px 0 rgba(0,152,234,0.2);
+      line-height: 1.5;
+    }
+    .subtitle {
+      font-size: 1.05rem; color: #8a8ab0;
+      letter-spacing: 0.03em; margin-bottom: 28px; line-height: 1.4;
+    }
+    .lang-btn {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 16px 18px;
+      background: #0f1420;
+      border: 2px solid #1e2a3a;
+      box-shadow: 3px 3px 0 0 #020208;
+      cursor: pointer; text-decoration: none;
+      margin-bottom: 14px;
+      transition: transform 0.1s;
+    }
+    .lang-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 0 #020208; }
+    .lang-btn:hover { border-color: #0098EA; }
+    .lang-flag { font-size: 1.8rem; line-height: 1; }
+    .lang-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.62rem; color: #e0e0f0;
+      letter-spacing: 0.03em;
+    }
+    .lang-arrow { margin-left: auto; color: #0098EA; font-size: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+    <div class="title">SELECT LANGUAGE</div>
+    <div class="subtitle">Choose your language to continue</div>
+
+    <a href="/setlang/es" class="lang-btn">
+      <span class="lang-flag">🇪🇸</span>
+      <span class="lang-label">Español</span>
+      <span class="lang-arrow">→</span>
+    </a>
+    <a href="/setlang/en" class="lang-btn">
+      <span class="lang-flag">🇬🇧</span>
+      <span class="lang-label">English</span>
+      <span class="lang-arrow">→</span>
+    </a>
+  </div>
+</body>
+</html>
