@@ -450,4 +450,4 @@ def notify_referral_fraud_skip(referrer_id, referred_name, language_code=None):
           referred_name=referred_name)
 
 def notify_generic(user_id, first_name, language_code=None):
-    _send(user_id,'generic_reply',detect_lang(language_code),user_id=user_id,name=first_name)
+    _send(user_id,'generic_reply',_resolve_lang(user_id, language_code),user_id=user_id,name=first_name)
