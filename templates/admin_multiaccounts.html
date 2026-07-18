@@ -78,11 +78,17 @@
         </p>
         <div style="display:flex; flex-wrap:wrap; gap:8px;">
             {% for s in ipd.shared_with %}
-            <a href="/admin/multiaccounts?q={{ s.user_id }}"
-               class="badge {% if s.banned %}badge-danger{% elif s.blocked %}badge-warning{% else %}badge-secondary{% endif %}"
-               style="text-decoration:none;">
-                {{ s.name }} #{{ s.user_id }}
-            </a>
+            <div style="display:inline-flex;align-items:center;gap:6px;margin:4px 6px 4px 0;flex-wrap:wrap">
+                <a href="/admin/multiaccounts?q={{ s.user_id }}"
+                   class="badge {% if s.banned %}badge-danger{% elif s.blocked %}badge-warning{% else %}badge-secondary{% endif %}"
+                   style="text-decoration:none;">
+                    {{ s.name }} #{{ s.user_id }}
+                </a>
+                <span style="font-size:0.62rem;color:#40c4ff;white-space:nowrap">🌐 Misma IP</span>
+                {% if s.same_device %}
+                <span style="font-size:0.62rem;color:#ff4466;white-space:nowrap">📱 Mismo Dispositivo</span>
+                {% endif %}
+            </div>
             {% endfor %}
         </div>
         {% else %}
