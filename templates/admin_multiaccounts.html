@@ -126,19 +126,35 @@
 {# ─────────── GRUPOS DE IP COMPARTIDA ─────────── #}
 <div class="card pixel-border">
     <h2 class="section-title">📡 Grupos de IP compartida ({{ groups|length }})</h2>
+
+    <div style="background:#0a1a0e;border:2px solid #1e5a2e;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+            <div style="color:#00e676;font-size:0.8rem;font-weight:bold;margin-bottom:4px">🎯 BANEO AUTO POR DISPOSITIVO + IP <span style="color:#888;font-weight:normal">(recomendado)</span></div>
+            <div style="color:#888;font-size:0.72rem;max-width:520px">
+                El más preciso: banea solo si detecta el MISMO dispositivo Y la MISMA IP en otra cuenta.
+                Casi sin falsos positivos (dos personas con el mismo wifi tienen dispositivos distintos). Admins protegidos.
+            </div>
+        </div>
+        <button class="btn {% if auto_ban_device %}btn-danger{% else %}btn-success{% endif %}"
+                style="white-space:nowrap" onclick="toggleAutoBan({{ 'false' if auto_ban_device else 'true' }}, 'device')">
+            {% if auto_ban_device %}🔴 ACTIVO (desactivar){% else %}🟢 ACTIVAR{% endif %}
+        </button>
+    </div>
+
     <div style="background:#0a0e18;border:2px solid #3a2e1e;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
-            <div style="color:#ffb300;font-size:0.8rem;font-weight:bold;margin-bottom:4px">⚡ BANEO AUTOMÁTICO POR IP</div>
+            <div style="color:#ffb300;font-size:0.8rem;font-weight:bold;margin-bottom:4px">⚡ BANEO AUTO SOLO POR IP <span style="color:#888;font-weight:normal">(agresivo)</span></div>
             <div style="color:#888;font-size:0.72rem;max-width:520px">
-                Si se activa, cuando una cuenta comparta IP con {{ auto_ban_threshold }}+ cuentas será baneada automáticamente al entrar.
-                Las cuentas de admin están protegidas. IPs con más de {{ auto_ban_max }} cuentas se ignoran (probable wifi público).
+                Banea si una cuenta comparte IP con {{ auto_ban_threshold }}+ cuentas. ⚠ Puede banear usuarios legítimos
+                (mismo wifi/operador). IPs con +{{ auto_ban_max }} cuentas se ignoran.
             </div>
         </div>
         <button class="btn {% if auto_ban_enabled %}btn-danger{% else %}btn-secondary{% endif %}"
-                style="white-space:nowrap" onclick="toggleAutoBan({{ 'false' if auto_ban_enabled else 'true' }})">
-            {% if auto_ban_enabled %}🔴 ACTIVO (desactivar){% else %}⚪ DESACTIVADO (activar){% endif %}
+                style="white-space:nowrap" onclick="toggleAutoBan({{ 'false' if auto_ban_enabled else 'true' }}, 'ip')">
+            {% if auto_ban_enabled %}🔴 ACTIVO (desactivar){% else %}⚪ ACTIVAR{% endif %}
         </button>
     </div>
+
     <p class="text-muted" style="margin-bottom:12px;">
         IPs usadas por 2+ cuentas, ordenadas por cantidad. Recuerda: un wifi o IP de operador
         móvil puede ser legítimamente compartido; investiga antes de banear.
@@ -185,16 +201,23 @@
 </div>
 
 <script>
-async function toggleAutoBan(enable) {
-    const msg = enable
-        ? '¿Activar el baneo AUTOMÁTICO por IP compartida?\n\n⚠ Cuentas que compartan IP serán baneadas al entrar. Puede afectar usuarios legítimos con wifi/red compartida.'
-        : '¿Desactivar el baneo automático por IP?';
+async function toggleAutoBan(enable, type) {
+    let msg;
+    if (type === 'device') {
+        msg = enable
+            ? '¿Activar el baneo AUTOMÁTICO por dispositivo + IP?\n\nBanea solo cuando el mismo dispositivo Y la misma IP aparecen en otra cuenta. Es el más seguro.'
+            : '¿Desactivar el baneo automático por dispositivo + IP?';
+    } else {
+        msg = enable
+            ? '¿Activar el baneo AUTOMÁTICO solo por IP?\n\n⚠ CUIDADO: banea cuentas que compartan IP. Puede afectar usuarios legítimos con wifi/red compartida.'
+            : '¿Desactivar el baneo automático por IP?';
+    }
     if (!confirm(msg)) return;
     try {
         const res = await fetch('/admin/api/multiaccount/toggle-autoban', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled: enable })
+            body: JSON.stringify({ enabled: enable, type: type })
         });
         const data = await res.json();
         alert(data.message || 'Listo');
