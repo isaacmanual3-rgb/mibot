@@ -1,339 +1,119 @@
 /**
- * ARCADE PXC Device Fingerprint
- * Client-side device identification for fraud detection
+ * Aero Flex - Device UUID (identificación única por navegador)
+ *
+ * En vez de un fingerprint de canvas/webgl (que COLISIONA entre teléfonos
+ * del mismo modelo), usamos un UUID aleatorio único por navegador, guardado
+ * en localStorage Y cookie con auto-reparación. Así dos personas con el mismo
+ * modelo de celular tienen UUIDs distintos y no se marcan como multicuenta.
  */
-
-(function() {
+(function () {
     'use strict';
 
-    const DeviceFingerprint = {
-        // Generate canvas fingerprint
-        getCanvasFingerprint: function() {
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 200;
-                canvas.height = 50;
-                
-                ctx.textBaseline = 'top';
-                ctx.font = '14px Arial';
-                ctx.fillStyle = '#f60';
-                ctx.fillRect(0, 0, 125, 62);
-                ctx.fillStyle = '#069';
-                ctx.fillText('PXC-Device-FP', 2, 15);
-                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-                ctx.fillText('PXC-Device-FP', 4, 17);
-                
-                // Add some unique shapes
-                ctx.beginPath();
-                ctx.arc(50, 25, 20, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                return this.hashCode(canvas.toDataURL());
-            } catch (e) {
-                return 'canvas_not_available';
-            }
-        },
+    var STORAGE_KEY = 'device_uuid';
+    var COOKIE_KEY = 'device_uuid';
 
-        // Get WebGL fingerprint
-        getWebGLFingerprint: function() {
-            try {
-                const canvas = document.createElement('canvas');
-                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                
-                if (!gl) return 'webgl_not_available';
-                
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                if (debugInfo) {
-                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-                    return this.hashCode(vendor + '~' + renderer);
-                }
-                
-                return 'no_debug_info';
-            } catch (e) {
-                return 'webgl_error';
-            }
-        },
+    // Genera un UUID v4 aleatorio
+    function genUUID() {
+        if (window.crypto && crypto.randomUUID) {
+            try { return 'df_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24); } catch (e) {}
+        }
+        // Fallback
+        var s = '';
+        var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < 24; i++) s += chars[Math.floor(Math.random() * chars.length)];
+        return 'df_' + s;
+    }
 
-        // Get audio fingerprint
-        getAudioFingerprint: function() {
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) return 'audio_not_available';
-                
-                const context = new AudioContext();
-                const oscillator = context.createOscillator();
-                const analyser = context.createAnalyser();
-                const gainNode = context.createGain();
-                const scriptProcessor = context.createScriptProcessor(4096, 1, 1);
-                
-                gainNode.gain.value = 0;
-                oscillator.type = 'triangle';
-                oscillator.connect(analyser);
-                analyser.connect(scriptProcessor);
-                scriptProcessor.connect(gainNode);
-                gainNode.connect(context.destination);
-                
-                oscillator.start(0);
-                
-                const bins = new Float32Array(analyser.frequencyBinCount);
-                analyser.getFloatFrequencyData(bins);
-                
-                oscillator.stop();
-                context.close();
-                
-                let sum = 0;
-                for (let i = 0; i < bins.length; i++) {
-                    sum += Math.abs(bins[i]);
-                }
-                
-                return 'audio_' + Math.abs(sum).toString(36).substring(0, 8);
-            } catch (e) {
-                return 'audio_error';
-            }
-        },
+    // Leer/escribir cookie
+    function setCookie(name, value, days) {
+        var d = new Date();
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+    }
+    function getCookie(name) {
+        var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : null;
+    }
 
-        // Get screen info
-        getScreenInfo: function() {
-            return {
-                width: screen.width,
-                height: screen.height,
-                colorDepth: screen.colorDepth,
-                pixelRatio: window.devicePixelRatio || 1,
-                availWidth: screen.availWidth,
-                availHeight: screen.availHeight
-            };
-        },
+    // Obtener el UUID del dispositivo (con auto-reparación entre localStorage y cookie)
+    function getDeviceUUID() {
+        var fromLS = null, fromCookie = getCookie(COOKIE_KEY);
+        try { fromLS = localStorage.getItem(STORAGE_KEY); } catch (e) {}
 
-        // Get browser info
-        getBrowserInfo: function() {
-            return {
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-                deviceMemory: navigator.deviceMemory || 'unknown',
-                maxTouchPoints: navigator.maxTouchPoints || 0,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                plugins: this.getPluginsHash()
-            };
-        },
+        var uuid = fromLS || fromCookie;
+        if (!uuid) {
+            uuid = genUUID();
+        }
+        // Auto-reparación: asegurar que ambos almacenes tengan el mismo valor
+        try { if (fromLS !== uuid) localStorage.setItem(STORAGE_KEY, uuid); } catch (e) {}
+        if (fromCookie !== uuid) setCookie(COOKIE_KEY, uuid, 3650); // 10 años
 
-        // Get plugins hash
-        getPluginsHash: function() {
-            try {
-                const plugins = [];
-                for (let i = 0; i < navigator.plugins.length; i++) {
-                    plugins.push(navigator.plugins[i].name);
-                }
-                return this.hashCode(plugins.sort().join(','));
-            } catch (e) {
-                return 'no_plugins';
-            }
-        },
+        return uuid;
+    }
 
-        // Get storage fingerprint
-        getStorageFingerprint: function() {
-            const hasLocalStorage = !!window.localStorage;
-            const hasSessionStorage = !!window.sessionStorage;
-            const hasIndexedDB = !!window.indexedDB;
-            return `ls:${hasLocalStorage}|ss:${hasSessionStorage}|idb:${hasIndexedDB}`;
-        },
-
-        // Simple hash function
-        hashCode: function(str) {
-            let hash = 0;
-            if (!str || str.length === 0) return hash.toString(36);
-            
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            
-            return Math.abs(hash).toString(36);
-        },
-
-        // Generate full fingerprint
-        generate: function() {
-            const canvas = this.getCanvasFingerprint();
-            const webgl = this.getWebGLFingerprint();
-            const audio = this.getAudioFingerprint();
-            const screen = this.getScreenInfo();
-            const browser = this.getBrowserInfo();
-            const storage = this.getStorageFingerprint();
-            
-            const components = [
-                canvas,
-                webgl,
-                audio,
-                screen.width + 'x' + screen.height,
-                screen.colorDepth,
-                screen.pixelRatio,
-                browser.platform,
-                browser.timezone,
-                browser.hardwareConcurrency,
-                browser.maxTouchPoints,
-                browser.plugins,
-                storage
-            ];
-            
-            const fullHash = this.hashCode(components.join('|'));
-            const shortHash = this.hashCode(canvas + webgl + screen.width + browser.platform);
-            
-            return {
-                hash: 'df_' + shortHash + '_' + fullHash,
-                device_info: {
-                    canvas: canvas,
-                    webgl: webgl,
-                    audio: audio,
-                    screen: screen,
-                    browser: browser,
-                    storage: storage
-                }
-            };
-        },
-
-        // Send fingerprint to server
-        // UUID aleatorio persistente — identidad FUERTE del navegador/instalación.
-        // NO se calcula del hardware, así que dos dispositivos del mismo modelo NO
-        // colisionan (a diferencia de canvas/webgl). Se guarda en localStorage Y
-        // cookie; si borran uno, se auto-repara desde el otro.
-        getDeviceUUID: function() {
-            var KEY = '_dvid';
-            var uuid = null;
-            try { uuid = localStorage.getItem(KEY); } catch (e) {}
-            if (!uuid) {
-                try {
-                    var m = document.cookie.match(/(?:^|; )_se_dvid=([^;]+)/);
-                    if (m) uuid = decodeURIComponent(m[1]);
-                } catch (e) {}
-            }
-            if (!uuid) {
-                try {
-                    uuid = (window.crypto && crypto.randomUUID)
-                        ? crypto.randomUUID()
-                        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                            var r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
-                            return v.toString(16);
-                        });
-                } catch (e) {
-                    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                        var r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
-                        return v.toString(16);
-                    });
-                }
-            }
-            try { localStorage.setItem(KEY, uuid); } catch (e) {}
-            try { document.cookie = '_se_dvid=' + encodeURIComponent(uuid) + ';path=/;max-age=31536000'; } catch (e) {}
-            return uuid;
-        },
-
-        sendToServer: function(userId) {
-            if (!userId) return;
-            
-            const fingerprint = this.generate();
-            const deviceUuid = this.getDeviceUUID();
-            
-            // Store in cookie for server-side access
-            document.cookie = '_se_dfp_hash=' + fingerprint.hash + ';path=/;max-age=31536000';
-            
-            // Send to server
-            var _initData = '';
-            try { if (window.Telegram && Telegram.WebApp) _initData = Telegram.WebApp.initData || ''; } catch(e) {}
+    // Enviar el UUID al servidor
+    function sendToServer(userId) {
+        var uuid = getDeviceUUID();
+        try {
             fetch('/api/device-check', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Device-Hash': fingerprint.hash,
-                    'X-Device-UUID': deviceUuid
-                },
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     user_id: userId,
-                    device_hash: fingerprint.hash,
-                    device_uuid: deviceUuid,
-                    device_info: fingerprint.device_info,
-                    init_data: _initData
+                    device_hash: uuid
                 })
-            }).then(response => {
-                if (!response.ok) {
-                    console.log('[PXC-FP] Server check completed');
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                // Si el servidor baneó por dispositivo+IP, recargar para mostrar la pantalla de baneo
+                if (data && data.banned) {
+                    window.location.reload();
                 }
-            }).catch(error => {
-                // Silent fail - don't expose fingerprinting to user
-            });
-        },
+            })
+            .catch(function () { /* silencioso */ });
+        } catch (e) { /* silencioso */ }
+    }
 
-        // Get stored fingerprint
-        getStoredFingerprint: function() {
-            const stored = localStorage.getItem('_se_device_fp');
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
-                    // Check if fingerprint is less than 24 hours old
-                    if (data.timestamp && (Date.now() - data.timestamp) < 86400000) {
-                        return data.hash;
-                    }
-                } catch (e) {}
-            }
-            
-            const fingerprint = this.generate();
-            localStorage.setItem('_se_device_fp', JSON.stringify({
-                hash: fingerprint.hash,
-                timestamp: Date.now()
-            }));
-            
-            return fingerprint.hash;
-        },
-
-        // Initialize
-        init: function(userId) {
-            if (userId) {
-                // Enviar de inmediato para que el device_hash quede grabado
-                // antes de que el usuario complete su primera tarea (anti-fraude referidos)
-                this.sendToServer(userId);
-            }
-        }
-    };
-
-    // Helper: obtener el user_id de Telegram o de la URL (?user_id=...)
-    function _resolveUserId() {
+    // Obtener el user_id de Telegram o de la URL (?user_id=... o ?u=...)
+    function resolveUserId() {
         try {
-            var tgId = window.Telegram && Telegram.WebApp &&
-                       Telegram.WebApp.initDataUnsafe &&
-                       Telegram.WebApp.initDataUnsafe.user &&
-                       Telegram.WebApp.initDataUnsafe.user.id;
-            if (tgId) return String(tgId);
+            if (window.Telegram && window.Telegram.WebApp) {
+                var tg = window.Telegram.WebApp;
+                var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+                if (u && u.id) return String(u.id);
+            }
         } catch (e) {}
         try {
             var p = new URLSearchParams(window.location.search);
-            var uid = p.get('user_id');
-            if (uid) return uid;
+            return p.get('user_id') || p.get('u') || null;
         } catch (e) {}
         return null;
     }
 
-    // Dispara el envío del fingerprint en cuanto haya un user_id disponible.
-    // Reintenta unas cuantas veces porque el SDK de Telegram puede tardar unos
-    // ms en tener initDataUnsafe listo tras cargar la página.
-    function _autoStart() {
-        window.DeviceFingerprint = DeviceFingerprint;
-        var tries = 0;
-        (function attempt() {
-            var uid = _resolveUserId();
-            if (uid) {
-                DeviceFingerprint.init(uid);
-                return;
-            }
-            if (tries++ < 20) setTimeout(attempt, 500); // reintenta hasta ~10s
-        })();
+    // Disparar en cuanto haya un user_id disponible
+    function init() {
+        var uid = resolveUserId();
+        if (uid) {
+            sendToServer(uid);
+        } else {
+            // Reintentar un par de veces por si Telegram tarda en cargar
+            var tries = 0;
+            var iv = setInterval(function () {
+                tries++;
+                var id = resolveUserId();
+                if (id) { clearInterval(iv); sendToServer(id); }
+                else if (tries >= 10) { clearInterval(iv); }
+            }, 500);
+        }
     }
 
-    // Auto-initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _autoStart);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        _autoStart();
+        init();
     }
+
+    // Exponer para uso manual si se necesita
+    window.DeviceUUID = { get: getDeviceUUID, send: sendToServer };
 })();
