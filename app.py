@@ -896,6 +896,17 @@ def index():
                 channel_url=channel_url)
 
     record_user_ip(user_id, get_client_ip())
+
+    # ── Baneo automático por IP compartida (si está activado) ──
+    if get_config('auto_ban_shared_ip', '0') == '1':
+        try:
+            _autoban_check_shared_ip(user_id, get_client_ip())
+            # Re-leer por si se acaba de banear
+            user = get_user(user_id) or user
+            if user.get('banned'):
+                return render_template('banned.html', reason=user.get('ban_reason'))
+        except Exception as _abe:
+            logger.warning(f"[autoban] error: {_abe}")
     
     # Get check-in status
     checkin = get_checkin_status(user_id)
@@ -2948,11 +2959,18 @@ def admin_multiaccounts():
         logger.warning(f"duplicate wallets error: {e}")
         dup_wallets = []
 
+    auto_ban_enabled = get_config('auto_ban_shared_ip', '0') == '1'
+    auto_ban_threshold = int(get_config('auto_ban_ip_threshold', '3') or 3)
+    auto_ban_max = int(get_config('auto_ban_ip_max', '8') or 8)
+
     return render_template('admin_multiaccounts.html',
                            groups=groups,
                            dup_wallets=dup_wallets,
                            search_result=search_result,
                            query=query,
+                           auto_ban_enabled=auto_ban_enabled,
+                           auto_ban_threshold=auto_ban_threshold,
+                           auto_ban_max=auto_ban_max,
                            active_page='multiaccounts')
 
 
@@ -2967,6 +2985,74 @@ def admin_api_multiaccount_search():
     except Exception as e:
         logger.warning(f"multiaccount api search error: {e}")
         return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/admin/api/multiaccount/toggle-autoban', methods=['POST'])
+@require_admin
+def admin_api_toggle_autoban():
+    """Activa/desactiva el baneo automático por IP compartida."""
+    try:
+        data = request.get_json(silent=True) or {}
+        enabled = bool(data.get('enabled'))
+        from database import set_config
+        set_config('auto_ban_shared_ip', '1' if enabled else '0')
+        estado = 'activado' if enabled else 'desactivado'
+        logger.info(f"[autoban] baneo automático por IP {estado}")
+        return jsonify({'success': True, 'message': f'Baneo automático {estado}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {e}'})
+
+
+@app.route('/admin/api/multiaccount/ban-ip-group', methods=['POST'])
+@require_admin
+def admin_api_ban_ip_group():
+    """Banea TODAS las cuentas que comparten una IP (excepto admins)."""
+    from database import execute_query
+    try:
+        data = request.get_json(silent=True) or {}
+        ip = (data.get('ip') or '').strip()
+        if not ip:
+            return jsonify({'success': False, 'message': 'Falta la IP'})
+
+        # Obtener todos los user_id que usaron esa IP
+        rows = execute_query(
+            "SELECT DISTINCT user_id FROM user_ips WHERE ip_address = %s",
+            (ip,), fetch_all=True
+        ) or []
+        user_ids = [str(r['user_id']) for r in rows if r.get('user_id')]
+
+        if not user_ids:
+            return jsonify({'success': False, 'message': 'No se encontraron cuentas para esa IP'})
+
+        # IDs de admin que NUNCA se banean
+        admin_ids = set(str(a).strip() for a in ADMIN_IDS)
+
+        banned = 0
+        skipped_admin = 0
+        for uid in user_ids:
+            if uid in admin_ids:
+                skipped_admin += 1
+                continue
+            try:
+                ban_user(uid, f'Multicuenta - IP compartida {ip}')
+                banned += 1
+            except Exception as _be:
+                logger.warning(f"[ban-ip-group] error baneando {uid}: {_be}")
+
+        # También bloquear la IP para futuros accesos
+        try:
+            ban_ip(ip, 'Multicuenta - baneo masivo')
+        except Exception:
+            pass
+
+        msg = f'✅ {banned} cuentas baneadas de la IP {ip}'
+        if skipped_admin:
+            msg += f' ({skipped_admin} admin protegidas)'
+        return jsonify({'success': True, 'banned': banned, 'message': msg})
+    except Exception as e:
+        import traceback
+        logger.error(f"[ban-ip-group] {e}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
 
 
 # ============================================
@@ -3362,7 +3448,41 @@ def _check_all_channels(user_id):
     return len(missing) == 0, missing
 
 
-def _detect_lang_from_update(user_obj):
+def _autoban_check_shared_ip(user_id, ip):
+    """
+    Banea automáticamente si el usuario comparte IP con suficientes cuentas.
+    Protecciones:
+    - Admins nunca se banean.
+    - IPs con demasiadas cuentas se ignoran (probable wifi público / operador móvil).
+    - Solo cuenta accesos recientes (últimos 3 días) para evitar IPs recicladas.
+    """
+    from database import execute_query
+    if not ip:
+        return
+    # Admins protegidos
+    if str(user_id) in set(str(a).strip() for a in ADMIN_IDS):
+        return
+
+    threshold = int(get_config('auto_ban_ip_threshold', '3') or 3)
+    max_accounts = int(get_config('auto_ban_ip_max', '8') or 8)
+
+    # Contar cuentas distintas que usaron esta IP recientemente
+    rows = execute_query(
+        """SELECT DISTINCT user_id FROM user_ips
+           WHERE ip_address = %s
+             AND last_seen >= DATE_SUB(NOW(), INTERVAL 3 DAY)""",
+        (ip,), fetch_all=True
+    ) or []
+    uids = [str(r['user_id']) for r in rows if r.get('user_id')]
+    count = len(uids)
+
+    # Si comparten pocas cuentas, no banear. Si son demasiadas, tampoco (wifi público).
+    if count < threshold or count > max_accounts:
+        return
+
+    # Banear al usuario actual (no a todos, solo al que entra)
+    ban_user(user_id, f'Auto-ban: IP compartida con {count} cuentas ({ip})')
+    logger.info(f"[autoban] baneado {user_id} por IP {ip} ({count} cuentas)")
     """Idioma de los mensajes del bot: SOLO el guardado por el usuario en la app.
     Si no tiene ninguno, inglés. Telegram NUNCA decide el idioma."""
     uid = user_obj.get('id')
