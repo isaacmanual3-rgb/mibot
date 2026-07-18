@@ -2525,6 +2525,11 @@ def _run_migrations():
     safe_run("add_users_device_hash_v2",
         "ALTER TABLE users ADD COLUMN device_hash VARCHAR(80) DEFAULT NULL"
     )
+    # Limpiar los device_hash viejos (fingerprint canvas/webgl que COLISIONA por
+    # modelo de teléfono). Se regeneran con el nuevo UUID único por navegador.
+    safe_run("clear_old_device_hashes_v1",
+        "UPDATE users SET device_hash = NULL WHERE device_hash IS NOT NULL"
+    )
 
     # Registro global de direcciones de retiro para impedir duplicados
     # (una dirección de retiro = una cuenta).
@@ -2770,15 +2775,18 @@ def search_multiaccounts(query, limit=100):
     """, (str(target_uid),), fetch_all=True) or []
 
     user_info = execute_query(
-        "SELECT user_id, username, first_name, banned, withdrawal_blocked, ton_wallet FROM users WHERE user_id = %s",
+        "SELECT user_id, username, first_name, banned, withdrawal_blocked, ton_wallet, device_hash FROM users WHERE user_id = %s",
         (str(target_uid),), fetch_one=True
     ) or {}
+
+    # Device hash del usuario objetivo (para comparar por dispositivo)
+    target_device = user_info.get('device_hash')
 
     ip_details = []
     for ipr in ip_rows:
         ip = ipr['ip_address']
         shared = execute_query("""
-            SELECT ui.user_id, u.username, u.first_name, u.banned, u.withdrawal_blocked
+            SELECT ui.user_id, u.username, u.first_name, u.banned, u.withdrawal_blocked, u.device_hash
             FROM user_ips ui
             LEFT JOIN users u ON u.user_id = ui.user_id
             WHERE ui.ip_address = %s AND ui.user_id != %s
@@ -2792,6 +2800,8 @@ def search_multiaccounts(query, limit=100):
                 'name': s.get('username') or s.get('first_name') or f"#{s['user_id']}",
                 'banned': bool(s.get('banned', 0)),
                 'blocked': bool(s.get('withdrawal_blocked', 0)),
+                # 📱 Mismo dispositivo: comparten el MISMO device_hash (no vacío)
+                'same_device': bool(target_device and s.get('device_hash') and s.get('device_hash') == target_device),
             } for s in shared],
         })
 
