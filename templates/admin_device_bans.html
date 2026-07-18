@@ -43,7 +43,7 @@
                     {% if b.username %}<div style="color:#40c4ff;font-size:0.75rem">@{{ b.username }}</div>{% endif %}
                 </td>
                 <td style="font-family:monospace;font-size:0.7rem;color:#888">
-                    {{ (b.device_hash or '—')[:16] }}{% if b.device_hash and b.device_hash|length > 16 %}…{% endif %}
+                    {{ (b.device_hash or '—')|string|truncate(18, true, '…') }}
                 </td>
                 <td style="font-size:0.75rem;color:#ff8899">{{ b.ban_reason }}</td>
                 <td>
