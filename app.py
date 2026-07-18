@@ -2989,6 +2989,46 @@ def admin_api_multiaccount_search():
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/admin/device-bans')
+@require_admin
+def admin_device_bans():
+    """Lista de cuentas baneadas por dispositivo+IP, con buscador."""
+    from database import execute_query
+    try:
+        query = request.args.get('q', '').strip()
+
+        base_sql = """SELECT user_id, first_name, username, ban_reason, device_hash
+                      FROM users
+                      WHERE banned = 1
+                        AND ban_reason LIKE %s"""
+        params = ['%device%']
+
+        if query:
+            base_sql += " AND (user_id LIKE %s OR username LIKE %s OR first_name LIKE %s)"
+            like = f'%{query}%'
+            params += [like, like, like]
+
+        base_sql += " ORDER BY user_id DESC LIMIT 300"
+
+        rows = execute_query(base_sql, tuple(params), fetch_all=True) or []
+
+        total = execute_query(
+            "SELECT COUNT(*) c FROM users WHERE banned = 1 AND ban_reason LIKE %s",
+            ('%device%',), fetch_one=True
+        )
+        total_count = total.get('c', 0) if total else 0
+
+        return render_template('admin_device_bans.html',
+                               bans=rows,
+                               query=query,
+                               total_count=total_count,
+                               active_page='device_bans')
+    except Exception as e:
+        import traceback
+        logger.error(f"[device-bans] {e}\n{traceback.format_exc()}")
+        return f"<pre style='color:#fff;background:#111;padding:20px'>Error en device-bans:\n{e}\n\n{traceback.format_exc()}</pre>", 200
+
+
 @app.route('/admin/api/device-debug')
 @require_admin
 def admin_device_debug():
@@ -3074,7 +3114,7 @@ def api_device_check():
 
         if shared:
             # Coincidencia de dispositivo Y IP → banear al usuario actual
-            ban_user(user_id, f'Auto-ban: mismo dispositivo + IP que otra cuenta')
+            ban_user(user_id, f'Auto-ban: same device + IP as another account')
             logger.info(f"[device-check] baneado {user_id}: device+IP coincide con {[str(r['user_id']) for r in shared]}")
             return jsonify({'ok': True, 'banned': True})
 
@@ -3134,7 +3174,7 @@ def admin_api_ban_ip_group():
                 skipped_admin += 1
                 continue
             try:
-                ban_user(uid, f'Multicuenta - IP compartida {ip}')
+                ban_user(uid, f'Multi-account - shared IP {ip}')
                 banned += 1
             except Exception as _be:
                 logger.warning(f"[ban-ip-group] error baneando {uid}: {_be}")
@@ -3581,7 +3621,7 @@ def _autoban_check_shared_ip(user_id, ip):
         return
 
     # Banear al usuario actual (no a todos, solo al que entra)
-    ban_user(user_id, f'Auto-ban: IP compartida con {count} cuentas ({ip})')
+    ban_user(user_id, f'Auto-ban: IP shared with {count} accounts ({ip})')
     logger.info(f"[autoban] baneado {user_id} por IP {ip} ({count} cuentas)")
     """Idioma de los mensajes del bot: SOLO el guardado por el usuario en la app.
     Si no tiene ninguno, inglés. Telegram NUNCA decide el idioma."""
