@@ -2512,6 +2512,20 @@ def _run_migrations():
         "ALTER TABLE users ADD COLUMN wallet_locked TINYINT(1) DEFAULT 0"
     )
 
+    # Idioma seleccionado por el usuario (para notificaciones en su idioma).
+    safe_run("add_users_language",
+        "ALTER TABLE users ADD COLUMN language VARCHAR(5) DEFAULT NULL"
+    )
+    # Última vez que se le preguntó el idioma (para volver a preguntar cada semana).
+    safe_run("add_users_lang_asked_at",
+        "ALTER TABLE users ADD COLUMN lang_asked_at DATETIME DEFAULT NULL"
+    )
+    # Fingerprint del dispositivo (para detectar multicuentas por dispositivo).
+    # (nombre v2 para forzar re-ejecución si la v1 quedó marcada sin crear la columna)
+    safe_run("add_users_device_hash_v2",
+        "ALTER TABLE users ADD COLUMN device_hash VARCHAR(80) DEFAULT NULL"
+    )
+
     # Registro global de direcciones de retiro para impedir duplicados
     # (una dirección de retiro = una cuenta).
     safe_run("create_wallet_address_registry",
@@ -2550,6 +2564,26 @@ try:
     _run_migrations()
 except Exception as _e:
     logging.getLogger(__name__).error(f"[migrations] FAILED: {_e}")
+
+# ── Garantía extra: crear device_hash si por alguna razón no existe ──
+def _ensure_device_hash_column():
+    """Crea la columna device_hash directamente si falta (a prueba de fallos)."""
+    try:
+        # ¿Existe la columna?
+        execute_query("SELECT device_hash FROM users LIMIT 1")
+    except Exception:
+        try:
+            execute_query("ALTER TABLE users ADD COLUMN device_hash VARCHAR(80) DEFAULT NULL")
+            logging.getLogger(__name__).info("[migrations] device_hash creada (garantía extra)")
+        except Exception as _ce:
+            err = str(_ce)
+            if 'Duplicate' not in err and '42S21' not in err:
+                logging.getLogger(__name__).warning(f"[migrations] device_hash: {_ce}")
+
+try:
+    _ensure_device_hash_column()
+except Exception as _e:
+    logging.getLogger(__name__).error(f"[device_hash col] {_e}")
 
 
 
