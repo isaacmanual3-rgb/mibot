@@ -2989,6 +2989,37 @@ def admin_api_multiaccount_search():
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/admin/api/device-debug')
+@require_admin
+def admin_device_debug():
+    """Diagnóstico: muestra cuántos usuarios tienen device_hash guardado."""
+    from database import execute_query
+    try:
+        total = execute_query("SELECT COUNT(*) c FROM users WHERE device_hash IS NOT NULL AND device_hash != ''", fetch_one=True)
+        con_hash = total.get('c', 0) if total else 0
+        # Dispositivos compartidos por 2+ cuentas
+        shared = execute_query(
+            """SELECT device_hash, COUNT(DISTINCT user_id) AS cuentas,
+                      GROUP_CONCAT(user_id) AS uids
+               FROM users
+               WHERE device_hash IS NOT NULL AND device_hash != ''
+               GROUP BY device_hash
+               HAVING COUNT(DISTINCT user_id) > 1
+               ORDER BY cuentas DESC LIMIT 50""",
+            fetch_all=True
+        ) or []
+        return jsonify({
+            'usuarios_con_device_hash': con_hash,
+            'auto_ban_device_ip_activo': get_config('auto_ban_device_ip', '0') == '1',
+            'dispositivos_compartidos': [
+                {'hash': s['device_hash'][:24], 'cuentas': s['cuentas'], 'user_ids': s['uids']}
+                for s in shared
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 @app.route('/api/device-check', methods=['POST'])
 def api_device_check():
     """
@@ -3018,7 +3049,8 @@ def api_device_check():
 
         # ¿Baneo automático por dispositivo+IP activado?
         if get_config('auto_ban_device_ip', '0') != '1':
-            return jsonify({'ok': True, 'banned': False})
+            logger.info(f"[device-check] user={user_id} hash={device_hash[:20]} ip={ip} → toggle DESACTIVADO")
+            return jsonify({'ok': True, 'banned': False, 'reason': 'toggle off'})
 
         # Buscar OTRAS cuentas con el MISMO device_hash
         same_device = execute_query(
@@ -3026,9 +3058,10 @@ def api_device_check():
             (device_hash[:80], str(user_id)), fetch_all=True
         ) or []
         other_uids = [str(r['user_id']) for r in same_device if r.get('user_id')]
+        logger.info(f"[device-check] user={user_id} hash={device_hash[:20]} ip={ip} → otras cuentas con mismo device: {other_uids}")
 
         if not other_uids:
-            return jsonify({'ok': True, 'banned': False})
+            return jsonify({'ok': True, 'banned': False, 'reason': 'no other device'})
 
         # De esas cuentas, ¿alguna compartió también la MISMA IP recientemente?
         # (dispositivo + IP al mismo tiempo = multicuenta casi seguro)
