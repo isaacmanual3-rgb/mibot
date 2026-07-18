@@ -2960,6 +2960,7 @@ def admin_multiaccounts():
         dup_wallets = []
 
     auto_ban_enabled = get_config('auto_ban_shared_ip', '0') == '1'
+    auto_ban_device = get_config('auto_ban_device_ip', '0') == '1'
     auto_ban_threshold = int(get_config('auto_ban_ip_threshold', '3') or 3)
     auto_ban_max = int(get_config('auto_ban_ip_max', '8') or 8)
 
@@ -2969,6 +2970,7 @@ def admin_multiaccounts():
                            search_result=search_result,
                            query=query,
                            auto_ban_enabled=auto_ban_enabled,
+                           auto_ban_device=auto_ban_device,
                            auto_ban_threshold=auto_ban_threshold,
                            auto_ban_max=auto_ban_max,
                            active_page='multiaccounts')
@@ -2987,17 +2989,82 @@ def admin_api_multiaccount_search():
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/api/device-check', methods=['POST'])
+def api_device_check():
+    """
+    Recibe el fingerprint del dispositivo, lo guarda, y aplica auto-ban
+    si el MISMO dispositivo + MISMA IP coinciden con otra cuenta.
+    """
+    from database import execute_query
+    try:
+        data = request.get_json(silent=True) or {}
+        device_hash = (data.get('device_hash') or '').strip()
+        # user_id: del initData verificado o del body como respaldo
+        user_id = get_user_id() or data.get('user_id')
+        if not user_id or not device_hash:
+            return jsonify({'ok': False})
+
+        ip = get_client_ip()
+
+        # Guardar el device_hash del usuario
+        try:
+            update_user(user_id, device_hash=device_hash[:80])
+        except Exception as _se:
+            logger.warning(f"[device-check] guardar hash: {_se}")
+
+        # Admin nunca se banea
+        if str(user_id) in set(str(a).strip() for a in ADMIN_IDS):
+            return jsonify({'ok': True, 'banned': False})
+
+        # ¿Baneo automático por dispositivo+IP activado?
+        if get_config('auto_ban_device_ip', '0') != '1':
+            return jsonify({'ok': True, 'banned': False})
+
+        # Buscar OTRAS cuentas con el MISMO device_hash
+        same_device = execute_query(
+            "SELECT user_id FROM users WHERE device_hash = %s AND user_id != %s",
+            (device_hash[:80], str(user_id)), fetch_all=True
+        ) or []
+        other_uids = [str(r['user_id']) for r in same_device if r.get('user_id')]
+
+        if not other_uids:
+            return jsonify({'ok': True, 'banned': False})
+
+        # De esas cuentas, ¿alguna compartió también la MISMA IP recientemente?
+        # (dispositivo + IP al mismo tiempo = multicuenta casi seguro)
+        placeholders = ','.join(['%s'] * len(other_uids))
+        shared = execute_query(
+            f"""SELECT DISTINCT user_id FROM user_ips
+                WHERE ip_address = %s AND user_id IN ({placeholders})""",
+            tuple([ip] + other_uids), fetch_all=True
+        ) or []
+
+        if shared:
+            # Coincidencia de dispositivo Y IP → banear al usuario actual
+            ban_user(user_id, f'Auto-ban: mismo dispositivo + IP que otra cuenta')
+            logger.info(f"[device-check] baneado {user_id}: device+IP coincide con {[str(r['user_id']) for r in shared]}")
+            return jsonify({'ok': True, 'banned': True})
+
+        return jsonify({'ok': True, 'banned': False})
+    except Exception as e:
+        logger.error(f"[device-check] {e}")
+        return jsonify({'ok': False, 'error': str(e)})
+
+
 @app.route('/admin/api/multiaccount/toggle-autoban', methods=['POST'])
 @require_admin
 def admin_api_toggle_autoban():
-    """Activa/desactiva el baneo automático por IP compartida."""
+    """Activa/desactiva el baneo automático (por IP, o por dispositivo+IP)."""
     try:
+        from database import set_config
         data = request.get_json(silent=True) or {}
         enabled = bool(data.get('enabled'))
-        from database import set_config
-        set_config('auto_ban_shared_ip', '1' if enabled else '0')
+        # tipo: 'ip' (solo IP) o 'device' (dispositivo + IP)
+        tipo = data.get('type', 'ip')
+        key = 'auto_ban_device_ip' if tipo == 'device' else 'auto_ban_shared_ip'
+        set_config(key, '1' if enabled else '0')
         estado = 'activado' if enabled else 'desactivado'
-        logger.info(f"[autoban] baneo automático por IP {estado}")
+        logger.info(f"[autoban] {key} {estado}")
         return jsonify({'success': True, 'message': f'Baneo automático {estado}'})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {e}'})
