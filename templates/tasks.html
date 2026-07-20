@@ -1073,6 +1073,8 @@ async function verifyTask() {
 }
 
 async function completeTaskDirect(taskId) {
+  // Timeout de seguridad: si en 8s no hubo respuesta, restaurar el botón
+  var safety = setTimeout(function () { restoreTaskButton(taskId); }, 8000);
   try {
     const response = await fetch('/api/task/complete', {
       method: 'POST',
@@ -1080,26 +1082,35 @@ async function completeTaskDirect(taskId) {
       body: JSON.stringify({ task_id: taskId })
     });
     const data = await response.json();
+    clearTimeout(safety);
     if (data.success) {
       const doneMsg = (window.I18N?.tq_quest_done || 'Quest completed! +{reward} TON').replace('{reward}', data.reward);
       showToast(doneMsg, 'success');
       setTimeout(() => location.reload(), 500);
     } else {
       showToast(data.message || (window.I18N?.tq_task_fail || 'Task failed'), 'error');
-      // Restaurar el botón si falló
-      var card = document.querySelector('[data-task-id="' + taskId + '"]');
-      if (card) {
-        var b = card.querySelector('.tq-btn-start');
-        if (b) { b.disabled = false; b.innerHTML = 'START ▸'; }
+      // Si el error es porque ya está completada o reclamada, recargar para
+      // mostrar el estado correcto en vez de dejar el botón colgado.
+      var m = (data.message || '').toLowerCase();
+      if (m.indexOf('already') !== -1 || m.indexOf('completed') !== -1 || m.indexOf('claimed') !== -1) {
+        setTimeout(() => location.reload(), 600);
+      } else {
+        restoreTaskButton(taskId);
       }
     }
   } catch (error) {
+    clearTimeout(safety);
     showToast(window.I18N?.connection_error || 'Connection error', 'error');
-    var card2 = document.querySelector('[data-task-id="' + taskId + '"]');
-    if (card2) {
-      var b2 = card2.querySelector('.tq-btn-start');
-      if (b2) { b2.disabled = false; b2.innerHTML = 'START ▸'; }
-    }
+    restoreTaskButton(taskId);
+  }
+}
+
+// Restaura el botón de una tarea (quita el spinner)
+function restoreTaskButton(taskId) {
+  var card = document.querySelector('[data-task-id="' + taskId + '"]');
+  if (card) {
+    var b = card.querySelector('.tq-btn-start');
+    if (b) { b.disabled = false; b.innerHTML = 'START ▸'; }
   }
 }
 
