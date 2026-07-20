@@ -3029,6 +3029,18 @@ def admin_device_bans():
         return f"<pre style='color:#fff;background:#111;padding:20px'>Error en device-bans:\n{e}\n\n{traceback.format_exc()}</pre>", 200
 
 
+@app.route('/admin/api/version')
+@require_admin
+def admin_version():
+    """Muestra la versión del código para verificar el deploy."""
+    return jsonify({
+        'version': 'v5-uuid-device',
+        'auto_ban_ip_active': get_config('auto_ban_shared_ip', '0') == '1',
+        'auto_ban_device_active': get_config('auto_ban_device_ip', '0') == '1',
+        'note': 'Si ves esta version, el codigo nuevo esta desplegado'
+    })
+
+
 @app.route('/admin/api/device-debug')
 @require_admin
 def admin_device_debug():
@@ -3592,11 +3604,15 @@ def _autoban_check_shared_ip(user_id, ip):
     """
     Banea automáticamente si el usuario comparte IP con suficientes cuentas.
     Protecciones:
+    - Solo corre si el toggle 'auto_ban_shared_ip' está activado.
     - Admins nunca se banean.
     - IPs con demasiadas cuentas se ignoran (probable wifi público / operador móvil).
     - Solo cuenta accesos recientes (últimos 3 días) para evitar IPs recicladas.
     """
     from database import execute_query
+    # Doble verificación del toggle (garantía extra: nunca banear por IP si está desactivado)
+    if get_config('auto_ban_shared_ip', '0') != '1':
+        return
     if not ip:
         return
     # Admins protegidos
@@ -3696,6 +3712,22 @@ def _join_needed_text(name, missing, lang='en'):
 
 
 # ─── Handlers del bot ────────────────────────────────────
+
+def _detect_lang_from_update(user_obj):
+    """Idioma de los mensajes del bot: SOLO el guardado por el usuario en la app.
+    Si no tiene ninguno, inglés. Telegram NUNCA decide el idioma."""
+    try:
+        uid = user_obj.get('id')
+        if uid:
+            u = get_user(uid)
+            if u:
+                saved = u.get('language')
+                if saved and str(saved).lower() in ('es', 'en'):
+                    return str(saved).lower()
+    except Exception:
+        pass
+    return 'en'
+
 
 def _handle_start(msg):
     user = msg['from']
