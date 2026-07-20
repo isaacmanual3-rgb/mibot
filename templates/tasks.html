@@ -1019,6 +1019,12 @@ function startTask(taskId, link, channelId) {
       document.getElementById('verifyModal').classList.add('show');
     }, 1500);
   } else {
+    // Feedback inmediato: deshabilitar el botón y mostrar spinner
+    var card = document.querySelector('[data-task-id="' + taskId + '"]');
+    if (card) {
+      var b = card.querySelector('.tq-btn-start');
+      if (b) { b.disabled = true; b.innerHTML = '<span class="tq-spinner"></span>'; }
+    }
     completeTaskDirect(taskId);
   }
 }
@@ -1077,12 +1083,23 @@ async function completeTaskDirect(taskId) {
     if (data.success) {
       const doneMsg = (window.I18N?.tq_quest_done || 'Quest completed! +{reward} TON').replace('{reward}', data.reward);
       showToast(doneMsg, 'success');
-      setTimeout(() => location.reload(), 1000);
+      setTimeout(() => location.reload(), 500);
     } else {
       showToast(data.message || (window.I18N?.tq_task_fail || 'Task failed'), 'error');
+      // Restaurar el botón si falló
+      var card = document.querySelector('[data-task-id="' + taskId + '"]');
+      if (card) {
+        var b = card.querySelector('.tq-btn-start');
+        if (b) { b.disabled = false; b.innerHTML = 'START ▸'; }
+      }
     }
   } catch (error) {
     showToast(window.I18N?.connection_error || 'Connection error', 'error');
+    var card2 = document.querySelector('[data-task-id="' + taskId + '"]');
+    if (card2) {
+      var b2 = card2.querySelector('.tq-btn-start');
+      if (b2) { b2.disabled = false; b2.innerHTML = 'START ▸'; }
+    }
   }
 }
 
