@@ -1181,11 +1181,13 @@ def _auto_send_ton(destination, ton_amount, memo=''):
         bot_wallet = get_config('ton_bot_wallet_address', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES') or os.getenv('TON_BOT_WALLET_ADDRESS', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES')
 
         from ton_wallet import send_ton
+        # El comentario de la transacción muestra el nombre de la app (no el ID interno)
+        comentario = _BOT_TITLE
         return send_ton(
             mnemonic           = mnemonic_str,
             to_addr            = destination,
             ton_amount         = float(ton_amount),
-            memo               = str(memo)[:50],
+            memo               = str(comentario)[:50],
             api_key            = api_key,
             bot_wallet_address = bot_wallet,
         )
