@@ -108,11 +108,11 @@ async def _send(words, to_addr, ton_amount, memo, api_key):
             result = await result
         wallet = result[0] if isinstance(result, (tuple, list)) else result
 
-        logger.info(f'Enviando {ton_amount} TON ({amount_nano} nanotons) -> {to_addr}')
+        logger.info(f'Enviando {ton_amount} TON ({amount_nano} nanotons) -> {to_addr}, memo={memo!r}')
         tx = await wallet.transfer(
             destination=to_addr,
             amount=amount_nano,
-            body=memo if memo else None
+            body=str(memo) if memo else None
         )
 
         tx_hash = _extract_hash(tx)
