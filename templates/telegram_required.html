@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ t.tg_required_title }} - Doge Pixel</title>
+    <title>{{ t.tg_required_title }} - Aero Flex</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -152,7 +152,7 @@
             
             <h1>TELEGRAM REQUIRED</h1>
             
-            <p>Doge Pixel must be opened from inside the Telegram app to verify your account.</p>
+            <p>Aero Flex must be opened from inside the Telegram app to verify your account.</p>
             
             <div class="steps">
                 <div class="step">
@@ -161,7 +161,7 @@
                 </div>
                 <div class="step">
                     <span class="step-num">2</span>
-                    <span class="step-text">Search for @Dogepixelbot</span>
+                    <span class="step-text">Search for @Aerofllex_bot</span>
                 </div>
                 <div class="step">
                     <span class="step-num">3</span>
@@ -169,7 +169,7 @@
                 </div>
             </div>
             
-            <a href="https://t.me/Dogepixelbot" class="btn-telegram">
+            <a href="https://t.me/Aerofllex_bot" class="btn-telegram">
                 <span>►</span> OPEN TELEGRAM
             </a>
             
@@ -179,30 +179,48 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-    // Si se abre desde Telegram WebApp, autenticar automáticamente (una sola vez)
+    // Si se abre desde Telegram WebApp, autenticar automáticamente.
+    // Reintenta varias veces porque el initData a veces tarda en estar listo.
     (function() {
-        if (!window.Telegram || !window.Telegram.WebApp) return;
-        if (sessionStorage.getItem('tg_auth_done')) return;
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        const initData = tg.initData;
-        if (!initData) return;
-        sessionStorage.setItem('tg_auth_done', '1');
-        const startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
-        fetch('/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ initData: initData, start_param: startParam })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                window.location.replace('/');
+        var tries = 0;
+        var maxTries = 15;  // ~7.5 segundos
+
+        function tryAuth() {
+            tries++;
+            if (!window.Telegram || !window.Telegram.WebApp) {
+                if (tries < maxTries) return setTimeout(tryAuth, 500);
+                return;
             }
-        })
-        .catch(() => {});
+            var tg = window.Telegram.WebApp;
+            try { tg.ready(); tg.expand(); } catch (e) {}
+
+            var initData = tg.initData;
+            if (!initData) {
+                if (tries < maxTries) return setTimeout(tryAuth, 500);
+                return;
+            }
+            if (sessionStorage.getItem('tg_auth_done')) {
+                window.location.replace('/');
+                return;
+            }
+            sessionStorage.setItem('tg_auth_done', '1');
+            var startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
+            fetch('/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ initData: initData, start_param: startParam })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) window.location.replace('/');
+                else if (tries < maxTries) setTimeout(tryAuth, 500);
+            })
+            .catch(function() {
+                if (tries < maxTries) setTimeout(tryAuth, 500);
+            });
+        }
+        tryAuth();
     })();
     </script>
 </body>
