@@ -133,6 +133,24 @@
 <div class="card pixel-border">
     <h2 class="section-title">📡 Grupos de IP compartida ({{ groups|length }})</h2>
 
+    <div style="background:#12081a;border:2px solid #5a1e4a;padding:14px;margin-bottom:12px">
+        <div style="color:#ff4db8;font-size:0.8rem;font-weight:bold;margin-bottom:6px">🧹 BORRAR UNA IP DEL SISTEMA</div>
+        <div style="color:#888;font-size:0.72rem;margin-bottom:10px">
+            Escribe la IP que quieras borrar. Se eliminan sus registros y queda libre.
+            Opcional: pon un ID de usuario para quitar <b>solo a esa cuenta</b> de esa IP.
+            No borra ni banea usuarios.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="clearIpInput" class="form-input"
+                   placeholder="IP (ej: 40.160.233.110)" style="flex:1;min-width:190px">
+            <input type="text" id="clearUidInput" class="form-input"
+                   placeholder="ID usuario (opcional)" style="flex:1;min-width:160px">
+            <button class="btn btn-danger" style="white-space:nowrap" onclick="clearIpManual()">
+                🧹 BORRAR
+            </button>
+        </div>
+    </div>
+
     <div style="background:#0a1420;border:2px solid #1e3a5a;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
             <div style="color:#40c4ff;font-size:0.8rem;font-weight:bold;margin-bottom:4px">🚧 LÍMITE DE CUENTAS POR IP <span style="color:#888;font-weight:normal">(no banea)</span></div>
@@ -204,10 +222,16 @@
                 </td>
                 <td style="font-size:0.75rem;">
                     {% for a in g.accounts %}
-                    <a href="/admin/multiaccounts?q={{ a.user_id }}"
-                       class="{% if a.banned %}text-danger{% elif a.blocked %}text-warning{% else %}text-muted{% endif %}"
-                       style="text-decoration:none;">
-                        {{ a.name }}{% if a.banned %} ⛔{% elif a.blocked %} ⚠{% endif %}</a>{% if not loop.last %} · {% endif %}
+                    <span style="display:inline-flex;align-items:center;gap:4px;margin:2px 6px 2px 0;white-space:nowrap">
+                      <a href="/admin/multiaccounts?q={{ a.user_id }}"
+                         class="{% if a.banned %}text-danger{% elif a.blocked %}text-warning{% else %}text-muted{% endif %}"
+                         style="text-decoration:none;">
+                          {{ a.name }}{% if a.banned %} ⛔{% elif a.blocked %} ⚠{% endif %}</a>
+                      <button onclick="clearUserIp('{{ g.ip }}', '{{ a.user_id }}', '{{ a.name|e }}')"
+                              title="Quitar a este usuario de esta IP"
+                              style="background:none;border:1px solid #3a4a5a;color:#40c4ff;
+                                     cursor:pointer;font-size:0.6rem;padding:1px 4px;line-height:1.2">🧹</button>
+                    </span>{% if not loop.last %}<span style="color:#444">·</span> {% endif %}
                     {% endfor %}
                 </td>
                 <td>
@@ -230,6 +254,62 @@
 </div>
 
 <script>
+// Borra la IP que escribas. Si además pones un ID de usuario,
+// quita solo a esa cuenta de esa IP.
+async function clearIpManual() {
+    var ip  = (document.getElementById('clearIpInput').value || '').trim();
+    var uid = (document.getElementById('clearUidInput').value || '').trim();
+
+    if (!ip && !uid) {
+        alert('Escribe al menos una IP o un ID de usuario.');
+        return;
+    }
+
+    var aviso;
+    if (ip && uid)      aviso = '¿Quitar al usuario #' + uid + ' de la IP ' + ip + '?';
+    else if (ip)        aviso = '¿Borrar TODOS los registros de la IP ' + ip + '?';
+    else                aviso = '¿Quitar al usuario #' + uid + ' de TODAS sus IPs?';
+    aviso += '\n\nSolo se borran registros de IP. El usuario NO se borra ni se banea.';
+    if (!confirm(aviso)) return;
+
+    try {
+        var cuerpo = {};
+        if (ip)  cuerpo.ip = ip;
+        if (uid) cuerpo.user_id = uid;
+
+        const res = await fetch('/admin/api/multiaccount/clear-ip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cuerpo)
+        });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Listo' : 'Error'));
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+
+// Quita a UN usuario concreto de UNA IP (los demás siguen igual).
+// Libera su registro: esa cuenta deja de ocupar cupo en esa IP.
+async function clearUserIp(ip, userId, nombre) {
+    if (!confirm('¿Quitar a ' + nombre + ' (#' + userId + ') de la IP ' + ip + '?\n\n' +
+                 'Solo se borra su registro en esta IP. Las demás cuentas no se tocan.\n' +
+                 'El usuario NO se borra ni se banea.')) return;
+    try {
+        const res = await fetch('/admin/api/multiaccount/clear-ip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip, user_id: userId })
+        });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Listo' : 'Error'));
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+
 // Libera una IP: borra sus registros para que los cupos queden libres.
 // NO borra usuarios ni los banea.
 async function clearIp(ip, count) {
