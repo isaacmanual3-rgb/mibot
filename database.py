@@ -1304,6 +1304,52 @@ def get_ip_occupants(ip_address, window_hours=24):
         return []
 
 
+def clear_ip_records(ip_address=None, user_id=None, older_than_hours=None):
+    """
+    Limpia registros de user_ips para liberar cupos del límite por IP.
+
+    - clear_ip_records(ip_address='1.2.3.4')      → libera esa IP por completo
+    - clear_ip_records(user_id='123')             → quita a ese usuario de todas las IPs
+    - clear_ip_records(ip='x', user_id='123')     → quita solo a ese usuario de esa IP
+    - clear_ip_records(older_than_hours=24)       → limpia registros más viejos que N horas
+
+    Devuelve cuántos registros se borraron.
+    """
+    try:
+        condiciones, params = [], []
+        if ip_address:
+            condiciones.append("ip_address = %s")
+            params.append(ip_address)
+        if user_id:
+            condiciones.append("user_id = %s")
+            params.append(str(user_id))
+        if older_than_hours:
+            condiciones.append("last_seen < DATE_SUB(NOW(), INTERVAL %s HOUR)")
+            params.append(int(older_than_hours))
+
+        if not condiciones:
+            return 0   # nunca borrar todo sin filtro
+
+        # Contar antes de borrar
+        fila = execute_query(
+            f"SELECT COUNT(*) AS c FROM user_ips WHERE {' AND '.join(condiciones)}",
+            tuple(params), fetch_one=True
+        )
+        total = int(fila.get('c', 0)) if fila else 0
+
+        if total:
+            execute_query(
+                f"DELETE FROM user_ips WHERE {' AND '.join(condiciones)}",
+                tuple(params)
+            )
+            logger.info(f"[clear_ip] borrados {total} registros "
+                        f"(ip={ip_address}, user={user_id}, horas={older_than_hours})")
+        return total
+    except Exception as e:
+        logger.error(f"[clear_ip] error: {e}")
+        return 0
+
+
 def is_ip_banned(ip_address):
     """Check if IP is banned"""
     if not ip_address:

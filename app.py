@@ -3216,6 +3216,39 @@ def api_device_check():
         return jsonify({'ok': False, 'error': str(e)})
 
 
+@app.route('/admin/api/multiaccount/clear-ip', methods=['POST'])
+@require_admin
+def admin_api_clear_ip():
+    """Limpia registros de IP para liberar cupos (no borra usuarios)."""
+    try:
+        from database import clear_ip_records
+        data = request.get_json(silent=True) or {}
+        ip = (data.get('ip') or '').strip() or None
+        uid = (data.get('user_id') or '').strip() or None
+        horas = data.get('older_than_hours')
+
+        if not ip and not uid and not horas:
+            return jsonify({'success': False, 'message': 'Indica una IP, un usuario o las horas'})
+
+        borrados = clear_ip_records(ip_address=ip, user_id=uid,
+                                    older_than_hours=int(horas) if horas else None)
+
+        if ip and not uid:
+            msg = f'✅ IP {ip} liberada · {borrados} registros borrados'
+        elif uid and not ip:
+            msg = f'✅ Usuario {uid} quitado de todas las IPs · {borrados} registros'
+        elif horas:
+            msg = f'✅ Limpieza de +{horas}h · {borrados} registros borrados'
+        else:
+            msg = f'✅ {borrados} registros borrados'
+
+        return jsonify({'success': True, 'deleted': borrados, 'message': msg})
+    except Exception as e:
+        import traceback
+        logger.error(f"[clear-ip] {e}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
+
+
 @app.route('/admin/api/ip-debug')
 @require_admin
 def admin_ip_debug():
@@ -3241,6 +3274,13 @@ def admin_ip_debug():
         _mx = request.args.get('max')
         if _mx and _mx.isdigit():
             set_config('ip_limit_max_accounts', _mx)
+
+        # Permite limpiar esta IP desde la URL: ?clear=1
+        limpieza = None
+        if request.args.get('clear') == '1':
+            from database import clear_ip_records
+            borrados = clear_ip_records(ip_address=ip)
+            limpieza = f'🧹 IP {ip} liberada · {borrados} registros borrados'
 
         activo = get_config('ip_limit_enabled', '0') == '1'
         maximo = int(get_config('ip_limit_max_accounts', '1') or 1)
@@ -3303,11 +3343,13 @@ def admin_ip_debug():
             'con_cupo': ocupantes[:maximo],
             'serian_bloqueadas': ocupantes[maximo:],
             'prueba_gate_para_u': prueba,
-            'como_activar': '/admin/api/ip-debug?on=1   ·   apagar: ?on=0   ·   cambiar máximo: ?max=2',
-            'nota': 'Los administradores (ADMIN_IDS) nunca se bloquean.'
+            'como_activar': '/admin/api/ip-debug?on=1 · apagar: ?on=0 · máximo: ?max=2 · limpiar esta IP: ?clear=1',
+            'nota': 'El primero que llega conserva el cupo. Los ADMIN_IDS nunca se bloquean.'
         }
         if cambio:
             resp['CAMBIO_APLICADO'] = cambio
+        if limpieza:
+            resp['LIMPIEZA'] = limpieza
         return jsonify(resp)
     except Exception as e:
         import traceback
