@@ -65,6 +65,23 @@
                     {% else %}
                         <span class="badge badge-success">ACTIVE</span>
                     {% endif %}
+                    {% set plan = planes.get(user.user_id|string) if planes else None %}
+                    <div style="margin-top:6px">
+                        {% if plan %}
+                        <span style="display:inline-block;padding:3px 7px;border:2px solid #00e676;
+                                     background:rgba(0,230,118,0.12);color:#00e676;
+                                     font-size:0.6rem;white-space:nowrap"
+                              title="Vence: {{ plan.expires }}">
+                            ⛏ {{ plan.name }}
+                        </span>
+                        {% else %}
+                        <span style="display:inline-block;padding:3px 7px;border:2px solid #ff4466;
+                                     background:rgba(255,68,102,0.10);color:#ff8899;
+                                     font-size:0.6rem;white-space:nowrap">
+                            SIN PLAN
+                        </span>
+                        {% endif %}
+                    </div>
                 </td>
                 <td class="text-muted">{{ user.created_at }}</td>
                 <td>

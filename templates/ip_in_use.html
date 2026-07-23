@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP in use - Aero Flex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box;
+        -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+    body {
+      background:#05050a; color:#e0e0f0; font-family:'VT323',monospace;
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      padding:20px;
+      background-image:
+        linear-gradient(rgba(255,152,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,152,0,0.04) 1px, transparent 1px);
+      background-size:24px 24px;
+    }
+    .card {
+      background:#0a0a14; border:2px solid #3a2e1e;
+      box-shadow:4px 4px 0 0 #020208, 0 0 40px rgba(255,152,0,0.08);
+      max-width:390px; width:100%; padding:32px 24px; text-align:center;
+      position:relative;
+    }
+    .card::before {
+      content:''; position:absolute; top:-2px; left:-2px; right:-2px;
+      height:3px; background:#ff9800;
+    }
+    .icon {
+      width:72px; height:72px; margin:0 auto 20px;
+      background:rgba(255,152,0,0.08); border:2px solid rgba(255,152,0,0.42);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .title {
+      font-family:'Press Start 2P',monospace; font-size:0.78rem; color:#ff9800;
+      letter-spacing:0.05em; margin-bottom:14px; line-height:1.6;
+      text-shadow:2px 2px 0 rgba(255,152,0,0.18);
+    }
+    .subtitle {
+      font-size:1.05rem; color:#8a8ab0; letter-spacing:0.02em;
+      margin-bottom:20px; line-height:1.45;
+    }
+    .steps {
+      background:rgba(255,255,255,0.03); border:2px solid rgba(255,152,0,0.2);
+      padding:16px; margin-bottom:20px; text-align:left;
+    }
+    .step { display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; }
+    .step:last-child { margin-bottom:0; }
+    .step-num {
+      min-width:24px; height:24px; background:#ff9800; color:#0a0a0f;
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Press Start 2P',monospace; font-size:0.45rem; flex-shrink:0;
+    }
+    .step-txt { font-size:0.95rem; color:#b0b0c8; line-height:1.35; }
+    .btn {
+      display:block; width:100%; padding:15px; border:2px solid #ff9800;
+      background:#ff9800; color:#0a0a0f; cursor:pointer;
+      font-family:'Press Start 2P',monospace; font-size:0.58rem;
+      letter-spacing:0.05em; box-shadow:3px 3px 0 0 #5a3a00;
+      transition:transform .1s; text-transform:uppercase;
+    }
+    .btn:active { transform:translate(3px,3px); box-shadow:0 0 0 0 #5a3a00; }
+    .note {
+      margin-top:14px; font-size:0.88rem; color:#4a4a6e; line-height:1.4;
+    }
+    .note a { color:#40c4ff; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#ff9800"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+
+    <div class="title">{{ t.ipu_title }}</div>
+
+    <div class="subtitle">{{ t.ipu_subtitle }}</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-txt">{{ t.ipu_step1 }}</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-txt">{{ t.ipu_step2 }}</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-txt">{{ t.ipu_step3 }}</div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="location.reload()">{{ t.ipu_retry }}</button>
+
+    <div class="note">
+      {{ t.ipu_support }}
+      <a href="https://t.me/Aeroflexsoportt" target="_blank" rel="noopener">@Aeroflexsoportt</a>
+    </div>
+  </div>
+</body>
+</html>
