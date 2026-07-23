@@ -3221,11 +3221,48 @@ def api_device_check():
 def admin_ip_debug():
     """Diagnóstico del límite de cuentas por IP."""
     try:
-        from database import execute_query, ip_gate
+        from database import execute_query, ip_gate, set_config
         ip = request.args.get('ip') or get_client_ip()
         uid = request.args.get('u') or ''
+
+        # Permite activar/desactivar desde la URL: ?on=1  ó  ?on=0
+        cambio = None
+        _on = request.args.get('on')
+        if _on in ('0', '1'):
+            set_config('ip_limit_enabled', _on)
+            leido = get_config('ip_limit_enabled', '0')
+            cambio = {
+                'pediste': _on,
+                'guardado_en_bd': leido,
+                'resultado': '✅ GUARDADO OK' if leido == _on else '❌ NO SE GUARDÓ (set_config falla)'
+            }
+
+        # Permite cambiar el máximo: ?max=2
+        _mx = request.args.get('max')
+        if _mx and _mx.isdigit():
+            set_config('ip_limit_max_accounts', _mx)
+
         activo = get_config('ip_limit_enabled', '0') == '1'
         maximo = int(get_config('ip_limit_max_accounts', '1') or 1)
+
+        # ?set=1 activa · ?set=0 desactiva · y verifica que REALMENTE se guardó
+        resultado_guardado = None
+        _set = request.args.get('set')
+        if _set in ('0', '1'):
+            try:
+                from database import set_config
+                set_config('ip_limit_enabled', _set)
+                releido = get_config('ip_limit_enabled', '0')
+                activo = releido == '1'
+                resultado_guardado = {
+                    'intentado_guardar': _set,
+                    'valor_releido_de_BD': releido,
+                    'guardado_ok': releido == _set
+                }
+            except Exception as _se:
+                import traceback
+                resultado_guardado = {'ERROR_AL_GUARDAR': str(_se),
+                                      'trace': traceback.format_exc()[-500:]}
 
         filas = execute_query(
             """SELECT user_id, MIN(first_seen) AS entro, MAX(last_seen) AS visto
@@ -3255,19 +3292,23 @@ def admin_ip_debug():
             except Exception as _pe:
                 prueba = {'user_id': uid, 'error': str(_pe)}
 
-        return jsonify({
+        resp = {
             'ip_consultada': ip,
             'limite_activo': activo,
             'ESTADO': '🟢 ACTIVO - está bloqueando' if activo
-                      else '🔴 APAGADO - actívalo en Panel > Multicuentas > boton azul',
+                      else '🔴 APAGADO - abre esta misma URL con ?on=1 para activarlo',
             'max_cuentas': maximo,
             'cuentas_en_esta_ip_TOTAL': len(filas),
             'cuentas_ultimas_24h': ocupantes,
             'con_cupo': ocupantes[:maximo],
             'serian_bloqueadas': ocupantes[maximo:],
             'prueba_gate_para_u': prueba,
+            'como_activar': '/admin/api/ip-debug?on=1   ·   apagar: ?on=0   ·   cambiar máximo: ?max=2',
             'nota': 'Los administradores (ADMIN_IDS) nunca se bloquean.'
-        })
+        }
+        if cambio:
+            resp['CAMBIO_APLICADO'] = cambio
+        return jsonify(resp)
     except Exception as e:
         import traceback
         return ("<pre style='color:#fff;background:#111;padding:16px;font-size:12px'>"
