@@ -995,6 +995,42 @@
       </div>
     </div>
 
+    <!-- ── MODAL: DEBES HACER CLICK EN EL ANUNCIO ── -->
+    <div class="tq-modal-bg" id="adClickWarningModal">
+      <div class="tq-modal" style="max-width:360px">
+        <button onclick="closeAdClickWarning()" aria-label="close"
+                style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text2);font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 8px;z-index:2">×</button>
+
+        <div class="tq-modal-icon" style="border-color:rgba(255,152,0,0.4);background:rgba(255,152,0,0.08)">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#ff9800" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11.5 3.5 6M12 2v3M2 12h3M15.5 6 21 2M8 13l3.5 8.5L14 15l6.5-2.5z"/>
+          </svg>
+        </div>
+
+        <div class="tq-modal-title" style="color:#ff9800">{{ t.mn_ads_click_title }}</div>
+        <div class="tq-modal-desc">{{ t.mn_ads_click_desc }}</div>
+
+        <div style="background:rgba(255,255,255,0.03);border:2px solid rgba(255,152,0,0.2);padding:14px;margin:16px 0">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-pixel);font-size:0.45rem">1</div>
+            <span style="font-size:0.72rem;color:var(--text2)">{{ t.mn_ads_click_step1 }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-pixel);font-size:0.45rem">2</div>
+            <span style="font-size:0.72rem;color:var(--text2)">{{ t.mn_ads_click_step2 }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="min-width:24px;height:24px;background:#ff9800;color:#0a0a0f;display:flex;align-items:center;justify-content:center;font-family:var(--font-pixel);font-size:0.45rem">3</div>
+            <span style="font-size:0.72rem;color:var(--text2)">{{ t.mn_ads_click_step3 }}</span>
+          </div>
+        </div>
+
+        <button class="tq-modal-verify" onclick="closeAdClickWarning()" style="width:100%">
+          {{ t.mn_ads_click_understood }}
+        </button>
+      </div>
+    </div>
+
     <!-- ── TASKS LIST ── -->
     <div class="tq-list">
       {% if tasks %}
@@ -1130,6 +1166,15 @@ let currentChannelId = null;
 // ══════════════════════════════════════════════
 const CHECKIN_AD_BLOCK = "{{ adsgram_interstitial_id }}";
 
+function showAdClickWarning() {
+  var m = document.getElementById('adClickWarningModal');
+  if (m) m.classList.add('show');
+}
+function closeAdClickWarning() {
+  var m = document.getElementById('adClickWarningModal');
+  if (m) m.classList.remove('show');
+}
+
 function openCheckinModal() {
   var m = document.getElementById('checkinModal');
   if (m) m.classList.add('show');
@@ -1140,6 +1185,12 @@ document.addEventListener('DOMContentLoaded', function () {
   if (bg) {
     bg.addEventListener('click', function (e) {
       if (e.target === bg) closeCheckinModal();
+    });
+  }
+  var bg2 = document.getElementById('adClickWarningModal');
+  if (bg2) {
+    bg2.addEventListener('click', function (e) {
+      if (e.target === bg2) closeAdClickWarning();
     });
   }
 });
@@ -1213,15 +1264,18 @@ async function claimCheckin() {
   var startedAt = Date.now();
   try {
     var ctrl = window.Adsgram.init({ blockId: String(CHECKIN_AD_BLOCK) });
-    // Carrera: el anuncio, o un timeout de 90s. Así el botón nunca se cuelga
-    // si Adsgram no resuelve su promesa (pasa cuando el usuario cierra raro).
-    var result = await Promise.race([
-      ctrl.show(),
-      new Promise(function (resolve) {
-        setTimeout(function () { timedOut = true; resolve(null); }, 90000);
-      })
-    ]);
-    done = !!(result && result.done);
+    // Envolver show() para que un RECHAZO (cerrar con la X) no cuelgue la espera.
+    var adPromise = Promise.resolve()
+      .then(function () { return ctrl.show(); })
+      .then(function (r) { return { ok: true, result: r }; })
+      .catch(function (e) { return { ok: false, error: e }; });
+
+    var timeoutPromise = new Promise(function (resolve) {
+      setTimeout(function () { timedOut = true; resolve({ ok: false, timeout: true }); }, 60000);
+    });
+
+    var race = await Promise.race([adPromise, timeoutPromise]);
+    done = !!(race && race.ok && race.result && race.result.done);
   } catch (e) {
     done = false;
   } finally {
@@ -1239,17 +1293,17 @@ async function claimCheckin() {
     showToast(window.I18N?.mn_ads_unavailable || 'Ad did not respond. Try again.', 'error');
     return restoreBtn();
   }
-  if (closedEarly) {
-    showToast(window.I18N?.mn_ads_closed_early || 'You closed the ad too early', 'error');
-    return restoreBtn();
+  // Cerró el anuncio antes de tiempo → mostrar el modal explicando cómo hacerlo
+  if (closedEarly || !done) {
+    restoreBtn();
+    showAdClickWarning();
+    return;
   }
-  if (!done) {
-    showToast(window.I18N?.mn_ads_closed_early || 'Ad not completed', 'error');
-    return restoreBtn();
-  }
+  // Vio el anuncio pero no hizo click → mostrar el modal
   if (!ctaClicked) {
-    showToast(window.I18N?.mn_ads_click_desc || 'You must tap the ad to claim', 'error');
-    return restoreBtn();
+    restoreBtn();
+    showAdClickWarning();
+    return;
   }
 
   // ── Anuncio válido con click → reclamar ──
