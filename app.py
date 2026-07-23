@@ -3233,7 +3233,9 @@ def admin_api_clear_ip():
         borrados = clear_ip_records(ip_address=ip, user_id=uid,
                                     older_than_hours=int(horas) if horas else None)
 
-        if ip and not uid:
+        if ip and uid:
+            msg = f'✅ Usuario {uid} quitado de la IP {ip} · {borrados} registro(s)'
+        elif ip and not uid:
             msg = f'✅ IP {ip} liberada · {borrados} registros borrados'
         elif uid and not ip:
             msg = f'✅ Usuario {uid} quitado de todas las IPs · {borrados} registros'
@@ -3275,12 +3277,17 @@ def admin_ip_debug():
         if _mx and _mx.isdigit():
             set_config('ip_limit_max_accounts', _mx)
 
-        # Permite limpiar esta IP desde la URL: ?clear=1
+        # Permite limpiar desde la URL:
+        #   ?clear=1          → borra la IP consultada
+        #   ?clear=1&u=123    → quita solo a ese usuario de esa IP
         limpieza = None
         if request.args.get('clear') == '1':
             from database import clear_ip_records
-            borrados = clear_ip_records(ip_address=ip)
-            limpieza = f'🧹 IP {ip} liberada · {borrados} registros borrados'
+            borrados = clear_ip_records(ip_address=ip, user_id=uid or None)
+            if uid:
+                limpieza = f'🧹 Usuario {uid} quitado de {ip} · {borrados} registro(s)'
+            else:
+                limpieza = f'🧹 IP {ip} liberada · {borrados} registros borrados'
 
         activo = get_config('ip_limit_enabled', '0') == '1'
         maximo = int(get_config('ip_limit_max_accounts', '1') or 1)
