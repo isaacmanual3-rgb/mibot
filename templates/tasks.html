@@ -1159,6 +1159,42 @@
 </div>
 
 <script>
+// ── showToast: FALTABA en esta página. Sin él, cada llamada lanzaba
+//    ReferenceError y cortaba el flujo justo después de reclamar
+//    (por eso la recompensa se daba pero el botón se quedaba girando).
+function showToast(m, t) {
+  try {
+    if (window.DogeQuest && window.DogeQuest.showToast) {
+      window.DogeQuest.showToast(m, t);
+      return;
+    }
+  } catch (e) {}
+  // Respaldo propio: aviso flotante simple, nunca lanza error
+  try {
+    var el = document.getElementById('afToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'afToast';
+      el.style.cssText =
+        'position:fixed;left:50%;bottom:88px;transform:translateX(-50%);' +
+        'z-index:9999;max-width:88%;padding:12px 16px;border:2px solid;' +
+        'font-size:0.82rem;text-align:center;box-shadow:3px 3px 0 0 #020208;' +
+        'transition:opacity .25s;opacity:0;pointer-events:none';
+      document.body.appendChild(el);
+    }
+    var ok = (t !== 'error');
+    el.style.background = ok ? 'rgba(0,230,118,0.12)' : 'rgba(255,68,102,0.12)';
+    el.style.borderColor = ok ? '#00e676' : '#ff4466';
+    el.style.color = ok ? '#00e676' : '#ff8899';
+    el.textContent = String(m == null ? '' : m);
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.opacity = '0'; }, 3200);
+  } catch (e) {
+    try { console.log('[toast]', m); } catch (e2) {}
+  }
+}
+
 let currentTaskId = null;
 let currentChannelId = null;
 
@@ -1419,10 +1455,9 @@ async function claimCheckin() {
     }
 
     if (data.success) {
-      showToast(data.message || ('+' + data.reward + ' TON'), 'success');
-      // Actualizar la pantalla SIN depender de location.reload()
-      // (dentro de Telegram a veces no se ejecuta).
+      // Primero actualizar la pantalla (lo importante), luego el aviso.
       applyCheckinClaimed(data);
+      try { showToast(data.message || ('+' + data.reward + ' TON'), 'success'); } catch (e) {}
     } else {
       // El servidor puede responder con 'message' o con 'error' (ej: sesión caducada)
       var errMsg = data.message || data.error || 'Not available yet';
