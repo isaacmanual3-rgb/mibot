@@ -1161,6 +1161,13 @@ async function watchAd() {
   if (adsInProgress || adCooldownActive || adsWatched >= ADS_REQUIRED) return;
   const btn = document.getElementById('adsWatchBtn');
 
+  // Refrescar los parámetros de Telegram y esperar a que el SDK cargue
+  try { if (window.TG_PARAMS) window.TG_PARAMS.restore(); } catch (e) {}
+  if (window.TG_PARAMS && !window.TG_PARAMS.ok()) {
+    setAdsStatus('Reopen the app from Telegram to watch ads', 'error');
+    return;
+  }
+  if (window.waitForAdsgram) { await window.waitForAdsgram(8000); }
   if (!initAdsgram()) {
     setAdsStatus((window.I18N?.mn_ads_unavailable || '{{ t.mn_ads_unavailable }}'), 'error');
     return;

@@ -1278,6 +1278,13 @@ async function claimCheckin() {
   if (!btn || btn.disabled) return;
 
   var btnHtml = btn.innerHTML;   // guardar el contenido original del botón
+
+  // Definido AQUÍ (antes de cualquier uso) para que siempre esté disponible
+  var restoreBtn = function () {
+    try { clearTimeout(globalSafety); } catch (e) {}
+    btn.disabled = false;
+    btn.innerHTML = btnHtml;
+  };
   btn.disabled = true;
   btn.innerHTML = '<span class="tq-spinner"></span> ' + (window.I18N?.tq_checking || 'LOADING AD...');
 
@@ -1291,11 +1298,18 @@ async function claimCheckin() {
   }, 120000);
 
   // ── Anuncio interstitial de Adsgram con CLICK OBLIGATORIO ──
-  // Asegurar que los parámetros de lanzamiento de Telegram estén en la URL
-  // (si el usuario navegó dentro de la app, se pierden y Adsgram falla).
+  // Refrescar los parámetros de lanzamiento de Telegram (al navegar se pierden).
   try { if (window.TG_PARAMS) window.TG_PARAMS.restore(); } catch (e) {}
 
-  if (!window.Adsgram) {
+  // Si de verdad no hay parámetros, el anuncio no puede cargar: avisar y salir.
+  if (window.TG_PARAMS && !window.TG_PARAMS.ok()) {
+    showToast('Reopen the app from Telegram to watch ads', 'error');
+    return restoreBtn();
+  }
+
+  // El SDK se carga en diferido: esperarlo antes de continuar.
+  var sdkReady = await window.waitForAdsgram(8000);
+  if (!sdkReady || !window.Adsgram) {
     showToast(window.I18N?.mn_ads_unavailable || 'Ads not available', 'error');
     btn.disabled = false;
     btn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:14px;height:14px;flex-shrink:0\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> WATCH AD & CLAIM";
@@ -1357,11 +1371,6 @@ async function claimCheckin() {
   }
 
   var closedEarly = (Date.now() - startedAt) < 14000;
-  var restoreBtn = function () {
-    clearTimeout(globalSafety);
-    btn.disabled = false;
-    btn.innerHTML = btnHtml;
-  };
 
   if (timedOut) {
     showToast(window.I18N?.mn_ads_unavailable || 'Ad did not respond. Try again.', 'error');

@@ -28,36 +28,99 @@
        y los volvemos a poner en cada navegación.
        ────────────────────────────────────────────────────────── */
     window.TG_PARAMS = (function () {
-        var KEY = 'tg_launch_params';
-        var TG_KEYS = ['tgWebAppData', 'tgWebAppVersion', 'tgWebAppPlatform',
-                       'tgWebAppThemeParams', 'tgWebAppStartParam'];
+        var MY_KEY = 'af_tg_params';
+        var TG_KEY = '__telegram__initParams';   // clave OFICIAL del SDK de Telegram
+        var KEYS = ['tgWebAppData', 'tgWebAppVersion', 'tgWebAppPlatform',
+                    'tgWebAppThemeParams', 'tgWebAppStartParam', 'tgWebAppBotInline'];
 
-        // 1. Capturar de la URL actual (query o hash) y guardar
+        function readFromString(str) {
+            var out = {};
+            if (!str) return out;
+            try {
+                var p = new URLSearchParams(str.replace(/^[#?]/, ''));
+                KEYS.forEach(function (k) { var v = p.get(k); if (v) out[k] = v; });
+            } catch (e) {}
+            return out;
+        }
+
+        // ── 1. CAPTURAR de todas las fuentes posibles ──
         function capture() {
             var found = {};
-            try {
-                var qs = new URLSearchParams(window.location.search);
-                var hs = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
-                TG_KEYS.forEach(function (k) {
-                    var v = qs.get(k) || hs.get(k);
-                    if (v) found[k] = v;
-                });
-            } catch (e) {}
-            if (Object.keys(found).length) {
-                try { sessionStorage.setItem(KEY, JSON.stringify(found)); } catch (e) {}
-                return found;
+
+            // a) hash y query de la URL (primera carga desde Telegram)
+            var h = readFromString(window.location.hash);
+            var q = readFromString(window.location.search);
+            Object.keys(h).forEach(function (k) { found[k] = h[k]; });
+            Object.keys(q).forEach(function (k) { if (!found[k]) found[k] = q[k]; });
+
+            // b) sessionStorage oficial de Telegram
+            if (!found.tgWebAppData) {
+                try {
+                    var raw = sessionStorage.getItem(TG_KEY);
+                    if (raw) {
+                        var obj = JSON.parse(raw);
+                        KEYS.forEach(function (k) {
+                            if (obj[k] && !found[k]) {
+                                found[k] = (typeof obj[k] === 'string') ? obj[k] : JSON.stringify(obj[k]);
+                            }
+                        });
+                    }
+                } catch (e) {}
             }
-            // Si no venían en la URL, usar los guardados
-            try {
-                var saved = sessionStorage.getItem(KEY);
-                if (saved) return JSON.parse(saved);
-            } catch (e) {}
-            return null;
+
+            // c) nuestro respaldo
+            if (!found.tgWebAppData) {
+                try {
+                    var mine = sessionStorage.getItem(MY_KEY) || localStorage.getItem(MY_KEY);
+                    if (mine) {
+                        var o2 = JSON.parse(mine);
+                        KEYS.forEach(function (k) { if (o2[k] && !found[k]) found[k] = o2[k]; });
+                    }
+                } catch (e) {}
+            }
+
+            // d) el propio objeto Telegram.WebApp
+            if (!found.tgWebAppData) {
+                try {
+                    var tg = window.Telegram && window.Telegram.WebApp;
+                    if (tg && tg.initData) {
+                        found.tgWebAppData = tg.initData;
+                        if (tg.version)  found.tgWebAppVersion  = found.tgWebAppVersion  || tg.version;
+                        if (tg.platform) found.tgWebAppPlatform = found.tgWebAppPlatform || tg.platform;
+                        if (tg.themeParams) {
+                            found.tgWebAppThemeParams = found.tgWebAppThemeParams || JSON.stringify(tg.themeParams);
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            return Object.keys(found).length ? found : null;
         }
 
         var params = capture();
 
-        // 2. Restaurar en el hash de la URL actual (Adsgram lee de ahí)
+        // ── 2. GUARDAR en todos los destinos que leen los SDKs ──
+        function persist() {
+            if (!params) return;
+            // a) nuestro respaldo (sessionStorage + localStorage por si se limpia la sesión)
+            try { sessionStorage.setItem(MY_KEY, JSON.stringify(params)); } catch (e) {}
+            try { localStorage.setItem(MY_KEY, JSON.stringify(params)); } catch (e) {}
+
+            // b) clave OFICIAL de Telegram — de aquí lee Adsgram
+            try {
+                var obj = {};
+                Object.keys(params).forEach(function (k) {
+                    if (k === 'tgWebAppThemeParams') {
+                        try { obj[k] = JSON.parse(params[k]); } catch (e) { obj[k] = params[k]; }
+                    } else {
+                        obj[k] = params[k];
+                    }
+                });
+                sessionStorage.setItem(TG_KEY, JSON.stringify(obj));
+            } catch (e) {}
+        }
+
+        // ── 3. RESTAURAR en el hash de la URL ──
         function restoreToUrl() {
             if (!params) return;
             try {
@@ -72,9 +135,17 @@
                 }
             } catch (e) {}
         }
+
+        function refresh() {
+            var again = capture();
+            if (again && again.tgWebAppData) params = again;
+            persist();
+            restoreToUrl();
+        }
+
+        persist();
         restoreToUrl();
 
-        // 3. Añadir los parámetros a una URL de destino
         function appendTo(url) {
             if (!params || !url) return url;
             try {
@@ -84,12 +155,38 @@
             } catch (e) { return url; }
         }
 
-        return { get: function () { return params; }, appendTo: appendTo, restore: restoreToUrl };
+        return {
+            get: function () { return params; },
+            ok: function () { return !!(params && params.tgWebAppData); },
+            appendTo: appendTo,
+            restore: refresh
+        };
     })();
+
+    /* Cargar el SDK de Adsgram DESPUÉS de dejar los parámetros en su sitio,
+       para que al inicializarse ya los encuentre. */
+    (function () {
+        var s = document.createElement('script');
+        s.src = 'https://sad.adsgram.ai/js/sad.min.js';
+        s.async = false;
+        document.head.appendChild(s);
+    })();
+
+    /* Espera a que el SDK de Adsgram esté cargado (se carga en diferido).
+       Devuelve true si está listo, false si no llegó a tiempo. */
+    window.waitForAdsgram = function (timeoutMs) {
+        timeoutMs = timeoutMs || 8000;
+        return new Promise(function (resolve) {
+            if (window.Adsgram) return resolve(true);
+            var t0 = Date.now();
+            var iv = setInterval(function () {
+                if (window.Adsgram) { clearInterval(iv); resolve(true); }
+                else if (Date.now() - t0 > timeoutMs) { clearInterval(iv); resolve(false); }
+            }, 150);
+        });
+    };
     </script>
 
-    <!-- Adsgram SDK (rewarded ads) -->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
