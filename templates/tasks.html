@@ -874,6 +874,50 @@
       </div>
     </div>
 
+    <!-- ── CHECK-IN DIARIO (sistema propio, cada 24 horas) ── -->
+    <div class="tq-list" style="margin-bottom:0">
+      <div class="tq-task" id="checkinCard" style="border-left-color:#00e676">
+        <div class="tq-task-icon {% if not checkin.can_claim %}done{% endif %}" id="checkinIcon">
+          {% if checkin.can_claim %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="3" stroke-linecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          {% endif %}
+        </div>
+        <div class="tq-task-body">
+          <div class="tq-task-title">{{ t.tq_checkin_title if t.tq_checkin_title != 'tq_checkin_title' else 'Daily Check-In' }}</div>
+          <div class="tq-task-desc" id="checkinDesc">
+            {% if checkin.can_claim %}
+              {{ t.tq_checkin_desc if t.tq_checkin_desc != 'tq_checkin_desc' else 'Claim your daily reward' }}
+            {% else %}
+              <span id="checkinCountdown" data-seconds="{{ checkin.seconds_until_next }}">…</span>
+            {% endif %}
+          </div>
+          {% if checkin.streak > 0 %}
+          <div style="font-size:0.7rem;color:#ffd700;margin-top:4px">
+            🔥 {{ checkin.streak }} {{ t.tq_checkin_streak if t.tq_checkin_streak != 'tq_checkin_streak' else 'day streak' }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="tq-task-right">
+          <div class="tq-task-reward">+{{ '%.4f'|format(checkin.total_reward) }}</div>
+          {% if checkin.can_claim %}
+          <button class="tq-btn-start" id="checkinBtn" onclick="claimCheckin()">
+            {{ t.tq_claim if t.tq_claim != 'tq_claim' else 'CLAIM' }} ▸
+          </button>
+          {% else %}
+          <span class="tq-btn-done">{{ t.tq_claimed if t.tq_claimed != 'tq_claimed' else 'CLAIMED' }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
     <!-- ── TASKS LIST ── -->
     <div class="tq-list">
       {% if tasks %}
@@ -1003,6 +1047,78 @@
 <script>
 let currentTaskId = null;
 let currentChannelId = null;
+
+// ══════════════════════════════════════════════
+// CHECK-IN DIARIO (sistema propio, cada 24 horas)
+// ══════════════════════════════════════════════
+async function claimCheckin() {
+  var btn = document.getElementById('checkinBtn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="tq-spinner"></span>';
+
+  // Seguridad: si tarda demasiado, restaurar el botón
+  var safety = setTimeout(function () {
+    btn.disabled = false;
+    btn.innerHTML = 'CLAIM ▸';
+  }, 8000);
+
+  try {
+    const res = await fetch('/api/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    clearTimeout(safety);
+
+    if (data.success) {
+      showToast(data.message || ('+' + data.reward + ' TON'), 'success');
+      setTimeout(function () { location.reload(); }, 700);
+    } else {
+      showToast(data.message || 'Not available yet', 'error');
+      // Si ya estaba reclamado, recargar para mostrar la cuenta regresiva
+      if (data.already_claimed) {
+        setTimeout(function () { location.reload(); }, 900);
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = 'CLAIM ▸';
+      }
+    }
+  } catch (e) {
+    clearTimeout(safety);
+    showToast('Connection error', 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'CLAIM ▸';
+  }
+}
+
+// Cuenta regresiva hasta el próximo check-in
+(function () {
+  var el = document.getElementById('checkinCountdown');
+  if (!el) return;
+  var secs = parseInt(el.getAttribute('data-seconds') || '0', 10);
+
+  function fmt(s) {
+    if (s <= 0) return '';
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    return 'Next in ' + h + 'h ' + m + 'm ' + sec + 's';
+  }
+
+  function tick() {
+    if (secs <= 0) {
+      // Ya se puede reclamar: recargar para mostrar el botón
+      location.reload();
+      return;
+    }
+    el.textContent = fmt(secs);
+    secs--;
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
 
 function startTask(taskId, link, channelId) {
   currentTaskId = taskId;
