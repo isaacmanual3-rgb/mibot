@@ -133,6 +133,20 @@
 <div class="card pixel-border">
     <h2 class="section-title">📡 Grupos de IP compartida ({{ groups|length }})</h2>
 
+    <div style="background:#0a1420;border:2px solid #1e3a5a;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+            <div style="color:#40c4ff;font-size:0.8rem;font-weight:bold;margin-bottom:4px">🚧 LÍMITE DE CUENTAS POR IP <span style="color:#888;font-weight:normal">(no banea)</span></div>
+            <div style="color:#888;font-size:0.72rem;max-width:520px">
+                Solo deja entrar a las primeras {{ ip_limit_max }} cuenta(s) de cada IP. A las demás les sale
+                una pantalla pidiéndoles cambiar de red o usar VPN. <b>No las banea</b>: pueden entrar al cambiar de IP.
+            </div>
+        </div>
+        <button class="btn {% if ip_limit_enabled %}btn-danger{% else %}btn-primary{% endif %}"
+                style="white-space:nowrap" onclick="toggleIpLimit({{ 'false' if ip_limit_enabled else 'true' }})">
+            {% if ip_limit_enabled %}🔴 ACTIVO (desactivar){% else %}🔵 ACTIVAR{% endif %}
+        </button>
+    </div>
+
     <div style="background:#0a1a0e;border:2px solid #1e5a2e;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
             <div style="color:#00e676;font-size:0.8rem;font-weight:bold;margin-bottom:4px">🎯 BANEO AUTO POR DISPOSITIVO + IP <span style="color:#888;font-weight:normal">(recomendado)</span></div>
@@ -207,6 +221,25 @@
 </div>
 
 <script>
+async function toggleIpLimit(enable) {
+    var msg = enable
+        ? '¿Activar el LÍMITE DE CUENTAS POR IP?\n\nA las cuentas extra de una misma IP se les negará el acceso (sin banearlas) y verán una pantalla pidiéndoles cambiar de red o usar VPN.'
+        : '¿Desactivar el límite de cuentas por IP?';
+    if (!confirm(msg)) return;
+    try {
+        const res = await fetch('/admin/api/multiaccount/toggle-iplimit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: enable })
+        });
+        const data = await res.json();
+        alert(data.message || 'Listo');
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+
 async function toggleAutoBan(enable, type) {
     let msg;
     if (type === 'device') {
