@@ -1581,9 +1581,11 @@ def mining(user):
 def api_checkin(user):
     """Reclamar el check-in diario (una vez cada 24 horas reales)."""
     uid = user['user_id']
+    logger.info(f"[checkin] petición de reclamo user={uid}")
     status = get_checkin_status(uid)
 
     if not status:
+        logger.warning(f"[checkin] sin estado para user={uid}")
         return jsonify({'success': False, 'message': 'User not found'})
 
     if not status['can_claim']:
@@ -1598,10 +1600,18 @@ def api_checkin(user):
             'message': f'Next check-in in {horas}h {mins}m'
         })
 
-    result = claim_daily_checkin(uid)
+    try:
+        result = claim_daily_checkin(uid)
+    except Exception as e:
+        import traceback
+        logger.error(f"[checkin] error al reclamar user={uid}: {e}\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'Error: {e}'})
+
     if not result:
+        logger.warning(f"[checkin] claim devolvió None para user={uid}")
         return jsonify({'success': False, 'message': 'Could not claim right now'})
 
+    logger.info(f"[checkin] ✅ reclamado user={uid} día={result['streak']} +{result['reward']} TON")
     return jsonify({
         'success': True,
         'reward': result['reward'],
