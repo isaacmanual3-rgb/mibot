@@ -1151,8 +1151,19 @@ function closeCheckinModal() {
 async function claimCheckin() {
   var btn = document.getElementById('checkinClaimBtn');
   if (!btn || btn.disabled) return;
+
+  var btnHtml = btn.innerHTML;   // guardar el contenido original del botón
   btn.disabled = true;
   btn.innerHTML = '<span class="tq-spinner"></span> ' + (window.I18N?.tq_checking || 'LOADING AD...');
+
+  // Red de seguridad: si algo se cuelga, el botón vuelve solo a los 2 minutos
+  var globalSafety = setTimeout(function () {
+    if (btn.disabled) {
+      btn.disabled = false;
+      btn.innerHTML = btnHtml;
+      showToast(window.I18N?.mn_ads_unavailable || 'Something went wrong. Try again.', 'error');
+    }
+  }, 120000);
 
   // ── Anuncio interstitial de Adsgram con CLICK OBLIGATORIO ──
   // Asegurar que los parámetros de lanzamiento de Telegram estén en la URL
@@ -1198,10 +1209,18 @@ async function claimCheckin() {
   };
 
   var done = false;
+  var timedOut = false;
   var startedAt = Date.now();
   try {
     var ctrl = window.Adsgram.init({ blockId: String(CHECKIN_AD_BLOCK) });
-    var result = await ctrl.show();
+    // Carrera: el anuncio, o un timeout de 90s. Así el botón nunca se cuelga
+    // si Adsgram no resuelve su promesa (pasa cuando el usuario cierra raro).
+    var result = await Promise.race([
+      ctrl.show(),
+      new Promise(function (resolve) {
+        setTimeout(function () { timedOut = true; resolve(null); }, 90000);
+      })
+    ]);
     done = !!(result && result.done);
   } catch (e) {
     done = false;
@@ -1211,10 +1230,15 @@ async function claimCheckin() {
 
   var closedEarly = (Date.now() - startedAt) < 14000;
   var restoreBtn = function () {
+    clearTimeout(globalSafety);
     btn.disabled = false;
-    btn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:14px;height:14px;flex-shrink:0\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> WATCH AD & CLAIM";
+    btn.innerHTML = btnHtml;
   };
 
+  if (timedOut) {
+    showToast(window.I18N?.mn_ads_unavailable || 'Ad did not respond. Try again.', 'error');
+    return restoreBtn();
+  }
   if (closedEarly) {
     showToast(window.I18N?.mn_ads_closed_early || 'You closed the ad too early', 'error');
     return restoreBtn();
@@ -1237,6 +1261,7 @@ async function claimCheckin() {
       body: JSON.stringify({ ad_ok: true })
     });
     const data = await res.json();
+    clearTimeout(globalSafety);
     if (data.success) {
       showToast(data.message || ('+' + data.reward + ' TON'), 'success');
       setTimeout(function () { location.reload(); }, 800);
