@@ -1309,23 +1309,55 @@ async function claimCheckin() {
   // ── Anuncio válido con click → reclamar ──
   btn.innerHTML = '<span class="tq-spinner"></span>';
   try {
+    // Timeout de 20s para que la petición nunca deje el botón colgado
+    var ctlAbort = new AbortController();
+    var abortTimer = setTimeout(function () { ctlAbort.abort(); }, 20000);
+
     const res = await fetch('/api/checkin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ad_ok: true })
+      credentials: 'include',          // ← manda la sesión (sin esto el server no te reconoce)
+      body: JSON.stringify({ ad_ok: true }),
+      signal: ctlAbort.signal
     });
-    const data = await res.json();
+    clearTimeout(abortTimer);
     clearTimeout(globalSafety);
+
+    // Leer como texto primero: si el server devuelve HTML (sesión perdida),
+    // JSON.parse falla y sabremos exactamente qué pasó.
+    var raw = await res.text();
+    var data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error('[checkin] respuesta no-JSON:', res.status, raw.slice(0, 200));
+      showToast('Error ' + res.status + ' — reload the app', 'error');
+      return restoreBtn();
+    }
+
     if (data.success) {
       showToast(data.message || ('+' + data.reward + ' TON'), 'success');
       setTimeout(function () { location.reload(); }, 800);
     } else {
-      showToast(data.message || 'Not available yet', 'error');
-      if (data.already_claimed) setTimeout(function () { location.reload(); }, 900);
-      else restoreBtn();
+      // El servidor puede responder con 'message' o con 'error' (ej: sesión caducada)
+      var errMsg = data.message || data.error || 'Not available yet';
+      showToast(errMsg, 'error');
+      if (data.error === 'Authentication required') {
+        // Sesión perdida: recargar para reautenticar con Telegram
+        setTimeout(function () { location.reload(); }, 1200);
+      } else if (data.already_claimed) {
+        setTimeout(function () { location.reload(); }, 900);
+      } else {
+        restoreBtn();
+      }
     }
   } catch (e) {
-    showToast(window.I18N?.connection_error || 'Connection error', 'error');
+    clearTimeout(globalSafety);
+    var msg = (e && e.name === 'AbortError')
+      ? 'Server timeout. Try again.'
+      : (window.I18N?.connection_error || 'Connection error');
+    console.error('[checkin] error:', e);
+    showToast(msg, 'error');
     restoreBtn();
   }
 }
