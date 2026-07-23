@@ -1453,6 +1453,7 @@ def tasks(user):
         user=user,
         tasks=tasks_list,
         checkin=checkin,
+        adsgram_interstitial_id=get_config('adsgram_interstitial_id', '') or os.environ.get('ADSGRAM_INTERSTITIAL_ID', 'int-36741'),
         completed_tasks=completed_tasks,
         available_tasks=available_tasks,
         total_earned=total_earned,

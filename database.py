@@ -354,15 +354,52 @@ def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
 
 CHECKIN_COOLDOWN_HOURS = 24   # tiempo entre reclamos
 CHECKIN_STREAK_RESET_HOURS = 48  # si pasa de esto, la racha se rompe
+CHECKIN_TOTAL_DAYS = 30          # ciclo de 30 dias
+
+
+def get_checkin_day_reward(day):
+    """
+    Recompensa del dia N del ciclo (1..30).
+    Progresion suave: dia 1 = 0.0010 TON  →  dia 30 = 0.0100 TON.
+    """
+    day = max(1, min(int(day or 1), CHECKIN_TOTAL_DAYS))
+    first = float(get_config('checkin_day1_reward', '0.001') or 0.001)
+    last = float(get_config('checkin_day30_reward', '0.01') or 0.01)
+    if CHECKIN_TOTAL_DAYS <= 1:
+        return round(last, 6)
+    # Interpolacion lineal entre el dia 1 y el dia 30
+    step = (last - first) / (CHECKIN_TOTAL_DAYS - 1)
+    return round(first + step * (day - 1), 6)
+
+
+def get_checkin_calendar(current_streak, can_claim):
+    """
+    Devuelve la lista de los 30 dias para mostrar en el modal:
+    cada dia con su recompensa y su estado (reclamado / hoy / pendiente).
+    """
+    dias = []
+    # El dia que se reclamaria ahora
+    dia_actual = (int(current_streak or 0) % CHECKIN_TOTAL_DAYS) + 1
+    for d in range(1, CHECKIN_TOTAL_DAYS + 1):
+        if d < dia_actual:
+            estado = 'claimed'
+        elif d == dia_actual:
+            estado = 'today' if can_claim else 'waiting'
+        else:
+            estado = 'locked'
+        dias.append({
+            'day': d,
+            'reward': get_checkin_day_reward(d),
+            'state': estado,
+        })
+    return dias
 
 
 def _checkin_rewards(streak):
-    """Calcula la recompensa segun la racha actual."""
-    base = float(get_config('daily_base_reward', '0') or 0)
-    per_day = float(get_config('daily_streak_bonus', '0') or 0)
-    max_bonus = float(get_config('daily_max_streak_bonus', '0') or 0)
-    bonus = min(streak * per_day, max_bonus) if per_day else 0.0
-    return base, bonus, base + bonus
+    """Recompensa del proximo reclamo segun el dia del ciclo de 30."""
+    dia = ((int(streak or 0)) % CHECKIN_TOTAL_DAYS) + 1
+    total = get_checkin_day_reward(dia)
+    return 0.0, 0.0, total
 
 
 def get_checkin_status(user_id):
@@ -403,12 +440,16 @@ def get_checkin_status(user_id):
 
     # La racha que tendria si reclama AHORA
     next_streak = streak + 1
-    base, bonus, total = _checkin_rewards(next_streak)
+    base, bonus, total = _checkin_rewards(streak)
+    dia_actual = (streak % CHECKIN_TOTAL_DAYS) + 1
 
     return {
         'can_claim': can_claim,
         'streak': streak,
         'next_streak': next_streak,
+        'current_day': dia_actual,
+        'total_days': CHECKIN_TOTAL_DAYS,
+        'calendar': get_checkin_calendar(streak, can_claim),
         'base_reward': base,
         'streak_bonus': bonus,
         'total_reward': total,
