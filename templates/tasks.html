@@ -893,12 +893,15 @@
               <span id="checkinCountdown" data-seconds="{{ checkin.seconds_until_next }}">…</span>
             {% endif %}
           </div>
-          <div style="font-size:0.7rem;color:#ffd700;margin-top:4px">
-            📅 {{ t.tq_checkin_day if t.tq_checkin_day != 'tq_checkin_day' else 'Day' }} {{ checkin.current_day }}/{{ checkin.total_days }}
+          <div style="font-family:var(--font-pixel);font-size:0.4rem;letter-spacing:0.05em;color:var(--gold);margin-top:5px">
+            {{ t.tq_checkin_day if t.tq_checkin_day != 'tq_checkin_day' else 'DAY' }} {{ checkin.current_day }}/{{ checkin.total_days }}
           </div>
         </div>
         <div class="tq-task-right">
-          <div class="tq-task-reward">+{{ '%.4f'|format(checkin.total_reward) }}</div>
+          <div class="tq-reward">
+            <span class="tq-reward-icon" style="color:#40c4ff;">◈</span>
+            <span class="tq-reward-val">+{{ '%.4f'|format(checkin.total_reward) }}</span>
+          </div>
           <button class="tq-btn-start" onclick="openCheckinModal()">
             {{ t.tq_open if t.tq_open != 'tq_open' else 'OPEN' }} ▸
           </button>
@@ -907,54 +910,60 @@
     </div>
 
     <!-- ── MODAL DEL CHECK-IN: 30 DÍAS ── -->
-    <div class="tq-modal" id="checkinModal">
-      <div class="tq-modal-box" style="max-width:420px;width:94%">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-family:'Press Start 2P',monospace;font-size:0.72rem;color:#00e676">
-            📅 {{ t.tq_checkin_title if t.tq_checkin_title != 'tq_checkin_title' else 'DAILY CHECK-IN' }}
-          </div>
-          <button onclick="closeCheckinModal()" style="background:none;border:none;color:#888;font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+    <div class="tq-modal-bg" id="checkinModal">
+      <div class="tq-modal" style="max-width:420px">
+        <button onclick="closeCheckinModal()" aria-label="close"
+                style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text2);font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 8px;z-index:2">×</button>
+
+        <div class="tq-modal-icon" style="border-color:rgba(0,230,118,0.4);background:rgba(0,230,118,0.08)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" style="width:26px;height:26px">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M9 16l2 2 4-4"/>
+          </svg>
         </div>
 
-        <div style="font-size:0.85rem;color:#8a8ab0;margin-bottom:14px;line-height:1.4">
-          {{ t.tq_checkin_modal_desc if t.tq_checkin_modal_desc != 'tq_checkin_modal_desc' else 'Claim every day for 30 days. Rewards grow each day!' }}
-        </div>
+        <div class="tq-modal-title">{{ t.tq_checkin_title if t.tq_checkin_title != 'tq_checkin_title' else 'DAILY CHECK-IN' }}</div>
+        <div class="tq-modal-desc">{{ t.tq_checkin_modal_desc if t.tq_checkin_modal_desc != 'tq_checkin_modal_desc' else 'Claim every day for 30 days. Rewards grow each day!' }}</div>
 
         <!-- Cuadrícula de 30 días -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;max-height:280px;overflow-y:auto;padding:2px">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:16px 0;max-height:250px;overflow-y:auto;padding:2px">
           {% for d in checkin.calendar %}
           <div style="
-              border:2px solid {% if d.state == 'claimed' %}#1e5a2e{% elif d.state == 'today' %}#00e676{% elif d.state == 'waiting' %}#5a4a1e{% else %}#1e2a3a{% endif %};
-              background:{% if d.state == 'claimed' %}rgba(0,230,118,0.08){% elif d.state == 'today' %}rgba(0,230,118,0.18){% else %}#0a0e18{% endif %};
-              padding:6px 2px;text-align:center;position:relative;
-              {% if d.state == 'today' %}box-shadow:0 0 10px rgba(0,230,118,0.35);{% endif %}">
-            <div style="font-size:0.58rem;color:{% if d.state == 'locked' %}#555{% else %}#aaa{% endif %};margin-bottom:2px">
-              {{ t.tq_checkin_day if t.tq_checkin_day != 'tq_checkin_day' else 'Day' }} {{ d.day }}
+              border:2px solid {% if d.state == 'claimed' %}#1e5a2e{% elif d.state == 'today' %}var(--gold){% elif d.state == 'waiting' %}#5a4a1e{% else %}var(--border){% endif %};
+              background:{% if d.state == 'claimed' %}rgba(0,230,118,0.08){% elif d.state == 'today' %}rgba(255,215,0,0.14){% else %}var(--surface){% endif %};
+              box-shadow:{% if d.state == 'today' %}0 0 12px rgba(255,215,0,0.3){% else %}1px 1px 0 0 #030308{% endif %};
+              padding:7px 2px;text-align:center;position:relative">
+            <div style="font-family:var(--font-pixel);font-size:0.36rem;letter-spacing:0.04em;color:{% if d.state == 'locked' %}var(--text3,#555){% else %}var(--text2){% endif %};margin-bottom:3px">
+              {{ t.tq_checkin_day if t.tq_checkin_day != 'tq_checkin_day' else 'DAY' }}{{ d.day }}
             </div>
-            <div style="font-size:0.62rem;font-weight:bold;color:{% if d.state == 'claimed' %}#00e676{% elif d.state == 'today' %}#fff{% elif d.state == 'locked' %}#555{% else %}#ffd700{% endif %}">
+            <div style="font-size:0.66rem;font-weight:bold;color:{% if d.state == 'claimed' %}#00e676{% elif d.state == 'today' %}var(--gold){% elif d.state == 'locked' %}#555{% else %}var(--text2){% endif %}">
               {{ '%.4f'|format(d.reward) }}
             </div>
             {% if d.state == 'claimed' %}
-            <div style="position:absolute;top:2px;right:3px;color:#00e676;font-size:0.6rem">✓</div>
+            <div style="position:absolute;top:1px;right:3px;color:#00e676;font-size:0.55rem">✓</div>
             {% endif %}
           </div>
           {% endfor %}
         </div>
 
-        <!-- Botón de reclamo -->
         {% if checkin.can_claim %}
-        <button class="tq-btn-verify" id="checkinClaimBtn" onclick="claimCheckin()" style="width:100%">
-          📺 {{ t.tq_checkin_watch_claim if t.tq_checkin_watch_claim != 'tq_checkin_watch_claim' else 'WATCH AD & CLAIM' }}
+        <button class="tq-modal-verify" id="checkinClaimBtn" onclick="claimCheckin()" style="width:100%">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          {{ t.tq_checkin_watch_claim if t.tq_checkin_watch_claim != 'tq_checkin_watch_claim' else 'WATCH AD & CLAIM' }}
         </button>
-        <div style="font-size:0.72rem;color:#666;text-align:center;margin-top:8px;line-height:1.3">
+        <div style="font-size:0.72rem;color:var(--text3,#666);text-align:center;margin-top:10px;line-height:1.35">
           {{ t.tq_checkin_ad_note if t.tq_checkin_ad_note != 'tq_checkin_ad_note' else 'You must watch the ad and tap it to claim' }}
         </div>
         {% else %}
-        <div style="text-align:center;padding:14px;border:2px solid #3a2e1e;background:rgba(255,179,0,0.05)">
-          <div style="font-size:0.72rem;color:#ffb300;margin-bottom:4px">
-            ⏳ {{ t.tq_checkin_wait if t.tq_checkin_wait != 'tq_checkin_wait' else 'Come back later' }}
+        <div style="text-align:center;padding:16px;border:2px solid #3a2e1e;background:rgba(255,179,0,0.05);box-shadow:2px 2px 0 0 #030308">
+          <div style="font-family:var(--font-pixel);font-size:0.44rem;letter-spacing:0.05em;color:#ffb300;margin-bottom:8px">
+            {{ t.tq_checkin_wait if t.tq_checkin_wait != 'tq_checkin_wait' else 'COME BACK LATER' }}
           </div>
-          <div style="font-size:0.9rem;color:#fff" id="checkinModalCountdown" data-seconds="{{ checkin.seconds_until_next }}">…</div>
+          <div style="font-size:1rem;color:var(--text);font-weight:bold" id="checkinModalCountdown" data-seconds="{{ checkin.seconds_until_next }}">…</div>
         </div>
         {% endif %}
       </div>
@@ -1099,6 +1108,15 @@ function openCheckinModal() {
   var m = document.getElementById('checkinModal');
   if (m) m.classList.add('show');
 }
+// Cerrar al tocar fuera de la caja del modal
+document.addEventListener('DOMContentLoaded', function () {
+  var bg = document.getElementById('checkinModal');
+  if (bg) {
+    bg.addEventListener('click', function (e) {
+      if (e.target === bg) closeCheckinModal();
+    });
+  }
+});
 function closeCheckinModal() {
   var m = document.getElementById('checkinModal');
   if (m) m.classList.remove('show');
@@ -1114,7 +1132,7 @@ async function claimCheckin() {
   if (!window.Adsgram) {
     showToast(window.I18N?.mn_ads_unavailable || 'Ads not available', 'error');
     btn.disabled = false;
-    btn.innerHTML = '📺 WATCH AD & CLAIM';
+    btn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:14px;height:14px;flex-shrink:0\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> WATCH AD & CLAIM";
     return;
   }
 
@@ -1164,7 +1182,7 @@ async function claimCheckin() {
   var closedEarly = (Date.now() - startedAt) < 14000;
   var restoreBtn = function () {
     btn.disabled = false;
-    btn.innerHTML = '📺 WATCH AD & CLAIM';
+    btn.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"width:14px;height:14px;flex-shrink:0\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg> WATCH AD & CLAIM";
   };
 
   if (closedEarly) {
