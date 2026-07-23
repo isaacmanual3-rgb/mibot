@@ -960,15 +960,16 @@
               border:2px solid {% if d.state == 'claimed' %}#1e5a2e{% elif d.state == 'today' %}var(--gold){% elif d.state == 'waiting' %}#5a4a1e{% else %}var(--border){% endif %};
               background:{% if d.state == 'claimed' %}rgba(0,230,118,0.08){% elif d.state == 'today' %}rgba(255,215,0,0.14){% else %}var(--surface){% endif %};
               box-shadow:{% if d.state == 'today' %}0 0 12px rgba(255,215,0,0.3){% else %}1px 1px 0 0 #030308{% endif %};
-              padding:7px 2px;text-align:center;position:relative">
+              padding:7px 2px;text-align:center;position:relative"
+              data-checkin-day="{{ d.day }}">
             <div style="font-family:var(--font-pixel);font-size:0.36rem;letter-spacing:0.04em;color:{% if d.state == 'locked' %}var(--text3,#555){% else %}var(--text2){% endif %};margin-bottom:3px">
               {{ t.tq_checkin_day if t.tq_checkin_day != 'tq_checkin_day' else 'DAY' }}{{ d.day }}
             </div>
-            <div style="font-size:0.66rem;font-weight:bold;color:{% if d.state == 'claimed' %}#00e676{% elif d.state == 'today' %}var(--gold){% elif d.state == 'locked' %}#555{% else %}var(--text2){% endif %}">
+            <div data-day-reward="1" style="font-size:0.66rem;font-weight:bold;color:{% if d.state == 'claimed' %}#00e676{% elif d.state == 'today' %}var(--gold){% elif d.state == 'locked' %}#555{% else %}var(--text2){% endif %}">
               {{ '%.4f'|format(d.reward) }}
             </div>
             {% if d.state == 'claimed' %}
-            <div style="position:absolute;top:1px;right:3px;color:#00e676;font-size:0.55rem">✓</div>
+            <div data-day-check="1" style="position:absolute;top:1px;right:3px;color:#00e676;font-size:0.55rem">✓</div>
             {% endif %}
           </div>
           {% endfor %}
@@ -1175,6 +1176,79 @@ function closeAdClickWarning() {
   if (m) m.classList.remove('show');
 }
 
+// Recarga robusta: location.reload() a veces no funciona dentro de Telegram,
+// así que navegamos a la misma URL (conservando los parámetros de Telegram).
+function hardReload() {
+  try {
+    var url = window.location.pathname + window.location.search;
+    if (window.TG_PARAMS) url = window.TG_PARAMS.appendTo(url);
+    window.location.replace(url);
+  } catch (e) {
+    try { location.reload(); } catch (e2) {}
+  }
+}
+
+// Actualiza la pantalla tras reclamar, SIN recargar:
+// marca el día como reclamado, pone el contador y actualiza el saldo.
+function applyCheckinClaimed(data) {
+  try {
+    // 1. Botón → estado reclamado
+    var btn = document.getElementById('checkinClaimBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      btn.innerHTML = '✓ ' + (window.I18N?.tq_claimed || 'CLAIMED');
+    }
+
+    // 2. Marcar el día actual como reclamado en la cuadrícula
+    var celdas = document.querySelectorAll('#checkinModal [data-checkin-day]');
+    var dia = parseInt(data.streak || 0, 10);
+    celdas.forEach(function (c) {
+      if (parseInt(c.getAttribute('data-checkin-day'), 10) === dia) {
+        c.style.borderColor = '#1e5a2e';
+        c.style.background = 'rgba(0,230,118,0.08)';
+        c.style.boxShadow = '1px 1px 0 0 #030308';
+        var val = c.querySelector('[data-day-reward]');
+        if (val) val.style.color = '#00e676';
+        if (!c.querySelector('[data-day-check]')) {
+          var tick = document.createElement('div');
+          tick.setAttribute('data-day-check', '1');
+          tick.style.cssText = 'position:absolute;top:1px;right:3px;color:#00e676;font-size:0.55rem';
+          tick.textContent = '✓';
+          c.appendChild(tick);
+        }
+      }
+    });
+
+    // 3. Actualizar el saldo del encabezado
+    var bal = document.querySelector('[data-user-balance]');
+    if (bal && typeof data.reward === 'number') {
+      var actual = parseFloat((bal.textContent || '0').replace(/[^0-9.]/g, '')) || 0;
+      bal.textContent = (actual + data.reward).toFixed(4);
+    }
+
+    // 4. Reemplazar el botón por la cuenta regresiva de 24 h
+    var secs = data.next_in_seconds || 86400;
+    var cont = btn ? btn.parentNode : null;
+    if (cont) {
+      setTimeout(function () {
+        cont.innerHTML =
+          '<div style="text-align:center;padding:16px;border:2px solid #3a2e1e;' +
+          'background:rgba(255,179,0,0.05);box-shadow:2px 2px 0 0 #030308">' +
+          '<div style="font-family:var(--font-pixel);font-size:0.44rem;letter-spacing:0.05em;' +
+          'color:#ffb300;margin-bottom:8px">' + (window.I18N?.tq_checkin_wait || 'COME BACK LATER') + '</div>' +
+          '<div style="font-size:1rem;color:var(--text);font-weight:bold" ' +
+          'id="checkinModalCountdown" data-seconds="' + secs + '">…</div></div>';
+        startCheckinCountdown();
+      }, 1200);
+    }
+  } catch (e) {
+    console.error('[checkin] al actualizar pantalla:', e);
+    // Si algo falla, recargar como respaldo
+    setTimeout(hardReload, 800);
+  }
+}
+
 function openCheckinModal() {
   var m = document.getElementById('checkinModal');
   if (m) m.classList.add('show');
@@ -1337,16 +1411,18 @@ async function claimCheckin() {
 
     if (data.success) {
       showToast(data.message || ('+' + data.reward + ' TON'), 'success');
-      setTimeout(function () { location.reload(); }, 800);
+      // Actualizar la pantalla SIN depender de location.reload()
+      // (dentro de Telegram a veces no se ejecuta).
+      applyCheckinClaimed(data);
     } else {
       // El servidor puede responder con 'message' o con 'error' (ej: sesión caducada)
       var errMsg = data.message || data.error || 'Not available yet';
       showToast(errMsg, 'error');
       if (data.error === 'Authentication required') {
         // Sesión perdida: recargar para reautenticar con Telegram
-        setTimeout(function () { location.reload(); }, 1200);
+        setTimeout(hardReload, 1200);
       } else if (data.already_claimed) {
-        setTimeout(function () { location.reload(); }, 900);
+        setTimeout(hardReload, 900);
       } else {
         restoreBtn();
       }
@@ -1363,7 +1439,9 @@ async function claimCheckin() {
 }
 
 // Cuenta regresiva (en la tarjeta y en el modal)
-(function () {
+var _checkinTimer = null;
+function startCheckinCountdown() {
+  if (_checkinTimer) { clearTimeout(_checkinTimer); _checkinTimer = null; }
   var els = [
     document.getElementById('checkinCountdown'),
     document.getElementById('checkinModalCountdown')
@@ -1378,14 +1456,15 @@ async function claimCheckin() {
     return h + 'h ' + m + 'm ' + sec + 's';
   }
   function tick() {
-    if (secs <= 0) { location.reload(); return; }
+    if (secs <= 0) { hardReload(); return; }
     var txt = fmt(secs);
     els.forEach(function (e) { e.textContent = txt; });
     secs--;
-    setTimeout(tick, 1000);
+    _checkinTimer = setTimeout(tick, 1000);
   }
   tick();
-})();
+}
+startCheckinCountdown();
 
 function startTask(taskId, link, channelId) {
   currentTaskId = taskId;
@@ -1469,14 +1548,14 @@ async function completeTaskDirect(taskId) {
     if (data.success) {
       const doneMsg = (window.I18N?.tq_quest_done || 'Quest completed! +{reward} TON').replace('{reward}', data.reward);
       showToast(doneMsg, 'success');
-      setTimeout(() => location.reload(), 500);
+      setTimeout(hardReload, 500);
     } else {
       showToast(data.message || (window.I18N?.tq_task_fail || 'Task failed'), 'error');
       // Si el error es porque ya está completada o reclamada, recargar para
       // mostrar el estado correcto en vez de dejar el botón colgado.
       var m = (data.message || '').toLowerCase();
       if (m.indexOf('already') !== -1 || m.indexOf('completed') !== -1 || m.indexOf('claimed') !== -1) {
-        setTimeout(() => location.reload(), 600);
+        setTimeout(hardReload, 600);
       } else {
         restoreTaskButton(taskId);
       }

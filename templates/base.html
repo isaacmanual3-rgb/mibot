@@ -166,7 +166,7 @@
                                 <line x1="28" y1="17.5" x2="28" y2="35" stroke="white" stroke-width="3.2" stroke-linecap="round"/>
                             </svg>
                         </span>
-                        <span class="hdr-balance-amt">{{ format_ton(user.doge_balance if user else 0) }}</span>
+                        <span class="hdr-balance-amt" data-user-balance="1">{{ format_ton(user.doge_balance if user else 0) }}</span>
                     </div>
                     <span class="hdr-balance-lbl">{{ t.balance_label }}</span>
                     <!-- Language switcher -->
