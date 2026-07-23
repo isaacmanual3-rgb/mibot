@@ -14,27 +14,27 @@
     
     <div class="config-grid">
         <div class="config-item">
-            <label class="config-label">Daily Base Reward</label>
+            <label class="config-label">Check-In · Día 1</label>
             <div class="config-input-group">
                 <input type="number" class="form-input config-input" 
-                       data-key="daily_base_reward" 
-                       value="{{ config.daily_base_reward or 0 }}"
-                       step="0.00000001" min="0">
-                <span class="config-unit">DOGE</span>
+                       data-key="checkin_day1_reward" 
+                       value="{{ config.checkin_day1_reward or 0.001 }}"
+                       step="0.0001" min="0">
+                <span class="config-unit">TON</span>
             </div>
-            <p class="config-hint">Base reward for daily check-in</p>
+            <p class="config-hint">Recompensa del primer día del ciclo de 30</p>
         </div>
         
         <div class="config-item">
-            <label class="config-label">Streak Bonus</label>
+            <label class="config-label">Check-In · Día 30</label>
             <div class="config-input-group">
                 <input type="number" class="form-input config-input" 
-                       data-key="daily_streak_bonus" 
-                       value="{{ config.daily_streak_bonus or 0 }}"
-                       step="0.00000001" min="0">
-                <span class="config-unit">DOGE/day</span>
+                       data-key="checkin_day30_reward" 
+                       value="{{ config.checkin_day30_reward or 0.01 }}"
+                       step="0.0001" min="0">
+                <span class="config-unit">TON</span>
             </div>
-            <p class="config-hint">Additional reward per streak day</p>
+            <p class="config-hint">Recompensa del día 30 (los días intermedios suben solos)</p>
         </div>
         
         <div class="config-item">
@@ -59,18 +59,6 @@
                 <span class="config-unit">days</span>
             </div>
             <p class="config-hint">Cap for streak bonus multiplier</p>
-        </div>
-
-        <div class="config-item">
-            <label class="config-label">Máximo Bonus de Racha</label>
-            <div class="config-input-group">
-                <input type="number" class="form-input config-input"
-                       data-key="daily_max_streak_bonus"
-                       value="{{ config.daily_max_streak_bonus or 0 }}"
-                       step="0.00000001" min="0">
-                <span class="config-unit">TON</span>
-            </div>
-            <p class="config-hint">Tope máximo del bonus de racha diaria (0 = sin bonus)</p>
         </div>
 
         <div class="config-item">
