@@ -1240,6 +1240,15 @@ def ip_gate(user_id, ip_address, max_accounts=None, window_hours=24):
     if get_config('ip_limit_enabled', '0') != '1':
         return True
 
+    # Los administradores nunca se bloquean
+    try:
+        import os as _os
+        _admins = set(a.strip() for a in _os.environ.get('ADMIN_IDS', '5515244003').split(',') if a.strip())
+        if uid in _admins:
+            return True
+    except Exception:
+        pass
+
     try:
         # Cuentas distintas que usaron esta IP en la ventana, más antiguas primero
         rows = execute_query(

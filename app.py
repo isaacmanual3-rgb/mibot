@@ -3258,13 +3258,15 @@ def admin_ip_debug():
         return jsonify({
             'ip_consultada': ip,
             'limite_activo': activo,
+            'ESTADO': '🟢 ACTIVO - está bloqueando' if activo
+                      else '🔴 APAGADO - actívalo en Panel > Multicuentas > boton azul',
             'max_cuentas': maximo,
             'cuentas_en_esta_ip_TOTAL': len(filas),
             'cuentas_ultimas_24h': ocupantes,
             'con_cupo': ocupantes[:maximo],
             'serian_bloqueadas': ocupantes[maximo:],
             'prueba_gate_para_u': prueba,
-            'nota': 'Si limite_activo es false, el sistema está apagado y nunca bloquea.'
+            'nota': 'Los administradores (ADMIN_IDS) nunca se bloquean.'
         })
     except Exception as e:
         import traceback
