@@ -2135,19 +2135,10 @@ def init_all_tables():
             )
         log.info("✓ default mining plans seeded")
 
-    # ── Sample tasks (only if tasks table is empty) ────────────
-    count = execute_query("SELECT COUNT(*) as c FROM tasks", fetch_one=True)
-    if count and count.get('c', 0) == 0:
-        sample_tasks = [
-            ('join_channel', 'Únete al Canal', 'Únete al canal oficial de Telegram', 0, 'channel', 'telegram', 1, '@DogePixel', 1),
-            ('invite_friend', 'Invita un Amigo', 'Comparte tu enlace de referido', 0, 'users', 'social', 0, None, 2),
-        ]
-        for t in sample_tasks:
-            execute_query(
-                "INSERT IGNORE INTO tasks (task_id,title,description,reward,icon,task_type,requires_channel,channel_username,sort_order) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                t
-            )
-        log.info("✓ sample tasks seeded")
+    # ── Tareas de ejemplo: DESACTIVADO ─────────────────────────
+    # Antes se creaban tareas automáticamente cuando la tabla estaba vacía,
+    # por eso reaparecían en cada reinicio aunque el admin las borrara.
+    # Ahora las tareas se crean solo desde el panel de administración.
 
     log.info("[init_all_tables] ✅ All tables ready.")
 
@@ -2629,6 +2620,11 @@ def _run_migrations():
     safe_run("remove_broken_daily_quest_task_v1",
         "DELETE FROM tasks WHERE task_id = 'daily_quest'",
         "DELETE FROM task_completions WHERE task_id = 'daily_quest'"
+    )
+    # Eliminar las tareas de ejemplo que se recreaban solas en cada reinicio.
+    safe_run("remove_sample_tasks_v1",
+        "DELETE FROM tasks WHERE task_id IN ('join_channel','invite_friend')",
+        "DELETE FROM task_completions WHERE task_id IN ('join_channel','invite_friend')"
     )
     # Limpiar los device_hash viejos (fingerprint canvas/webgl que COLISIONA por
     # modelo de teléfono). Se regeneran con el nuevo UUID único por navegador.
