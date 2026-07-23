@@ -1443,9 +1443,16 @@ def tasks(user):
     available_tasks = len(tasks_list) - completed_tasks if tasks_list else 0
     total_earned = float(user.get('total_earned', 0))
     
+    # Estado del check-in diario (sistema propio, 24h reales)
+    checkin = get_checkin_status(user['user_id']) or {
+        'can_claim': False, 'streak': 0, 'total_reward': 0,
+        'seconds_until_next': 0, 'total_checkins': 0
+    }
+
     return render_template('tasks.html',
         user=user,
         tasks=tasks_list,
+        checkin=checkin,
         completed_tasks=completed_tasks,
         available_tasks=available_tasks,
         total_earned=total_earned,
@@ -1571,21 +1578,53 @@ def mining(user):
 @app.route('/api/checkin', methods=['POST'])
 @require_user
 def api_checkin(user):
-    """Claim daily check-in"""
-    result = claim_daily_checkin(user['user_id'])
-    
-    if not result:
+    """Reclamar el check-in diario (una vez cada 24 horas reales)."""
+    uid = user['user_id']
+    status = get_checkin_status(uid)
+
+    if not status:
+        return jsonify({'success': False, 'message': 'User not found'})
+
+    if not status['can_claim']:
+        # Aún no pasan 24 horas: informar cuánto falta
+        secs = status.get('seconds_until_next', 0)
+        horas = secs // 3600
+        mins = (secs % 3600) // 60
         return jsonify({
             'success': False,
-            'message': 'Already claimed today!'
+            'already_claimed': True,
+            'seconds_until_next': secs,
+            'message': f'Next check-in in {horas}h {mins}m'
         })
-    
+
+    result = claim_daily_checkin(uid)
+    if not result:
+        return jsonify({'success': False, 'message': 'Could not claim right now'})
+
     return jsonify({
         'success': True,
         'reward': result['reward'],
         'streak': result['streak'],
         'streak_bonus': result['streak_bonus'],
-        'message': f'Day {result["streak"]} complete!'
+        'next_in_seconds': result['next_in_seconds'],
+        'message': f"Day {result['streak']} claimed! +{result['reward']:.4f} TON"
+    })
+
+
+@app.route('/api/checkin/status')
+@require_user
+def api_checkin_status(user):
+    """Estado del check-in (para mostrar el botón o la cuenta regresiva)."""
+    status = get_checkin_status(user['user_id'])
+    if not status:
+        return jsonify({'success': False})
+    return jsonify({
+        'success': True,
+        'can_claim': status['can_claim'],
+        'streak': status['streak'],
+        'total_reward': status['total_reward'],
+        'seconds_until_next': status['seconds_until_next'],
+        'total_checkins': status['total_checkins'],
     })
 
 @app.route('/api/task/complete', methods=['POST'])

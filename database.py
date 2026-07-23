@@ -343,91 +343,119 @@ def get_user_history_paginated(user_id, category='all', page=1, per_page=100):
 # DAILY CHECK-IN OPERATIONS
 # ============================================
 
+# ══════════════════════════════════════════════════════════════
+# CHECK-IN DIARIO  (sistema propio, reinicio cada 24 horas reales)
+# ══════════════════════════════════════════════════════════════
+# Reglas:
+#   - Se puede reclamar una vez cada 24 horas REALES (no por día del calendario).
+#   - Si pasan más de 48 horas sin reclamar, la racha vuelve a 0.
+#   - La recompensa es: base + (racha x bono), con un tope máximo.
+# ══════════════════════════════════════════════════════════════
+
+CHECKIN_COOLDOWN_HOURS = 24   # tiempo entre reclamos
+CHECKIN_STREAK_RESET_HOURS = 48  # si pasa de esto, la racha se rompe
+
+
+def _checkin_rewards(streak):
+    """Calcula la recompensa segun la racha actual."""
+    base = float(get_config('daily_base_reward', '0') or 0)
+    per_day = float(get_config('daily_streak_bonus', '0') or 0)
+    max_bonus = float(get_config('daily_max_streak_bonus', '0') or 0)
+    bonus = min(streak * per_day, max_bonus) if per_day else 0.0
+    return base, bonus, base + bonus
+
+
 def get_checkin_status(user_id):
-    """Get user's daily check-in status. Reinicia cada 24 horas REALES."""
+    """
+    Estado del check-in diario del usuario.
+    Devuelve si puede reclamar, cuanto falta, la racha y la recompensa.
+    """
     user = get_user(user_id)
     if not user:
         return None
 
     now = datetime.now()
-    today = date.today()
-    last_checkin_at = user.get('last_checkin_at')  # timestamp exacto
-    last_checkin = user.get('last_checkin')          # fecha (respaldo)
-    streak = user.get('checkin_streak', 0)
+    last_at = user.get('last_checkin_at')
+    streak = int(user.get('checkin_streak', 0) or 0)
+
+    # Normalizar el timestamp del ultimo reclamo
+    if isinstance(last_at, str):
+        try:
+            last_at = datetime.fromisoformat(last_at.replace('Z', ''))
+        except Exception:
+            last_at = None
+    if last_at is not None and not isinstance(last_at, datetime):
+        last_at = None
 
     can_claim = True
+    seconds_until_next = 0
     hours_since = None
 
-    # Preferir el timestamp exacto (24h reales)
-    if last_checkin_at:
-        if isinstance(last_checkin_at, str):
-            try:
-                last_checkin_at = datetime.fromisoformat(last_checkin_at.replace('Z', ''))
-            except Exception:
-                last_checkin_at = None
-        if isinstance(last_checkin_at, datetime):
-            hours_since = (now - last_checkin_at).total_seconds() / 3600.0
-            if hours_since < 24:
-                can_claim = False  # aún no pasan 24 horas
-            elif hours_since >= 48:
-                streak = 0  # pasaron más de 2 días, racha rota
-    elif last_checkin:
-        # Respaldo: si no hay timestamp, usar la lógica por fecha
-        if isinstance(last_checkin, str):
-            last_checkin = datetime.strptime(last_checkin, '%Y-%m-%d').date()
-        elif isinstance(last_checkin, datetime):
-            last_checkin = last_checkin.date()
-        if last_checkin == today:
+    if last_at:
+        hours_since = (now - last_at).total_seconds() / 3600.0
+        if hours_since < CHECKIN_COOLDOWN_HOURS:
+            # Aun no pasan 24 horas
             can_claim = False
-        elif last_checkin < today - timedelta(days=1):
+            seconds_until_next = int((CHECKIN_COOLDOWN_HOURS - hours_since) * 3600)
+        elif hours_since >= CHECKIN_STREAK_RESET_HOURS:
+            # Paso demasiado tiempo: la racha se rompe
             streak = 0
 
-    # Calculate rewards
-    base_reward = float(get_config('daily_base_reward', '0'))
-    streak_bonus = float(get_config('daily_streak_bonus', '0'))
-    max_bonus = float(get_config('daily_max_streak_bonus', '0'))
-
-    bonus = min(streak * streak_bonus, max_bonus)
-    total_reward = base_reward + bonus
-
-    # Segundos hasta poder reclamar de nuevo (para mostrar cuenta regresiva)
-    seconds_until = 0
-    if not can_claim and hours_since is not None:
-        seconds_until = int((24 - hours_since) * 3600)
+    # La racha que tendria si reclama AHORA
+    next_streak = streak + 1
+    base, bonus, total = _checkin_rewards(next_streak)
 
     return {
         'can_claim': can_claim,
         'streak': streak,
-        'last_checkin': last_checkin,
-        'base_reward': base_reward,
+        'next_streak': next_streak,
+        'base_reward': base,
         'streak_bonus': bonus,
-        'total_reward': total_reward,
-        'total_checkins': user.get('total_checkins', 0),
-        'longest_streak': user.get('longest_streak', 0),
-        'seconds_until_next': seconds_until
+        'total_reward': total,
+        'seconds_until_next': seconds_until_next,
+        'hours_since_last': round(hours_since, 2) if hours_since is not None else None,
+        'total_checkins': int(user.get('total_checkins', 0) or 0),
+        'longest_streak': int(user.get('longest_streak', 0) or 0),
+        'last_checkin_at': last_at,
     }
 
+
 def claim_daily_checkin(user_id):
-    """Process daily check-in claim"""
+    """
+    Reclama el check-in diario.
+    Devuelve un dict con la recompensa, o None si todavia no puede reclamar.
+    """
     status = get_checkin_status(user_id)
-    if not status or not status['can_claim']:
+    if not status:
+        return None
+    if not status['can_claim']:
         return None
 
-    user = get_user(user_id)
+    now = datetime.now()
     today = date.today()
+    new_streak = status['next_streak']
+    total_reward = status['total_reward']
 
-    # Calculate new streak
-    new_streak = status['streak'] + 1
-    longest_streak = max(new_streak, user.get('longest_streak', 0))
+    user = get_user(user_id) or {}
+    longest = max(new_streak, int(user.get('longest_streak', 0) or 0))
 
-    # Record check-in
-    execute_query("""
-        INSERT INTO daily_checkins (user_id, checkin_date, day_number, reward, streak_bonus, total_reward)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (str(user_id), today, new_streak, status['base_reward'],
-          status['streak_bonus'], status['total_reward']))
+    # Guardar el reclamo en el historial (si ya existe uno hoy, no falla)
+    try:
+        execute_query("""
+            INSERT INTO daily_checkins
+                (user_id, checkin_date, day_number, reward, streak_bonus, total_reward)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                day_number = VALUES(day_number),
+                reward = VALUES(reward),
+                streak_bonus = VALUES(streak_bonus),
+                total_reward = VALUES(total_reward)
+        """, (str(user_id), today, new_streak, status['base_reward'],
+              status['streak_bonus'], total_reward))
+    except Exception as e:
+        logger.warning(f"[checkin] historial: {e}")
 
-    # Update user
+    # Actualizar al usuario (la hora exacta es lo que manda para las 24h)
     execute_query("""
         UPDATE users SET
             checkin_streak = %s,
@@ -436,20 +464,23 @@ def claim_daily_checkin(user_id):
             longest_streak = %s,
             total_checkins = total_checkins + 1
         WHERE user_id = %s
-    """, (new_streak, today, datetime.now(), longest_streak, str(user_id)))
+    """, (new_streak, today, now, longest, str(user_id)))
 
-    # Add balance
-    update_balance(user_id, status['total_reward'], 'daily_checkin',
-                   f"Day {new_streak} check-in reward")
+    # Acreditar la recompensa
+    if total_reward > 0:
+        update_balance(user_id, total_reward, 'daily_checkin',
+                       f"Check-in dia {new_streak}")
 
-    # Update stats
     increment_stat('total_checkins')
+    logger.info(f"[checkin] user={user_id} racha={new_streak} recompensa={total_reward}")
 
     return {
-        'reward': status['total_reward'],
+        'reward': total_reward,
         'streak': new_streak,
-        'streak_bonus': status['streak_bonus']
+        'streak_bonus': status['streak_bonus'],
+        'next_in_seconds': CHECKIN_COOLDOWN_HOURS * 3600,
     }
+
 
 def get_checkin_history(user_id, days=7):
     """Get recent check-in history"""
@@ -2069,7 +2100,6 @@ def init_all_tables():
         sample_tasks = [
             ('join_channel', 'Únete al Canal', 'Únete al canal oficial de Telegram', 0, 'channel', 'telegram', 1, '@DogePixel', 1),
             ('invite_friend', 'Invita un Amigo', 'Comparte tu enlace de referido', 0, 'users', 'social', 0, None, 2),
-            ('daily_quest', 'Check-In Diario', 'Reclama tu recompensa diaria', 0, 'calendar', 'daily', 0, None, 3),
         ]
         for t in sample_tasks:
             execute_query(
@@ -2551,6 +2581,13 @@ def _run_migrations():
     # Hora exacta del último check-in (para reinicio cada 24h reales, no por fecha).
     safe_run("add_users_last_checkin_at",
         "ALTER TABLE users ADD COLUMN last_checkin_at DATETIME DEFAULT NULL"
+    )
+    # Eliminar la vieja tarea 'daily_quest' (check-in): estaba montada como tarea
+    # normal, por eso quedaba "RECLAMADO" para siempre. Ahora el check-in es un
+    # sistema propio con su lógica de 24 horas.
+    safe_run("remove_broken_daily_quest_task_v1",
+        "DELETE FROM tasks WHERE task_id = 'daily_quest'",
+        "DELETE FROM task_completions WHERE task_id = 'daily_quest'"
     )
     # Limpiar los device_hash viejos (fingerprint canvas/webgl que COLISIONA por
     # modelo de teléfono). Se regeneran con el nuevo UUID único por navegador.
