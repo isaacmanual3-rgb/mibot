@@ -1230,7 +1230,7 @@ def ip_gate(user_id, ip_address, max_accounts=None, window_hours=24):
     # Config: máximo de cuentas por IP (0 = sin límite)
     if max_accounts is None:
         try:
-            max_accounts = int(get_config('ip_limit_max_accounts', '2') or 2)
+            max_accounts = int(get_config('ip_limit_max_accounts', '1') or 1)
         except Exception:
             max_accounts = 2
     if max_accounts <= 0:
@@ -1263,8 +1263,8 @@ def ip_gate(user_id, ip_address, max_accounts=None, window_hours=24):
             return True
 
         # Cupo lleno y no es de los primeros → bloquear
-        logger.info(f"[ip_gate] {uid} bloqueado en {ip_address} "
-                    f"({len(ocupantes)} cuentas, máx {max_accounts})")
+        logger.info(f"[ip_gate] 🚫 {uid} BLOQUEADO en {ip_address} · "
+                    f"ocupada por {ocupantes[:max_accounts]} · máx={max_accounts}")
         return False
     except Exception as e:
         logger.warning(f"[ip_gate] error (deja pasar): {e}")

@@ -726,6 +726,17 @@ def require_user(f):
             if request.is_json:
                 return jsonify({'error': 'Access denied'}), 403
             return render_template('banned.html', reason='IP address blocked')
+
+        # ── Límite de cuentas por IP (NO banea, solo niega el acceso) ──
+        try:
+            from database import ip_gate
+            if not ip_gate(user_id, client_ip):
+                if request.is_json:
+                    return jsonify({'error': 'ip_in_use', 'redirect': '/'}), 403
+                _l = session.get('lang', 'en')
+                return render_template('ip_in_use.html', t=get_t(_l), lang=_l), 403
+        except Exception as _ige:
+            logger.warning(f"[ip_gate] error (deja pasar): {_ige}")
         
         # Record activity
         record_user_ip(user_id, client_ip)
@@ -895,20 +906,9 @@ def index():
                 channel=REQUIRED_CHANNEL,
                 channel_url=channel_url)
 
-    # ── Límite de cuentas por IP (NO banea: solo niega el acceso) ──
-    _cli_ip = get_client_ip()
-    try:
-        from database import ip_gate
-        if not ip_gate(user_id, _cli_ip):
-            _ipu_lang = session.get('lang', 'en')
-            return render_template('ip_in_use.html',
-                                   t=get_t(_ipu_lang),
-                                   lang=_ipu_lang), 403
-    except Exception as _ige:
-        logger.warning(f"[ip_gate] error (deja pasar): {_ige}")
-
-    # Se registra la IP SOLO tras pasar el gate: una cuenta bloqueada no ocupa cupo
-    record_user_ip(user_id, _cli_ip)
+    # El límite por IP ya se aplica en require_user (cubre todas las páginas).
+    # Se registra la IP SOLO tras pasar el gate: una cuenta bloqueada no ocupa cupo.
+    record_user_ip(user_id, get_client_ip())
 
     # ── Baneo automático por IP compartida (si está activado) ──
     if get_config('auto_ban_shared_ip', '0') == '1':
@@ -3038,7 +3038,7 @@ def admin_multiaccounts():
     auto_ban_enabled = get_config('auto_ban_shared_ip', '0') == '1'
     auto_ban_device = get_config('auto_ban_device_ip', '0') == '1'
     ip_limit_enabled = get_config('ip_limit_enabled', '0') == '1'
-    ip_limit_max = int(get_config('ip_limit_max_accounts', '2') or 2)
+    ip_limit_max = int(get_config('ip_limit_max_accounts', '1') or 1)
     auto_ban_threshold = int(get_config('auto_ban_ip_threshold', '3') or 3)
     auto_ban_max = int(get_config('auto_ban_ip_max', '8') or 8)
 
@@ -3214,6 +3214,56 @@ def api_device_check():
     except Exception as e:
         logger.error(f"[device-check] {e}")
         return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/admin/api/ip-debug')
+@require_admin
+def admin_ip_debug():
+    """Diagnóstico del límite de cuentas por IP."""
+    from database import execute_query, ip_gate, get_ip_occupants
+    ip = request.args.get('ip') or get_client_ip()
+    uid = request.args.get('u') or ''
+    try:
+        activo = get_config('ip_limit_enabled', '0') == '1'
+        maximo = int(get_config('ip_limit_max_accounts', '1') or 1)
+
+        filas = execute_query(
+            """SELECT user_id, MIN(first_seen) AS entro, MAX(last_seen) AS visto
+               FROM user_ips
+               WHERE ip_address = %s
+               GROUP BY user_id
+               ORDER BY entro ASC""",
+            (ip,), fetch_all=True
+        ) or []
+
+        recientes = execute_query(
+            """SELECT user_id, MIN(first_seen) AS entro
+               FROM user_ips
+               WHERE ip_address = %s
+                 AND last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+               GROUP BY user_id
+               ORDER BY entro ASC""",
+            (ip,), fetch_all=True
+        ) or []
+
+        ocupantes = [str(r['user_id']) for r in recientes if r.get('user_id')]
+
+        return jsonify({
+            'ip_consultada': ip,
+            'limite_activo': activo,
+            'max_cuentas': maximo,
+            'cuentas_en_esta_ip_TOTAL': len(filas),
+            'cuentas_ultimas_24h': ocupantes,
+            'con_cupo': ocupantes[:maximo],
+            'serian_bloqueadas': ocupantes[maximo:],
+            'prueba_gate_para_u': (
+                {'user_id': uid, 'puede_entrar': ip_gate(uid, ip)} if uid else 'pasa ?u=ID para probar'
+            ),
+            'nota': 'Si limite_activo es false, el sistema está apagado y nunca bloquea.'
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({'error': str(e), 'trace': traceback.format_exc()[-600:]})
 
 
 @app.route('/admin/api/multiaccount/toggle-iplimit', methods=['POST'])
