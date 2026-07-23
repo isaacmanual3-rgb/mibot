@@ -141,10 +141,15 @@
                 una pantalla pidiéndoles cambiar de red o usar VPN. <b>No las banea</b>: pueden entrar al cambiar de IP.
             </div>
         </div>
-        <button class="btn {% if ip_limit_enabled %}btn-danger{% else %}btn-primary{% endif %}"
-                style="white-space:nowrap" onclick="toggleIpLimit({{ 'false' if ip_limit_enabled else 'true' }})">
-            {% if ip_limit_enabled %}🔴 ACTIVO (desactivar){% else %}🔵 ACTIVAR{% endif %}
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn {% if ip_limit_enabled %}btn-danger{% else %}btn-primary{% endif %}"
+                    style="white-space:nowrap" onclick="toggleIpLimit({{ 'false' if ip_limit_enabled else 'true' }})">
+                {% if ip_limit_enabled %}🔴 ACTIVO (desactivar){% else %}🔵 ACTIVAR{% endif %}
+            </button>
+            <button class="btn btn-secondary" style="white-space:nowrap" onclick="clearOldIps()">
+                🧹 LIMPIAR ANTIGUAS
+            </button>
+        </div>
     </div>
 
     <div style="background:#0a1a0e;border:2px solid #1e5a2e;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -206,9 +211,13 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <button class="btn btn-danger" style="padding:5px 10px;font-size:0.65rem;white-space:nowrap"
+                    <button class="btn btn-danger" style="padding:5px 10px;font-size:0.65rem;white-space:nowrap;margin-bottom:5px"
                             onclick="banIpGroup('{{ g.ip }}', {{ g.account_count }})">
                         ⛔ BANEAR TODOS
+                    </button>
+                    <button class="btn btn-secondary" style="padding:5px 10px;font-size:0.65rem;white-space:nowrap"
+                            onclick="clearIp('{{ g.ip }}', {{ g.account_count }})">
+                        🧹 LIMPIAR IP
                     </button>
                 </td>
             </tr>
@@ -221,6 +230,46 @@
 </div>
 
 <script>
+// Libera una IP: borra sus registros para que los cupos queden libres.
+// NO borra usuarios ni los banea.
+async function clearIp(ip, count) {
+    if (!confirm('¿Limpiar la IP ' + ip + '?\n\nSe borrarán sus ' + count +
+                 ' registro(s) y quedará libre. Los usuarios NO se borran ni se banean:\n' +
+                 'el próximo que entre tomará el cupo.')) return;
+    try {
+        const res = await fetch('/admin/api/multiaccount/clear-ip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip })
+        });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Listo' : 'Error'));
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+
+// Limpieza general: borra registros más viejos que N horas
+async function clearOldIps() {
+    var horas = prompt('Limpiar registros de IP más viejos que… (horas)', '48');
+    if (!horas || !/^\d+$/.test(horas)) return;
+    if (!confirm('¿Borrar todos los registros de IP con más de ' + horas + ' horas?\n\n' +
+                 'Libera cupos antiguos. No borra ni banea usuarios.')) return;
+    try {
+        const res = await fetch('/admin/api/multiaccount/clear-ip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ older_than_hours: parseInt(horas, 10) })
+        });
+        const data = await res.json();
+        alert(data.message || 'Listo');
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+}
+
 async function toggleIpLimit(enable) {
     var msg = enable
         ? '¿Activar el LÍMITE DE CUENTAS POR IP?\n\nA las cuentas extra de una misma IP se les negará el acceso (sin banearlas) y verán una pantalla pidiéndoles cambiar de red o usar VPN.'
