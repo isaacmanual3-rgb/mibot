@@ -333,6 +333,18 @@ TRANSLATIONS = {
     'tq_checkin_watch_claim': {'en': 'WATCH AD & CLAIM',   'es': 'VER ANUNCIO Y RECLAMAR'},
     'tq_checkin_ad_note': {'en': 'You must watch the ad and tap it to claim', 'es': 'Debes ver el anuncio y hacer click en él para reclamar'},
     'tq_checkin_wait':   {'en': 'Come back later',         'es': 'Vuelve más tarde'},
+    # ── Pantalla de IP en uso (límite de cuentas por IP) ──
+    'ipu_title':         {'en': 'IP ALREADY IN USE',       'es': 'IP EN USO'},
+    'ipu_subtitle':      {'en': 'This internet connection is already being used by another account. Only one account per network is allowed.',
+                          'es': 'Esta conexión a internet ya está siendo usada por otra cuenta. Solo se permite una cuenta por red.'},
+    'ipu_step1':         {'en': 'Switch networks: use mobile data instead of wifi (or the other way around)',
+                          'es': 'Cambia de red: usa tus datos móviles en vez del wifi (o al revés)'},
+    'ipu_step2':         {'en': 'Or turn on a VPN to get a different IP',
+                          'es': 'O activa una VPN para obtener una IP diferente'},
+    'ipu_step3':         {'en': 'Open the app again',      'es': 'Vuelve a abrir la app'},
+    'ipu_retry':         {'en': 'TRY AGAIN',               'es': 'REINTENTAR'},
+    'ipu_support':       {'en': 'If you think this is a mistake, contact us:',
+                          'es': 'Si crees que es un error, escríbenos:'},
     'tq_tasks_label': {'en': '★  ACTIVE QUESTS',          'es': '★  MISIONES ACTIVAS'},
     'tq_start_btn':   {'en': 'START ▶',                   'es': 'INICIAR ▶'},
     'tq_verify_hint': {

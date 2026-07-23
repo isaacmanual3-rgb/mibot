@@ -1212,6 +1212,89 @@ def record_user_ip(user_id, ip_address):
 
     update_user(user_id, last_ip=ip_address, last_active=datetime.now())
 
+def ip_gate(user_id, ip_address, max_accounts=None, window_hours=24):
+    """
+    Límite de cuentas por IP (NO banea, solo bloquea el acceso).
+
+    Lógica "first-come": las primeras cuentas que usaron la IP en las últimas
+    `window_hours` conservan el acceso. Si llega una cuenta nueva y el cupo
+    está lleno, se le niega la entrada (debe cambiar de red o usar VPN).
+
+    Devuelve True si puede entrar, False si la IP está llena.
+    """
+    if not ip_address or not user_id:
+        return True
+
+    uid = str(user_id)
+
+    # Config: máximo de cuentas por IP (0 = sin límite)
+    if max_accounts is None:
+        try:
+            max_accounts = int(get_config('ip_limit_max_accounts', '2') or 2)
+        except Exception:
+            max_accounts = 2
+    if max_accounts <= 0:
+        return True
+
+    # Si el sistema está desactivado, dejar pasar
+    if get_config('ip_limit_enabled', '0') != '1':
+        return True
+
+    try:
+        # Cuentas distintas que usaron esta IP en la ventana, más antiguas primero
+        rows = execute_query(
+            """SELECT user_id, MIN(first_seen) AS entro
+               FROM user_ips
+               WHERE ip_address = %s
+                 AND last_seen >= DATE_SUB(NOW(), INTERVAL %s HOUR)
+               GROUP BY user_id
+               ORDER BY entro ASC""",
+            (ip_address, int(window_hours)), fetch_all=True
+        ) or []
+
+        ocupantes = [str(r['user_id']) for r in rows if r.get('user_id')]
+
+        # Ya tiene cupo (está entre los primeros) → puede entrar
+        if uid in ocupantes[:max_accounts]:
+            return True
+
+        # Hay hueco libre → puede entrar
+        if len(ocupantes) < max_accounts:
+            return True
+
+        # Cupo lleno y no es de los primeros → bloquear
+        logger.info(f"[ip_gate] {uid} bloqueado en {ip_address} "
+                    f"({len(ocupantes)} cuentas, máx {max_accounts})")
+        return False
+    except Exception as e:
+        logger.warning(f"[ip_gate] error (deja pasar): {e}")
+        return True
+
+
+def get_ip_occupants(ip_address, window_hours=24):
+    """Cuentas que ocupan una IP ahora mismo (para el panel admin)."""
+    if not ip_address:
+        return []
+    try:
+        rows = execute_query(
+            """SELECT ui.user_id, u.username, u.first_name,
+                      MIN(ui.first_seen) AS entro, MAX(ui.last_seen) AS visto
+               FROM user_ips ui
+               LEFT JOIN users u ON u.user_id = ui.user_id
+               WHERE ui.ip_address = %s
+                 AND ui.last_seen >= DATE_SUB(NOW(), INTERVAL %s HOUR)
+               GROUP BY ui.user_id
+               ORDER BY entro ASC""",
+            (ip_address, int(window_hours)), fetch_all=True
+        ) or []
+        return [{
+            'user_id': r['user_id'],
+            'name': r.get('username') or r.get('first_name') or f"#{r['user_id']}",
+        } for r in rows]
+    except Exception:
+        return []
+
+
 def is_ip_banned(ip_address):
     """Check if IP is banned"""
     if not ip_address:
@@ -1508,6 +1591,42 @@ def get_user_machines(user_id):
         ORDER BY purchased_at DESC
     """
     return execute_query(query, (str(user_id),), fetch_all=True) or []
+
+def get_active_plans_for_users(user_ids):
+    """
+    Plan activo de varios usuarios en UNA sola consulta (para el panel admin).
+    Devuelve {user_id: {'name': ..., 'expires': ...}} solo de los que tienen plan.
+    """
+    if not user_ids:
+        return {}
+    try:
+        ids = [str(u) for u in user_ids if u]
+        if not ids:
+            return {}
+        marcas = ','.join(['%s'] * len(ids))
+        rows = execute_query(
+            f"""SELECT user_id, plan_name, name, expires_at, hourly_rate
+                FROM user_mining_machines
+                WHERE user_id IN ({marcas}) AND expires_at > NOW()
+                ORDER BY expires_at DESC""",
+            tuple(ids), fetch_all=True
+        ) or []
+        out = {}
+        for r in rows:
+            uid = str(r['user_id'])
+            if uid in out:          # ya guardamos el de mayor vencimiento
+                continue
+            exp = r.get('expires_at')
+            out[uid] = {
+                'name': r.get('plan_name') or r.get('name') or 'Plan',
+                'expires': exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else str(exp or ''),
+                'rate': float(r.get('hourly_rate', 0) or 0),
+            }
+        return out
+    except Exception as e:
+        logger.warning(f"[planes admin] {e}")
+        return {}
+
 
 def get_user_mining_stats(user_id):
     """Get user's mining statistics"""

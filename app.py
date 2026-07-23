@@ -895,7 +895,20 @@ def index():
                 channel=REQUIRED_CHANNEL,
                 channel_url=channel_url)
 
-    record_user_ip(user_id, get_client_ip())
+    # ── Límite de cuentas por IP (NO banea: solo niega el acceso) ──
+    _cli_ip = get_client_ip()
+    try:
+        from database import ip_gate
+        if not ip_gate(user_id, _cli_ip):
+            _ipu_lang = session.get('lang', 'en')
+            return render_template('ip_in_use.html',
+                                   t=get_t(_ipu_lang),
+                                   lang=_ipu_lang), 403
+    except Exception as _ige:
+        logger.warning(f"[ip_gate] error (deja pasar): {_ige}")
+
+    # Se registra la IP SOLO tras pasar el gate: una cuenta bloqueada no ocupa cupo
+    record_user_ip(user_id, _cli_ip)
 
     # ── Baneo automático por IP compartida (si está activado) ──
     if get_config('auto_ban_shared_ip', '0') == '1':
@@ -2193,8 +2206,17 @@ def admin_users():
         # es user_id (que ES el ID de Telegram). Lo exponemos como alias.
         u['telegram_id'] = u.get('user_id', '')
 
+    # Plan activo de los usuarios de esta página (una sola consulta)
+    try:
+        from database import get_active_plans_for_users
+        planes = get_active_plans_for_users([u.get('user_id') for u in (users or [])])
+    except Exception as _pe:
+        logger.warning(f"[admin_users] planes: {_pe}")
+        planes = {}
+
     return render_template('admin_users.html',
         users=users,
+        planes=planes,
         page=page,
         total_pages=total_pages,
         total_users=total_users,
@@ -3015,6 +3037,8 @@ def admin_multiaccounts():
 
     auto_ban_enabled = get_config('auto_ban_shared_ip', '0') == '1'
     auto_ban_device = get_config('auto_ban_device_ip', '0') == '1'
+    ip_limit_enabled = get_config('ip_limit_enabled', '0') == '1'
+    ip_limit_max = int(get_config('ip_limit_max_accounts', '2') or 2)
     auto_ban_threshold = int(get_config('auto_ban_ip_threshold', '3') or 3)
     auto_ban_max = int(get_config('auto_ban_ip_max', '8') or 8)
 
@@ -3025,6 +3049,8 @@ def admin_multiaccounts():
                            query=query,
                            auto_ban_enabled=auto_ban_enabled,
                            auto_ban_device=auto_ban_device,
+                           ip_limit_enabled=ip_limit_enabled,
+                           ip_limit_max=ip_limit_max,
                            auto_ban_threshold=auto_ban_threshold,
                            auto_ban_max=auto_ban_max,
                            active_page='multiaccounts')
@@ -3188,6 +3214,22 @@ def api_device_check():
     except Exception as e:
         logger.error(f"[device-check] {e}")
         return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/admin/api/multiaccount/toggle-iplimit', methods=['POST'])
+@require_admin
+def admin_api_toggle_iplimit():
+    """Activa/desactiva el límite de cuentas por IP (bloquea acceso, no banea)."""
+    try:
+        from database import set_config
+        data = request.get_json(silent=True) or {}
+        enabled = bool(data.get('enabled'))
+        set_config('ip_limit_enabled', '1' if enabled else '0')
+        estado = 'activado' if enabled else 'desactivado'
+        logger.info(f"[ip_limit] límite por IP {estado}")
+        return jsonify({'success': True, 'message': f'Límite por IP {estado}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error: {e}'})
 
 
 @app.route('/admin/api/multiaccount/toggle-autoban', methods=['POST'])
