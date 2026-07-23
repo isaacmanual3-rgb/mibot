@@ -1660,7 +1660,7 @@ def get_active_plans_for_users(user_ids):
             return {}
         marcas = ','.join(['%s'] * len(ids))
         rows = execute_query(
-            f"""SELECT user_id, plan_name, name, expires_at, hourly_rate
+            f"""SELECT user_id, plan_name, expires_at, hourly_rate
                 FROM user_mining_machines
                 WHERE user_id IN ({marcas}) AND expires_at > NOW()
                 ORDER BY expires_at DESC""",
@@ -1673,13 +1673,14 @@ def get_active_plans_for_users(user_ids):
                 continue
             exp = r.get('expires_at')
             out[uid] = {
-                'name': r.get('plan_name') or r.get('name') or 'Plan',
+                'name': r.get('plan_name') or 'Plan',
                 'expires': exp.strftime('%Y-%m-%d') if exp and hasattr(exp, 'strftime') else str(exp or ''),
                 'rate': float(r.get('hourly_rate', 0) or 0),
             }
         return out
     except Exception as e:
-        logger.warning(f"[planes admin] {e}")
+        import traceback
+        logger.error(f"[planes admin] {e}\n{traceback.format_exc()[-500:]}")
         return {}
 
 
