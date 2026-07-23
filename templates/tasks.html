@@ -876,13 +876,31 @@
 
     <!-- ── CHECK-IN DIARIO (modal de 30 días + anuncio obligatorio) ── -->
     <div class="tq-list" style="margin-bottom:0">
-      <div class="tq-task" id="checkinCard" style="border-left-color:#00e676">
-        <div class="tq-task-icon {% if not checkin.can_claim %}done{% endif %}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
+      <div class="tq-task" id="checkinCard" style="border-left-color:var(--gold)">
+        <div class="tq-task-icon" style="background:linear-gradient(145deg,rgba(255,215,0,0.14),rgba(0,230,118,0.06));border-color:rgba(255,215,0,0.42);box-shadow:2px 2px 0 0 #020205, inset 0 0 12px rgba(255,215,0,0.10)">
+          <!-- Calendario premium con el día actual dentro -->
+          <svg viewBox="0 0 32 32" style="width:26px;height:26px;position:relative;z-index:1" fill="none">
+            <defs>
+              <linearGradient id="ciGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffd700"/>
+                <stop offset="100%" stop-color="#e6a800"/>
+              </linearGradient>
+            </defs>
+            <!-- anillas -->
+            <rect x="9" y="2" width="2.6" height="5" rx="1" fill="url(#ciGrad)"/>
+            <rect x="20.4" y="2" width="2.6" height="5" rx="1" fill="url(#ciGrad)"/>
+            <!-- cuerpo -->
+            <rect x="4" y="5" width="24" height="23" rx="2.5" stroke="url(#ciGrad)" stroke-width="2.2"/>
+            <!-- cabecera -->
+            <path d="M4 12 H28" stroke="url(#ciGrad)" stroke-width="2.2"/>
+            <rect x="4.2" y="5.2" width="23.6" height="6.6" rx="2" fill="url(#ciGrad)" opacity="0.22"/>
+            <!-- número del día -->
+            <text x="16" y="23.5" text-anchor="middle"
+                  font-family="'Press Start 2P',monospace" font-size="8" font-weight="bold"
+                  fill="#ffd700">{{ checkin.current_day }}</text>
           </svg>
+          <!-- brillo de esquina -->
+          <div style="position:absolute;top:0;right:0;width:10px;height:10px;background:linear-gradient(225deg,rgba(255,215,0,0.35),transparent 70%);pointer-events:none"></div>
         </div>
         <div class="tq-task-body">
           <div class="tq-task-title">{{ t.tq_checkin_title if t.tq_checkin_title != 'tq_checkin_title' else 'Daily Check-In' }}</div>
@@ -915,12 +933,20 @@
         <button onclick="closeCheckinModal()" aria-label="close"
                 style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text2);font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 8px;z-index:2">×</button>
 
-        <div class="tq-modal-icon" style="border-color:rgba(0,230,118,0.4);background:rgba(0,230,118,0.08)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" style="width:26px;height:26px">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <path d="M9 16l2 2 4-4"/>
+        <div class="tq-modal-icon" style="border-color:rgba(255,215,0,0.42);background:linear-gradient(145deg,rgba(255,215,0,0.14),rgba(0,230,118,0.05))">
+          <svg viewBox="0 0 32 32" fill="none" style="width:28px;height:28px">
+            <defs>
+              <linearGradient id="ciGradM" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffd700"/>
+                <stop offset="100%" stop-color="#e6a800"/>
+              </linearGradient>
+            </defs>
+            <rect x="9" y="2" width="2.6" height="5" rx="1" fill="url(#ciGradM)"/>
+            <rect x="20.4" y="2" width="2.6" height="5" rx="1" fill="url(#ciGradM)"/>
+            <rect x="4" y="5" width="24" height="23" rx="2.5" stroke="url(#ciGradM)" stroke-width="2.2"/>
+            <path d="M4 12 H28" stroke="url(#ciGradM)" stroke-width="2.2"/>
+            <rect x="4.2" y="5.2" width="23.6" height="6.6" rx="2" fill="url(#ciGradM)" opacity="0.22"/>
+            <path d="M11 20.5l3.2 3.2L21.5 16.5" stroke="#00e676" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
 
