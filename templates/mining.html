@@ -1058,6 +1058,10 @@ let AdController = null;
 function initAdsgram() {
   if (typeof window.Adsgram === 'undefined') return false;
   if (AdController) return true;
+  // Asegurar que los parámetros de lanzamiento de Telegram estén en la URL
+  // (al navegar dentro de la app se pierden y Adsgram falla con
+  // "Unable to retrieve launch parameters").
+  try { if (window.TG_PARAMS) window.TG_PARAMS.restore(); } catch (e) {}
   try {
     AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
     return true;

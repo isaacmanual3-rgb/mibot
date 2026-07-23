@@ -20,6 +20,74 @@
       } catch (e) { /* ignora */ }
     </script>
 
+    <script>
+    /* ──────────────────────────────────────────────────────────
+       Parámetros de lanzamiento de Telegram (tgWebAppData).
+       Adsgram los necesita para mostrar anuncios. Al navegar dentro
+       de la app se pierden de la URL, así que los guardamos una vez
+       y los volvemos a poner en cada navegación.
+       ────────────────────────────────────────────────────────── */
+    window.TG_PARAMS = (function () {
+        var KEY = 'tg_launch_params';
+        var TG_KEYS = ['tgWebAppData', 'tgWebAppVersion', 'tgWebAppPlatform',
+                       'tgWebAppThemeParams', 'tgWebAppStartParam'];
+
+        // 1. Capturar de la URL actual (query o hash) y guardar
+        function capture() {
+            var found = {};
+            try {
+                var qs = new URLSearchParams(window.location.search);
+                var hs = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+                TG_KEYS.forEach(function (k) {
+                    var v = qs.get(k) || hs.get(k);
+                    if (v) found[k] = v;
+                });
+            } catch (e) {}
+            if (Object.keys(found).length) {
+                try { sessionStorage.setItem(KEY, JSON.stringify(found)); } catch (e) {}
+                return found;
+            }
+            // Si no venían en la URL, usar los guardados
+            try {
+                var saved = sessionStorage.getItem(KEY);
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return null;
+        }
+
+        var params = capture();
+
+        // 2. Restaurar en el hash de la URL actual (Adsgram lee de ahí)
+        function restoreToUrl() {
+            if (!params) return;
+            try {
+                var hs = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+                var changed = false;
+                Object.keys(params).forEach(function (k) {
+                    if (!hs.get(k)) { hs.set(k, params[k]); changed = true; }
+                });
+                if (changed) {
+                    history.replaceState(null, '', window.location.pathname +
+                        window.location.search + '#' + hs.toString());
+                }
+            } catch (e) {}
+        }
+        restoreToUrl();
+
+        // 3. Añadir los parámetros a una URL de destino
+        function appendTo(url) {
+            if (!params || !url) return url;
+            try {
+                var hs = new URLSearchParams();
+                Object.keys(params).forEach(function (k) { hs.set(k, params[k]); });
+                return url + (url.indexOf('#') === -1 ? '#' : '&') + hs.toString();
+            } catch (e) { return url; }
+        }
+
+        return { get: function () { return params; }, appendTo: appendTo, restore: restoreToUrl };
+    })();
+    </script>
+
     <!-- Adsgram SDK (rewarded ads) -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
@@ -321,7 +389,7 @@
     <!-- JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <!-- Device fingerprint (detección de multicuentas por dispositivo) -->
-    <script src="{{ url_for('static', filename='js/device_fingerprint.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/device_fingerprint.js') }}?v=4"></script>
 
     <script>
         /* ── Menu ─────────────────────────── */
@@ -438,10 +506,11 @@
             el.style.cursor = 'pointer';
             el.addEventListener('click', function() {
                 var dest = this.getAttribute('data-nav');
-                if (dest) window.location.href = dest;
+                if (dest) window.location.href = TG_PARAMS.appendTo(dest);
             });
         });
     })();
+
     </script>
 </body>
 </html>

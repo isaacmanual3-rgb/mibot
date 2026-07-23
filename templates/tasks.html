@@ -1155,6 +1155,10 @@ async function claimCheckin() {
   btn.innerHTML = '<span class="tq-spinner"></span> ' + (window.I18N?.tq_checking || 'LOADING AD...');
 
   // ── Anuncio interstitial de Adsgram con CLICK OBLIGATORIO ──
+  // Asegurar que los parámetros de lanzamiento de Telegram estén en la URL
+  // (si el usuario navegó dentro de la app, se pierden y Adsgram falla).
+  try { if (window.TG_PARAMS) window.TG_PARAMS.restore(); } catch (e) {}
+
   if (!window.Adsgram) {
     showToast(window.I18N?.mn_ads_unavailable || 'Ads not available', 'error');
     btn.disabled = false;
