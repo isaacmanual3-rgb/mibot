@@ -3220,10 +3220,10 @@ def api_device_check():
 @require_admin
 def admin_ip_debug():
     """Diagnóstico del límite de cuentas por IP."""
-    from database import execute_query, ip_gate, get_ip_occupants
-    ip = request.args.get('ip') or get_client_ip()
-    uid = request.args.get('u') or ''
     try:
+        from database import execute_query, ip_gate
+        ip = request.args.get('ip') or get_client_ip()
+        uid = request.args.get('u') or ''
         activo = get_config('ip_limit_enabled', '0') == '1'
         maximo = int(get_config('ip_limit_max_accounts', '1') or 1)
 
@@ -3240,13 +3240,20 @@ def admin_ip_debug():
             """SELECT user_id, MIN(first_seen) AS entro
                FROM user_ips
                WHERE ip_address = %s
-                 AND last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                 AND last_seen >= DATE_SUB(NOW(), INTERVAL %s HOUR)
                GROUP BY user_id
                ORDER BY entro ASC""",
-            (ip,), fetch_all=True
+            (ip, 24), fetch_all=True
         ) or []
 
         ocupantes = [str(r['user_id']) for r in recientes if r.get('user_id')]
+
+        prueba = 'pasa ?u=ID para probar una cuenta'
+        if uid:
+            try:
+                prueba = {'user_id': uid, 'puede_entrar': ip_gate(uid, ip)}
+            except Exception as _pe:
+                prueba = {'user_id': uid, 'error': str(_pe)}
 
         return jsonify({
             'ip_consultada': ip,
@@ -3256,14 +3263,13 @@ def admin_ip_debug():
             'cuentas_ultimas_24h': ocupantes,
             'con_cupo': ocupantes[:maximo],
             'serian_bloqueadas': ocupantes[maximo:],
-            'prueba_gate_para_u': (
-                {'user_id': uid, 'puede_entrar': ip_gate(uid, ip)} if uid else 'pasa ?u=ID para probar'
-            ),
+            'prueba_gate_para_u': prueba,
             'nota': 'Si limite_activo es false, el sistema está apagado y nunca bloquea.'
         })
     except Exception as e:
         import traceback
-        return jsonify({'error': str(e), 'trace': traceback.format_exc()[-600:]})
+        return ("<pre style='color:#fff;background:#111;padding:16px;font-size:12px'>"
+                f"ERROR en ip-debug:\n{e}\n\n{traceback.format_exc()}</pre>"), 200
 
 
 @app.route('/admin/api/multiaccount/toggle-iplimit', methods=['POST'])
