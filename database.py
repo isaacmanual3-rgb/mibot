@@ -2714,6 +2714,10 @@ def _run_migrations():
         "ALTER TABLE users ADD COLUMN fraud_reason VARCHAR(255) DEFAULT NULL"
     )
 
+    safe_run("add_users_fraud_exempt",
+        "ALTER TABLE users ADD COLUMN fraud_exempt TINYINT(1) DEFAULT 0"
+    )
+
     safe_run("add_users_fraud_flagged_at",
         "ALTER TABLE users ADD COLUMN fraud_flagged_at DATETIME DEFAULT NULL"
     )
@@ -3051,7 +3055,7 @@ def search_multiaccounts(query, limit=100):
     """, (str(target_uid),), fetch_all=True) or []
 
     user_info = execute_query(
-        "SELECT user_id, username, first_name, banned, withdrawal_blocked, ton_wallet, device_hash FROM users WHERE user_id = %s",
+        "SELECT user_id, username, first_name, banned, withdrawal_blocked, fraud_reason, fraud_exempt, ton_wallet, device_hash FROM users WHERE user_id = %s",
         (str(target_uid),), fetch_one=True
     ) or {}
 
@@ -3089,6 +3093,8 @@ def search_multiaccounts(query, limit=100):
             'name': user_info.get('username') or user_info.get('first_name') or f"#{target_uid}",
             'banned': bool(user_info.get('banned', 0)),
             'blocked': bool(user_info.get('withdrawal_blocked', 0)),
+            'fraud_reason': user_info.get('fraud_reason') or '',
+            'exempt': bool(user_info.get('fraud_exempt', 0)),
             'wallet': user_info.get('ton_wallet') or '',
         },
         'ip_details': ip_details,
@@ -3116,15 +3122,36 @@ def flag_user_fraud(user_id, reason):
     """, (reason[:255], str(user_id)))
 
 
-def unflag_user_fraud(user_id):
-    """Clear fraud flag (admin action)."""
+def unflag_user_fraud(user_id, exempt=True):
+    """
+    Clear fraud flag (admin action).
+    Si exempt=True marca al usuario como EXENTO: el escaneo automatico
+    de multicuenta ya no lo volvera a bloquear.
+    """
     execute_query("""
         UPDATE users
         SET withdrawal_blocked = 0,
             fraud_reason       = NULL,
-            fraud_flagged_at   = NULL
+            fraud_flagged_at   = NULL,
+            fraud_exempt       = %s
         WHERE user_id = %s
-    """, (str(user_id),))
+    """, (1 if exempt else 0, str(user_id),))
+
+
+def set_fraud_exempt(user_id, exempt):
+    """Activar/desactivar la exencion anti-fraude de un usuario."""
+    execute_query(
+        "UPDATE users SET fraud_exempt = %s WHERE user_id = %s",
+        (1 if exempt else 0, str(user_id))
+    )
+
+
+def is_fraud_exempt(user_id):
+    row = execute_query(
+        "SELECT fraud_exempt FROM users WHERE user_id = %s",
+        (str(user_id),), fetch_one=True
+    )
+    return bool(row and row.get('fraud_exempt'))
 
 
 def is_withdrawal_blocked(user_id):
@@ -3150,6 +3177,13 @@ def check_and_flag_multi_account(user_id, min_times_seen=2):
     - Normal app usage (browsing, mining, tasks) is NEVER blocked.
     Returns list of flagged user_ids, or [] if within the allowed limit.
     """
+    # Usuario exento por el admin: nunca se vuelve a bloquear automaticamente
+    if is_fraud_exempt(user_id):
+        blocked, _ = is_withdrawal_blocked(user_id)
+        if blocked:
+            unflag_user_fraud(user_id, exempt=True)
+        return []
+
     count, all_accounts = count_accounts_on_same_ip(user_id, min_times_seen=min_times_seen)
 
     if count <= MAX_ACCOUNTS_PER_IP:
@@ -3167,6 +3201,8 @@ def check_and_flag_multi_account(user_id, min_times_seen=2):
 
     flagged = []
     for uid in all_accounts:
+        if is_fraud_exempt(uid):
+            continue
         already_blocked, _ = is_withdrawal_blocked(uid)
         if not already_blocked:
             flag_user_fraud(uid, reason)

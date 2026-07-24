@@ -55,6 +55,7 @@ from database import (
     delete_user_completely,
     # Anti-fraud
     is_withdrawal_blocked, check_and_flag_multi_account, unflag_user_fraud,
+    flag_user_fraud, set_fraud_exempt, is_fraud_exempt,
     get_shared_ip_accounts, are_accounts_related,
     get_shared_ip_groups, search_multiaccounts,
 )
@@ -3694,9 +3695,21 @@ def admin_api_unban_user(user_id):
 @require_admin
 def admin_api_unflag_fraud(user_id):
     """Clear anti-fraud withdrawal block for a user (admin action)"""
-    unflag_user_fraud(user_id)
-    logger.info(f"[ANTI-FRAUD] Admin cleared fraud flag for user {user_id}")
-    return jsonify({'success': True, 'message': f'Fraud flag cleared for user {user_id}'})
+    unflag_user_fraud(user_id, exempt=True)
+    logger.info(f"[ANTI-FRAUD] Admin cleared fraud flag for user {user_id} (exempt)")
+    return jsonify({'success': True, 'message': f'Retiros desbloqueados para #{user_id} (exento del escaneo automatico)'})
+
+
+@app.route('/admin/api/flag_fraud/<user_id>', methods=['POST'])
+@require_admin
+def admin_api_flag_fraud(user_id):
+    """Bloquear retiros manualmente (admin)"""
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or 'Bloqueo manual del admin').strip()[:255]
+    set_fraud_exempt(user_id, False)
+    flag_user_fraud(user_id, reason)
+    logger.info(f"[ANTI-FRAUD] Admin blocked withdrawals for user {user_id} - {reason}")
+    return jsonify({'success': True, 'message': f'Retiros bloqueados para #{user_id}'})
 
 
 @app.route('/admin/api/fraud_status/<user_id>')
