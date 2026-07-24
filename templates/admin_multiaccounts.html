@@ -60,9 +60,30 @@
         <span class="text-muted">· #{{ search_result.user.user_id }}</span>
         {% if search_result.user.banned %}<span class="badge badge-danger">BANEADO</span>
         {% elif search_result.user.blocked %}<span class="badge badge-warning">BLOQUEADO</span>{% endif %}
+        {% if search_result.user.exempt %}<span class="badge badge-success">EXENTO</span>{% endif %}
         {% if search_result.user.wallet %}
         <div class="text-muted" style="font-size:0.75rem; margin-top:6px;">Wallet: {{ search_result.user.wallet }}</div>
         {% endif %}
+
+        {% if search_result.user.fraud_reason %}
+        <div class="text-warning" style="font-size:0.75rem; margin-top:6px;">
+            ⛔ Motivo: {{ search_result.user.fraud_reason }}
+        </div>
+        {% endif %}
+
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            {% if search_result.user.blocked %}
+            <button type="button" class="btn btn-success" style="font-size:0.75rem;"
+                    onclick="unflagFraud('{{ search_result.user.user_id }}', this)">
+                ✅ Desbloquear retiros
+            </button>
+            {% else %}
+            <button type="button" class="btn btn-warning" style="font-size:0.75rem;"
+                    onclick="flagFraud('{{ search_result.user.user_id }}', this)">
+                ⛔ Bloquear retiros
+            </button>
+            {% endif %}
+        </div>
     </div>
 
     {% if search_result.ip_details %}
@@ -409,6 +430,39 @@ async function banIpGroup(ip, count) {
     } catch (e) {
         alert('Error de conexión');
     }
+}
+
+async function unflagFraud(userId, btn) {
+    if (!confirm(`¿Quitar el bloqueo de retiros al usuario #${userId}?\n\nPodrá retirar normalmente. El sistema podría volver a bloquearlo si sigue compartiendo IP con muchas cuentas.`)) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/admin/api/unflag_fraud/${userId}`, { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Retiros desbloqueados' : 'Error'));
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+    btn.disabled = false;
+}
+
+async function flagFraud(userId, btn) {
+    const reason = prompt('Motivo del bloqueo de retiros:', 'Bloqueo manual del admin');
+    if (reason === null) return;
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/admin/api/flag_fraud/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason })
+        });
+        const data = await res.json();
+        alert(data.message || (data.success ? 'Retiros bloqueados' : 'Error'));
+        if (data.success) location.reload();
+    } catch (e) {
+        alert('Error de conexión');
+    }
+    btn.disabled = false;
 }
 </script>
 {% endblock %}
