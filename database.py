@@ -95,6 +95,30 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False):
         if conn:
             conn.close()
 
+def execute_update_rowcount(query, params=None):
+    """Ejecuta un UPDATE/DELETE y devuelve el numero de filas afectadas.
+    execute_query() devuelve lastrowid, que no sirve para saber si un
+    UPDATE condicional gano una carrera entre workers de gunicorn."""
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, params or ())
+        conn.commit()
+        return cursor.rowcount
+    except Exception as e:
+        logger.error(f"Query error: {e}\nQuery: {query}\nParams: {params}")
+        if conn:
+            conn.rollback()
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 # ============================================
 # USER OPERATIONS
 # ============================================
@@ -1706,9 +1730,12 @@ def get_pending_mining_rewards(user_id):
     now = datetime.now()
 
     for machine in machines:
-        last_claim = machine.get('last_claim_at')
+        last_claim = machine.get('last_claim_at') or machine.get('purchased_at')
         if last_claim:
-            hours_elapsed = (now - last_claim).total_seconds() / 3600
+            # Nunca contar tiempo despues del vencimiento del plan
+            expires = machine.get('expires_at')
+            hasta = min(now, expires) if expires else now
+            hours_elapsed = max(0.0, (hasta - last_claim).total_seconds() / 3600)
             hourly_rate = float(machine.get('hourly_rate', 0))
             pending = hours_elapsed * hourly_rate
             total_pending += pending
@@ -1726,9 +1753,12 @@ def claim_mining_rewards(user_id):
     now = datetime.now()
 
     for machine in machines:
-        last_claim = machine.get('last_claim_at')
+        last_claim = machine.get('last_claim_at') or machine.get('purchased_at')
         if last_claim:
-            hours_elapsed = (now - last_claim).total_seconds() / 3600
+            # Nunca contar tiempo despues del vencimiento del plan
+            expires = machine.get('expires_at')
+            hasta = min(now, expires) if expires else now
+            hours_elapsed = max(0.0, (hasta - last_claim).total_seconds() / 3600)
             hourly_rate = float(machine.get('hourly_rate', 0))
             pending = hours_elapsed * hourly_rate
 
@@ -1738,10 +1768,10 @@ def claim_mining_rewards(user_id):
                 # Update machine
                 query = """
                     UPDATE user_mining_machines
-                    SET last_claim_at = NOW(), total_mined = total_mined + %s
+                    SET last_claim_at = %s, total_mined = total_mined + %s
                     WHERE id = %s
                 """
-                execute_query(query, (pending, machine['id']))
+                execute_query(query, (hasta, pending, machine['id']))
 
     if total_claimed > 0:
         # Credit to user balance
@@ -1763,6 +1793,109 @@ def claim_mining_rewards(user_id):
 def process_mining_rewards(user_id):
     """Process mining rewards (background task)"""
     return claim_mining_rewards(user_id)
+
+
+# ============================================
+# LIQUIDACION AUTOMATICA DE PLANES VENCIDOS
+# ============================================
+
+def settle_expired_machines(user_id=None, limit=300):
+    """
+    Acredita automaticamente el saldo minado que quedo SIN reclamar cuando
+    un plan vence.
+
+    Antes de esto, get_user_machines() filtraba por `expires_at > NOW()`, asi
+    que al vencer el plan la maquina desaparecia de todas las consultas y lo
+    minado entre el ultimo claim y el vencimiento se perdia para siempre.
+
+    - Cuenta solo hasta expires_at (nunca mina despues de vencer).
+    - Guard atomico `settled = 0` para que dos workers de gunicorn o el
+      barrido en segundo plano no acrediten dos veces lo mismo.
+    - Si user_id es None liquida a TODOS los usuarios (barrido global).
+
+    Devuelve lista de dicts: [{'user_id','machine_id','plan_name','amount'}, ...]
+    """
+    params = []
+    filtro_user = ""
+    if user_id is not None:
+        filtro_user = "AND user_id = %s"
+        params.append(str(user_id))
+    params.append(int(limit))
+
+    try:
+        vencidas = execute_query(f"""
+            SELECT id, machine_id, user_id, plan_id, plan_name, hourly_rate,
+                   last_claim_at, purchased_at, expires_at
+            FROM user_mining_machines
+            WHERE settled = 0 AND expires_at <= NOW() {filtro_user}
+            ORDER BY expires_at ASC
+            LIMIT %s
+        """, tuple(params), fetch_all=True) or []
+    except Exception as e:
+        logger.warning(f"[MINING-SETTLE] error consultando vencidas: {e}")
+        return []
+
+    liquidadas = []
+
+    for m in vencidas:
+        try:
+            expires = m.get('expires_at')
+            desde = m.get('last_claim_at') or m.get('purchased_at')
+
+            pendiente = 0.0
+            if expires and desde:
+                horas = (expires - desde).total_seconds() / 3600
+                if horas > 0:
+                    pendiente = horas * float(m.get('hourly_rate', 0) or 0)
+
+            if pendiente < 0:
+                pendiente = 0.0
+
+            # ── GUARD ATOMICO: solo un proceso puede pasar de settled 0 -> 1.
+            # Si otro worker gano la carrera, rowcount = 0 y no acreditamos.
+            filas = execute_update_rowcount("""
+                UPDATE user_mining_machines
+                SET settled       = 1,
+                    last_claim_at = expires_at,
+                    total_mined   = total_mined + %s
+                WHERE id = %s AND settled = 0
+            """, (pendiente, m['id']))
+
+            if not filas:
+                continue  # otro proceso ya lo liquido
+
+            if pendiente > 0:
+                update_balance(
+                    m['user_id'], pendiente, 'mining_expiry_settlement',
+                    f"Saldo restante acreditado al vencer el plan {m.get('plan_name') or ''}".strip()
+                )
+                increment_stat('total_doge_distributed', int(pendiente * 100000000))
+                pay_referral_commission(m['user_id'], pendiente, 'mining')
+
+                liquidadas.append({
+                    'user_id':    m['user_id'],
+                    'machine_id': m.get('machine_id'),
+                    'plan_name':  m.get('plan_name') or 'Mining',
+                    'amount':     pendiente,
+                    'expires_at': expires,
+                })
+                logger.info(
+                    f"[MINING-SETTLE] user {m['user_id']} +{pendiente:.8f} "
+                    f"por vencimiento de '{m.get('plan_name')}' (machine {m.get('machine_id')})"
+                )
+        except Exception as e:
+            logger.warning(f"[MINING-SETTLE] error liquidando machine {m.get('id')}: {e}")
+
+    return liquidadas
+
+
+def get_unsettled_expired_count():
+    """Cuantos planes vencidos siguen sin liquidar (para el panel admin)."""
+    row = execute_query(
+        "SELECT COUNT(*) AS c FROM user_mining_machines WHERE settled = 0 AND expires_at <= NOW()",
+        fetch_one=True
+    )
+    return int(row.get('c', 0)) if row else 0
 
 def create_mining_plan(name, tier, price, hourly_rate, duration_days=30, description=None):
     """Create a new mining plan"""
@@ -2129,9 +2262,11 @@ def init_all_tables():
             last_claim_at DATETIME DEFAULT NULL,
             purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             expires_at DATETIME NOT NULL,
+            settled TINYINT(1) NOT NULL DEFAULT 0,
             INDEX idx_user_id (user_id),
             INDEX idx_expires_at (expires_at),
-            INDEX idx_machine_id (machine_id)
+            INDEX idx_machine_id (machine_id),
+            INDEX idx_settled_expires (settled, expires_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     """)
     log.info("✓ user_mining_machines")
@@ -2713,6 +2848,17 @@ def _run_migrations():
     safe_run("add_users_fraud_reason",
         "ALTER TABLE users ADD COLUMN fraud_reason VARCHAR(255) DEFAULT NULL"
     )
+
+    safe_run("add_mining_machines_settled",
+        "ALTER TABLE user_mining_machines ADD COLUMN settled TINYINT(1) NOT NULL DEFAULT 0"
+    )
+
+    safe_run("add_mining_machines_settled_idx",
+        "ALTER TABLE user_mining_machines ADD INDEX idx_settled_expires (settled, expires_at)"
+    )
+
+    # Los planes que YA vencieron antes de este deploy nunca fueron liquidados.
+    # Se dejan con settled=0 para que el barrido inicial les acredite lo pendiente.
 
     safe_run("add_users_fraud_exempt",
         "ALTER TABLE users ADD COLUMN fraud_exempt TINYINT(1) DEFAULT 0"

@@ -205,6 +205,40 @@ _TEXTS = {
     "Pour toute question, contactez le support depuis l'app. 🤝"
   ),
 },
+'plan_expired_settled':{
+  'es':(
+    "⏳ <b>Tu plan de mineria vencio</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Saldo acreditado:</b> {amount} TON\n\n"
+    "No perdiste nada: lo que quedaba sin reclamar se acredito "
+    "automaticamente a tu balance. ✅\n\n"
+    "Activa un nuevo plan para seguir minando. ⛏️"
+  ),
+  'en':(
+    "⏳ <b>Your mining plan expired</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Credited:</b> {amount} TON\n\n"
+    "You lost nothing: the unclaimed balance was automatically "
+    "credited to your account. ✅\n\n"
+    "Activate a new plan to keep mining. ⛏️"
+  ),
+  'pt':(
+    "⏳ <b>Seu plano de mineracao expirou</b>\n\n"
+    "📦 <b>Plano:</b> {plan_name}\n"
+    "💰 <b>Creditado:</b> {amount} TON\n\n"
+    "Voce nao perdeu nada: o saldo nao resgatado foi creditado "
+    "automaticamente na sua conta. ✅\n\n"
+    "Ative um novo plano para continuar minerando. ⛏️"
+  ),
+  'fr':(
+    "⏳ <b>Votre plan de minage a expire</b>\n\n"
+    "📦 <b>Plan:</b> {plan_name}\n"
+    "💰 <b>Credite:</b> {amount} TON\n\n"
+    "Vous n'avez rien perdu: le solde non reclame a ete credite "
+    "automatiquement sur votre compte. ✅\n\n"
+    "Activez un nouveau plan pour continuer a miner. ⛏️"
+  ),
+},
 'plan_activated':{
   'es':(
     "⛏️ <b>¡Plan activado! Tu minería ya está corriendo.</b>\n\n"
@@ -439,6 +473,10 @@ def notify_withdrawal_rejected(user_id, amount, currency, withdrawal_id, reason=
 def notify_plan_activated(user_id, plan_name, ton_per_hour, expires, language_code=None):
     _send(user_id,'plan_activated',_resolve_lang(user_id, language_code),user_id=user_id,
           plan_name=plan_name,ton_per_hour=ton_per_hour,expires=expires)
+
+def notify_plan_expired_settled(user_id, plan_name, amount, language_code=None):
+    _send(user_id,'plan_expired_settled',_resolve_lang(user_id, language_code),user_id=user_id,
+          plan_name=plan_name,amount=amount)
 
 def notify_referral_validated(referrer_id, referred_name, reward, total_refs=0, total_earnings=0, language_code=None):
     _send(referrer_id,'referral_validated',_resolve_lang(referrer_id, language_code),user_id=referrer_id,

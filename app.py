@@ -42,6 +42,7 @@ from database import (
     get_all_mining_plans, get_mining_plan, purchase_mining_machine,
     get_user_machines, get_user_mining_stats, get_pending_mining_rewards,
     claim_mining_rewards, process_mining_rewards, create_mining_plan,
+    settle_expired_machines, get_unsettled_expired_count,
     delete_mining_plan, update_mining_plan, get_mining_stats,
     get_free_plan_ad_progress, increment_free_plan_ad_progress, reset_free_plan_ad_progress,
     get_ad_cooldown_remaining,
@@ -65,7 +66,8 @@ try:
     from notifications import (
         detect_lang,
         notify_deposit, notify_withdrawal_approved, notify_withdrawal_rejected,
-        notify_plan_activated, notify_referral_validated, notify_referral_fraud_skip, notify_welcome
+        notify_plan_activated, notify_referral_validated, notify_referral_fraud_skip, notify_welcome,
+        notify_plan_expired_settled
     )
     _NOTIF_OK = True
 except ImportError:
@@ -1566,10 +1568,34 @@ def promo(user):
         format_doge=format_doge
     )
 
+def _settle_and_notify(user_id=None, limit=300):
+    """Liquida planes vencidos y avisa al usuario por Telegram.
+    Nunca lanza excepcion: si falla, la peticion del usuario sigue normal."""
+    try:
+        liquidadas = settle_expired_machines(user_id=user_id, limit=limit)
+    except Exception as e:
+        logger.warning(f"[MINING-SETTLE] fallo la liquidacion: {e}")
+        return []
+
+    if liquidadas and _NOTIF_OK:
+        for liq in liquidadas:
+            try:
+                notify_plan_expired_settled(
+                    liq['user_id'], liq['plan_name'], f"{liq['amount']:.8f}"
+                )
+            except Exception as e:
+                logger.warning(f"[MINING-SETTLE] no se pudo notificar a {liq.get('user_id')}: {e}")
+    return liquidadas
+
+
 @app.route('/mining')
 @require_user
 def mining(user):
     """Mining page - Purchase and manage mining machines"""
+    # Acreditar lo que quedo pendiente de planes ya vencidos
+    if _settle_and_notify(user['user_id']):
+        user = get_user(user['user_id']) or user
+
     plans = get_all_mining_plans(active_only=True)
     user_machines = get_user_machines(user['user_id'])
     mining_stats = get_user_mining_stats(user['user_id'])
@@ -1908,6 +1934,8 @@ def api_mining_purchase(user):
 @require_user
 def api_mining_claim(user):
     """Claim mining rewards"""
+    # Primero acreditar planes vencidos sin reclamar, luego los activos
+    _settle_and_notify(user['user_id'])
     result = claim_mining_rewards(user['user_id'])
     return jsonify(translate_result(result))
 
@@ -1915,6 +1943,7 @@ def api_mining_claim(user):
 @require_user
 def api_mining_stats(user):
     """Get user's mining stats"""
+    _settle_and_notify(user['user_id'])
     mining_stats = get_user_mining_stats(user['user_id'])
     pending_rewards = get_pending_mining_rewards(user['user_id'])
     machines = get_user_machines(user['user_id'])
@@ -3712,6 +3741,31 @@ def admin_api_flag_fraud(user_id):
     return jsonify({'success': True, 'message': f'Retiros bloqueados para #{user_id}'})
 
 
+@app.route('/admin/api/mining/settle-expired', methods=['POST'])
+@require_admin
+def admin_api_settle_expired():
+    """Forzar la liquidacion de planes vencidos sin reclamar.
+    Opcional: {"user_id": "123"} para liquidar solo a un usuario."""
+    data = request.get_json(silent=True) or {}
+    uid = (data.get('user_id') or '').strip() or None
+    liquidadas = _settle_and_notify(user_id=uid, limit=1000)
+    total = sum(l['amount'] for l in liquidadas)
+    return jsonify({
+        'success':   True,
+        'liquidados': len(liquidadas),
+        'total':      f"{total:.8f}",
+        'pendientes': get_unsettled_expired_count(),
+        'message':    f"{len(liquidadas)} plan(es) liquidados · {total:.8f} TON acreditados",
+    })
+
+
+@app.route('/admin/api/mining/expired-pending')
+@require_admin
+def admin_api_expired_pending():
+    """Cuantos planes vencidos siguen sin liquidar."""
+    return jsonify({'success': True, 'pendientes': get_unsettled_expired_count()})
+
+
 @app.route('/admin/api/fraud_status/<user_id>')
 @require_admin
 def admin_api_fraud_status(user_id):
@@ -4548,6 +4602,46 @@ def _background_deposit_scanner():
         time.sleep(30)
 
 _threading.Thread(target=_background_deposit_scanner, daemon=True).start()
+
+
+def _background_expired_plans_settler():
+    """
+    Acredita el saldo restante de los planes de mineria que vencieron,
+    aunque el usuario NUNCA abra la app. Corre cada 5 minutos.
+
+    Sin esto la acreditacion solo pasaria cuando el usuario entra, que es
+    justo el caso que falla: el que se olvida de reclamar antes de vencer.
+
+    Solo un worker de gunicorn ejecuta el barrido (file lock). Aun asi,
+    settle_expired_machines() tiene guard atomico por si el lock falla.
+    """
+    import time, tempfile
+    time.sleep(25)  # esperar a que la app y las migraciones terminen
+
+    lock_path = os.path.join(tempfile.gettempdir(), 'mining_settler.lock')
+    try:
+        import fcntl
+        lock_file = open(lock_path, 'w')
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        logger.info("[MINING-SETTLE] otro worker corre el barrido, saltando.")
+        return
+
+    logger.info("[MINING-SETTLE] barrido de planes vencidos activo (cada 5 min).")
+    while True:
+        try:
+            liquidadas = _settle_and_notify(user_id=None, limit=300)
+            if liquidadas:
+                total = sum(l['amount'] for l in liquidadas)
+                logger.info(
+                    f"[MINING-SETTLE] {len(liquidadas)} plan(es) liquidados, "
+                    f"{total:.8f} TON acreditados en total."
+                )
+        except Exception as e:
+            logger.warning(f"[MINING-SETTLE] error en el barrido: {e}")
+        time.sleep(300)  # 5 minutos
+
+_threading.Thread(target=_background_expired_plans_settler, daemon=True).start()
 
 
 
