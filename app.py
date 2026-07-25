@@ -75,7 +75,58 @@ except ImportError:
 
 # Flask App Setup
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+# ── Identidad de la app ────────────────────────────────────────
+# APP_NAME aisla esta instancia de cualquier otra app Flask en el mismo
+# servidor (locks en /tmp, cookie de sesion). Arcade PXC y Aero Flex
+# conviven sin pisarse aunque compartan VPS.
+APP_NAME = os.environ.get('APP_NAME', 'aeroflex').strip() or 'aeroflex'
+
+def _load_secret_key():
+    """
+    SECRET_KEY estable entre workers.
+
+    Antes: secrets.token_hex(32) como fallback. Con --workers 2 cada worker
+    generaba una clave DISTINTA, asi que la sesion creada en un worker era
+    invalida en el otro -> los usuarios se deslogueaban solo, sin patron.
+
+    Ahora: si no hay variable de entorno, se genera UNA vez y se guarda en
+    disco para que todos los workers usen la misma.
+    """
+    env_key = os.environ.get('SECRET_KEY', '').strip()
+    if env_key:
+        return env_key
+
+    key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.secret_key')
+    try:
+        if os.path.exists(key_file):
+            with open(key_file, 'r') as f:
+                saved = f.read().strip()
+            if saved:
+                return saved
+        generated = secrets.token_hex(32)
+        with open(key_file, 'w') as f:
+            f.write(generated)
+        os.chmod(key_file, 0o600)
+        logger.critical(
+            "SECRET_KEY no esta definida en el entorno. Se genero una y se "
+            f"guardo en {key_file}. Definela en el .env para produccion."
+        )
+        return generated
+    except Exception as e:
+        logger.critical(
+            f"SECRET_KEY no definida y no se pudo persistir ({e}). "
+            "Con mas de 1 worker los usuarios sufriran cierres de sesion aleatorios."
+        )
+        return secrets.token_hex(32)
+
+app.secret_key = _load_secret_key()
+
+# Cookie con nombre propio: evita que otra app Flask del mismo servidor
+# (o un futuro subdominio compartido) sobrescriba la sesion.
+app.config['SESSION_COOKIE_NAME'] = f'{APP_NAME}_session'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'   # requerido dentro del iframe de Telegram
+app.config['SESSION_COOKIE_SECURE'] = True
 app.permanent_session_lifetime = timedelta(days=7)
 
 # (El panel admin usa login con usuario/contraseña + dominio autorizado.)
@@ -4528,7 +4579,7 @@ def _auto_register_webhook():
         return
 
     import tempfile
-    lock_path = os.path.join(tempfile.gettempdir(), 'sally_webhook.lock')
+    lock_path = os.path.join(tempfile.gettempdir(), f'{APP_NAME}_webhook.lock')
     try:
         import fcntl
         lock_file = open(lock_path, 'w')
@@ -4578,8 +4629,21 @@ _threading.Thread(target=_delayed_webhook_setup, daemon=True).start()
 def _background_deposit_scanner():
     """Escanea depósitos TON pendientes cada 30s, así se acreditan aunque
     el usuario cierre la app. Solo corre si hay wallet + API configuradas."""
-    import time
+    import time, tempfile
     time.sleep(15)  # esperar a que la app arranque
+
+    # Solo UN worker de gunicorn escanea: sin esto, con --workers 2 se
+    # duplican las llamadas a Toncenter cada 30 segundos.
+    lock_path = os.path.join(tempfile.gettempdir(), f'{APP_NAME}_ton_scanner.lock')
+    try:
+        import fcntl
+        _dep_lock = open(lock_path, 'w')
+        fcntl.flock(_dep_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        logger.info("[TON-SCAN] otro worker escanea depositos, saltando.")
+        return
+
+    logger.info("[TON-SCAN] scanner de depositos activo (cada 30s).")
     while True:
         try:
             receiver = (get_config('ton_wallet_address', '') or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
@@ -4618,7 +4682,7 @@ def _background_expired_plans_settler():
     import time, tempfile
     time.sleep(25)  # esperar a que la app y las migraciones terminen
 
-    lock_path = os.path.join(tempfile.gettempdir(), 'mining_settler.lock')
+    lock_path = os.path.join(tempfile.gettempdir(), f'{APP_NAME}_mining_settler.lock')
     try:
         import fcntl
         lock_file = open(lock_path, 'w')
