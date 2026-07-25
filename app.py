@@ -1305,6 +1305,37 @@ _ESTADO_LABEL = {
     'failed':    ('⚠️', 'RETIRO FALLIDO'),
 }
 
+# Explorador de la blockchain de TON usado en los avisos.
+TONVIEWER = 'https://tonviewer.com'
+
+
+def _corto(txt, ini=6, fin=6):
+    """Acorta una direccion larga: UQAfW1es…zD2eAp"""
+    t = str(txt or '')
+    return t if len(t) <= (ini + fin + 1) else f'{t[:ini]}…{t[-fin:]}'
+
+
+def _link_tx(tx_hash):
+    """Enlace a la transaccion en Tonviewer.
+
+    El hash que devuelve tonutils es el del mensaje externo, no siempre el
+    de la transaccion on-chain, asi que el enlace puede no resolver en
+    algunos casos. Por eso el aviso incluye TAMBIEN el enlace a la wallet
+    de destino, que siempre funciona y muestra el historial completo.
+    """
+    h = str(tx_hash or '').strip()
+    if not h:
+        return None
+    return f'{TONVIEWER}/transaction/{h}'
+
+
+def _link_wallet(direccion):
+    d = str(direccion or '').strip()
+    if not d:
+        return None
+    return f'{TONVIEWER}/{d}'
+
+
 
 def _avisar_pago(withdrawal_id, status, monto=None, moneda='TON',
                  wallet=None, user_id=None, username=None,
@@ -1328,12 +1359,29 @@ def _avisar_pago(withdrawal_id, status, monto=None, moneda='TON',
             quien = f"@{username} " if username else ""
             lineas.append(f"👤 <b>Usuario:</b> {quien}<code>{user_id}</code>")
         if wallet:
-            lineas.append(f"🏦 <b>Wallet:</b> <code>{wallet}</code>")
+            lw = _link_wallet(wallet)
+            corta = _corto(wallet, 8, 6)
+            lineas.append(
+                f'🏦 <b>Wallet:</b> <a href="{lw}">{corta}</a>' if lw
+                else f"🏦 <b>Wallet:</b> <code>{wallet}</code>"
+            )
         lineas.append(f"🧾 <b>ID:</b> <code>{withdrawal_id}</code>")
-        if tx_hash:
-            lineas.append(f"🔗 <b>TX:</b> <code>{tx_hash[:24]}…</code>")
         if nota:
             lineas.append(f"📝 {nota}")
+
+        # ── Verificacion en la blockchain
+        enlaces = []
+        ltx = _link_tx(tx_hash)
+        if ltx:
+            enlaces.append(f'<a href="{ltx}">🔎 Ver transaccion</a>')
+        lw2 = _link_wallet(wallet)
+        if lw2:
+            enlaces.append(f'<a href="{lw2}">📜 Historial de la wallet</a>')
+        if enlaces:
+            lineas.append("")
+            lineas.append(" · ".join(enlaces))
+        if tx_hash:
+            lineas.append(f"<code>{_corto(tx_hash, 10, 8)}</code>")
 
         _enviar_a_grupo(CHAT_PAGOS, "\n".join(lineas))
     except Exception as e:
