@@ -942,19 +942,23 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
         msg += (window.I18N?.wl_wd_to || 'To:') + ' ' + addr;
         if (data.tx_hash) {
           msg += '\nTX: ' + data.tx_hash;
-          // Mostrar link a tonscan debajo del mensaje
-          setTimeout(function() {
-            var el2 = document.getElementById('ton-wd-success-msg');
-            if (el2 && data.tx_hash) {
-              var link = document.createElement('a');
-              link.href = 'https://tonscan.org/tx/' + data.tx_hash;
-              link.target = '_blank';
-              link.textContent = '🔍 Ver en Tonscan';
-              link.style.cssText = 'display:block;margin-top:8px;color:#0098EA;font-size:13px;word-break:break-all;';
-              el2.parentNode.appendChild(link);
-            }
-          }, 100);
         }
+        // Enlace de verificacion: apunta a la WALLET DEL USUARIO, no al hash.
+        // El hash que devuelve tonutils es del mensaje externo y los
+        // exploradores devolvian 404. La wallet siempre resuelve y ahi se
+        // ve el TON entrante, que es lo que el usuario quiere comprobar.
+        setTimeout(function() {
+          var el2 = document.getElementById('ton-wd-success-msg');
+          if (el2 && addr) {
+            var link = document.createElement('a');
+            link.href = 'https://tonviewer.com/' + addr;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = '🔍 Ver mi wallet en Tonviewer';
+            link.style.cssText = 'display:block;margin-top:8px;color:#0098EA;font-size:13px;word-break:break-all;';
+            el2.parentNode.appendChild(link);
+          }
+        }, 100);
       } else {
         msg  = (window.I18N?.wl_wd_in_process || '⏳ Retiro registrado y en proceso') + '\n\n';
         msg += data.doge_amount.toFixed(2) + ' TON → ' + data.ton_amount.toFixed(4) + ' TON\n';
