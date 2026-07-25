@@ -1370,13 +1370,18 @@ def _avisar_pago(withdrawal_id, status, monto=None, moneda='TON',
             lineas.append(f"📝 {nota}")
 
         # ── Verificacion en la blockchain
+        #
+        # El enlace de la WALLET va primero a proposito: siempre resuelve y
+        # muestra si el TON entro de verdad, que es lo que se quiere verificar.
+        # El enlace por hash puede fallar si tonutils devolvio el hash del
+        # mensaje externo en vez del de la transaccion on-chain.
         enlaces = []
-        ltx = _link_tx(tx_hash)
-        if ltx:
-            enlaces.append(f'<a href="{ltx}">🔎 Ver transaccion</a>')
         lw2 = _link_wallet(wallet)
         if lw2:
-            enlaces.append(f'<a href="{lw2}">📜 Historial de la wallet</a>')
+            enlaces.append(f'<a href="{lw2}">📜 Ver wallet en Tonviewer</a>')
+        ltx = _link_tx(tx_hash)
+        if ltx:
+            enlaces.append(f'<a href="{ltx}">🔎 Transaccion</a>')
         if enlaces:
             lineas.append("")
             lineas.append(" · ".join(enlaces))

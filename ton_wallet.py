@@ -138,18 +138,29 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
             loop = asyncio.get_event_loop()
             if loop.is_closed():
                 raise RuntimeError
-            return loop.run_until_complete(
+            ok, tx_hash, err = loop.run_until_complete(
                 _send(words, to_addr, float(ton_amount), memo, api_key)
             )
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                return loop.run_until_complete(
+                ok, tx_hash, err = loop.run_until_complete(
                     _send(words, to_addr, float(ton_amount), memo, api_key)
                 )
             finally:
                 loop.close()
+
+        # ── Resolver el hash REAL de la blockchain.
+        # El que devuelve tonutils es del mensaje externo y los exploradores
+        # dan 404 con el. Se busca la transaccion on-chain por importe.
+        # Es best-effort: si no se resuelve, se conserva lo que haya.
+        if ok and bot_wallet_address and not skip_balance_check:
+            real = resolve_tx_hash(bot_wallet_address, float(ton_amount), api_key)
+            if real:
+                tx_hash = real
+
+        return ok, tx_hash, err
 
     except Exception as e:
         logger.exception(f'send_ton error: {e}')
@@ -185,8 +196,85 @@ def _extract_hash(tx) -> str:
     if matches:
         return matches[0]
 
-    # Último recurso: truncar
-    return s[:190]
+    # NO devolver el objeto truncado: antes se devolvia str(tx)[:190], que
+    # podia ser cualquier cosa (clave publica, estado del contrato...) y
+    # terminaba guardado en la BD como si fuera un hash valido. Los enlaces
+    # al explorador daban 404. Mejor admitir que no lo tenemos.
+    logger.warning(f'_extract_hash no pudo obtener un hash usable de: {s[:120]}')
+    return None
+
+
+def _b64_a_hex(valor):
+    """Toncenter devuelve los hashes en base64; los exploradores usan hex."""
+    import base64
+    try:
+        return base64.b64decode(str(valor)).hex()
+    except Exception:
+        return None
+
+
+def resolve_tx_hash(bot_wallet_address, ton_amount, api_key='',
+                    intentos=3, espera=2):
+    """
+    Busca en la blockchain el hash REAL de la transaccion recien enviada.
+
+    Necesario porque wallet.transfer() devuelve el hash del mensaje externo,
+    no el de la transaccion on-chain: los exploradores no lo encuentran y el
+    enlace da 404.
+
+    Estrategia: consultar las ultimas transacciones de la wallet del bot y
+    localizar el mensaje de salida cuyo importe coincida. Se reintenta unas
+    veces porque la transaccion tarda unos segundos en indexarse.
+
+    Devuelve el hash en hex, o None si no se pudo resolver.
+    """
+    import time
+
+    if not bot_wallet_address:
+        return None
+
+    objetivo = int(round(float(ton_amount) * TON_TO_NANO))
+    # Tolerancia: el importe recibido puede diferir en unos nanotons
+    tolerancia = 1000
+
+    url = ('https://toncenter.com/api/v2/getTransactions?limit=12&address='
+           + urllib.parse.quote(str(bot_wallet_address), safe=''))
+
+    for intento in range(1, intentos + 1):
+        time.sleep(espera)
+        req = urllib.request.Request(url, headers={'Accept': 'application/json'})
+        if api_key:
+            req.add_header('X-API-Key', api_key)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+        except Exception as e:
+            logger.warning(f'[resolve_tx] intento {intento} fallo: {e}')
+            continue
+
+        if not data.get('ok'):
+            continue
+
+        for tx in (data.get('result') or []):
+            for out in (tx.get('out_msgs') or []):
+                try:
+                    valor = int(out.get('value') or 0)
+                except (TypeError, ValueError):
+                    continue
+                if abs(valor - objetivo) <= tolerancia:
+                    h = ((tx.get('transaction_id') or {}).get('hash'))
+                    hex_hash = _b64_a_hex(h)
+                    if hex_hash:
+                        logger.info(
+                            f'[resolve_tx] hash real encontrado en el intento '
+                            f'{intento}: {hex_hash}'
+                        )
+                        return hex_hash
+
+        logger.info(f'[resolve_tx] intento {intento}: aun no indexada')
+
+    logger.warning('[resolve_tx] no se pudo resolver el hash on-chain')
+    return None
 
 
 async def _send(words, to_addr, ton_amount, memo, api_key):
