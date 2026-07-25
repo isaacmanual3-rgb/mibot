@@ -954,7 +954,7 @@ document.getElementById('withdraw-amount')?.addEventListener('input', function()
             link.href = 'https://tonviewer.com/' + addr;
             link.target = '_blank';
             link.rel = 'noopener';
-            link.textContent = '🔍 Ver mi wallet en Tonviewer';
+            link.textContent = (window.I18N?.wl_view_wallet || '🔍 View my wallet on Tonviewer');
             link.style.cssText = 'display:block;margin-top:8px;color:#0098EA;font-size:13px;word-break:break-all;';
             el2.parentNode.appendChild(link);
           }
