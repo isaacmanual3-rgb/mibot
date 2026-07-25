@@ -1168,6 +1168,10 @@ def api_ton_withdraw_init(user):
     withdrawal_mode = get_config('ton_withdrawal_mode', 'automatic')
     if withdrawal_mode == 'manual':
         logger.info(f"TON withdrawal {withdrawal_id}: MODO MANUAL — queda pendiente para aprobación del admin.")
+        _avisar_pago(withdrawal_id, 'pending', monto=ton_amount, moneda='TON',
+                     wallet=ton_wallet, user_id=user['user_id'],
+                     username=user.get('username'),
+                     nota='Solicitado por el usuario, espera aprobacion')
         return jsonify({
             'success':       True,
             'auto_sent':     False,
@@ -1190,6 +1194,10 @@ def api_ton_withdraw_init(user):
             (tx_hash, withdrawal_id)
         )
         logger.info(f"TON auto-withdrawal {withdrawal_id}: sent {ton_amount} TON to {ton_wallet} tx={tx_hash}")
+        _avisar_pago(withdrawal_id, 'completed', monto=ton_amount, moneda='TON',
+                     wallet=ton_wallet, user_id=user['user_id'],
+                     username=user.get('username'), tx_hash=tx_hash,
+                     nota='Pago automatico')
 
         # Notificar al usuario via bot de Telegram
         try:
@@ -1221,6 +1229,10 @@ def api_ton_withdraw_init(user):
     else:
         # Fallback: withdrawal stays pending, admin processes manually
         logger.warning(f"TON auto-send failed for {withdrawal_id}: {send_err} — queued for manual processing")
+        _avisar_pago(withdrawal_id, 'pending', monto=ton_amount, moneda='TON',
+                     wallet=ton_wallet, user_id=user['user_id'],
+                     username=user.get('username'),
+                     nota=f'Requiere revision manual: {send_err}')
         return jsonify({
             'success':       True,
             'auto_sent':     False,
@@ -1232,13 +1244,39 @@ def api_ton_withdraw_init(user):
         })
 
 
+# ── Canales de aviso al equipo ─────────────────────────────────
+# Grupos privados de Telegram. Se leen del .env; si no estan definidos
+# se cae al primer ADMIN_IDS como respaldo (mensaje directo).
+#   ALERTAS  -> problemas operativos (wallet sin fondos)
+#   PAGOS    -> cada cambio de estado de un retiro
+# El bot debe ser MIEMBRO del grupo y tener permiso para escribir.
+CHAT_ALERTAS = (os.environ.get('ALERT_CHAT_ID', '') or '').strip()
+CHAT_PAGOS   = (os.environ.get('PAYMENTS_CHAT_ID', '') or '').strip()
+
+
+def _enviar_a_grupo(chat_id, texto, fallback_admin=True):
+    """Manda un mensaje HTML a un chat/grupo. Nunca lanza excepcion."""
+    destino = (chat_id or '').strip()
+    if not destino and fallback_admin:
+        destino = ADMIN_IDS[0].strip() if ADMIN_IDS else ''
+    if not destino or not BOT_TOKEN:
+        logger.warning('[aviso] sin chat destino ni BOT_TOKEN, no se envia')
+        return False
+    try:
+        _bot_send(destino, texto)
+        return True
+    except Exception as e:
+        logger.warning(f'[aviso] fallo el envio a {destino}: {e}')
+        return False
+
+
 _ULTIMO_AVISO_SIN_FONDOS = [0.0]   # timestamp del ultimo aviso enviado
 
 def _avisar_admin_sin_fondos(detalle, withdrawal_id=None):
     """
-    Avisa por Telegram al admin que la wallet del bot se quedo sin fondos.
+    Avisa al grupo de ALERTAS que la wallet del bot se quedo sin fondos.
 
-    Anti-spam: como cada retiro pendiente reintenta, sin limite se
+    Anti-spam: cada retiro pendiente reintenta, asi que sin limite se
     mandarian decenas de mensajes. Se avisa como maximo 1 vez cada 30 min.
     """
     import time
@@ -1247,22 +1285,77 @@ def _avisar_admin_sin_fondos(detalle, withdrawal_id=None):
         return
     _ULTIMO_AVISO_SIN_FONDOS[0] = ahora
 
+    ref = f"\n\n🧾 Retiro: <code>{withdrawal_id}</code>" if withdrawal_id else ""
+    ok = _enviar_a_grupo(CHAT_ALERTAS, (
+        "⚠️ <b>WALLET SIN FONDOS</b>\n\n"
+        "Los retiros automaticos quedaron <b>en revision manual</b> "
+        "en vez de enviarse.\n\n"
+        f"📉 {detalle}{ref}\n\n"
+        "Recarga la wallet del bot y aprueba los retiros pendientes "
+        "desde el panel admin. Nada se perdio: siguen en cola."
+    ))
+    if ok:
+        logger.info("[sin-fondos] grupo de alertas avisado")
+
+
+_ESTADO_LABEL = {
+    'completed': ('✅', 'PAGO ENVIADO'),
+    'pending':   ('⏳', 'RETIRO PENDIENTE'),
+    'rejected':  ('❌', 'RETIRO RECHAZADO'),
+    'failed':    ('⚠️', 'RETIRO FALLIDO'),
+}
+
+
+def _avisar_pago(withdrawal_id, status, monto=None, moneda='TON',
+                 wallet=None, user_id=None, username=None,
+                 tx_hash=None, nota=None):
+    """
+    Manda al grupo de PAGOS un resumen del cambio de estado de un retiro.
+    Nunca interrumpe el flujo: si falla el envio, solo se registra.
+    """
     try:
-        admin_id = ADMIN_IDS[0].strip() if ADMIN_IDS else None
-        if not admin_id or not BOT_TOKEN:
-            return
-        ref = f"\n\n🧾 Retiro: <code>{withdrawal_id}</code>" if withdrawal_id else ""
-        _bot_send(admin_id, (
-            "⚠️ <b>WALLET SIN FONDOS</b>\n\n"
-            "Los retiros automaticos quedaron <b>en revision manual</b> "
-            "en vez de enviarse.\n\n"
-            f"📉 {detalle}{ref}\n\n"
-            "Recarga la wallet del bot y aprueba los retiros pendientes "
-            "desde el panel admin. Nada se perdio: siguen en cola."
-        ))
-        logger.info("[sin-fondos] admin avisado por Telegram")
+        icono, titulo = _ESTADO_LABEL.get(
+            (status or '').lower(), ('🔔', (status or '?').upper())
+        )
+
+        lineas = [f"{icono} <b>{titulo}</b>", ""]
+        if monto is not None:
+            try:
+                lineas.append(f"💰 <b>Monto:</b> {float(monto):.4f} {moneda}")
+            except (TypeError, ValueError):
+                lineas.append(f"💰 <b>Monto:</b> {monto} {moneda}")
+        if user_id:
+            quien = f"@{username} " if username else ""
+            lineas.append(f"👤 <b>Usuario:</b> {quien}<code>{user_id}</code>")
+        if wallet:
+            lineas.append(f"🏦 <b>Wallet:</b> <code>{wallet}</code>")
+        lineas.append(f"🧾 <b>ID:</b> <code>{withdrawal_id}</code>")
+        if tx_hash:
+            lineas.append(f"🔗 <b>TX:</b> <code>{tx_hash[:24]}…</code>")
+        if nota:
+            lineas.append(f"📝 {nota}")
+
+        _enviar_a_grupo(CHAT_PAGOS, "\n".join(lineas))
     except Exception as e:
-        logger.warning(f"[sin-fondos] no se pudo avisar al admin: {e}")
+        logger.warning(f'[aviso-pago] error armando el mensaje: {e}')
+
+
+def _upd_withdrawal(withdrawal_id, status, tx_hash=None, admin_note=None,
+                    monto=None, moneda='TON', wallet=None,
+                    user_id=None, username=None, avisar=True):
+    """
+    Envoltorio de update_withdrawal() que ademas notifica al grupo de PAGOS.
+
+    Se centraliza aqui a proposito: update_withdrawal es el unico punto por
+    donde pasan TODOS los cambios de estado (usuario, admin, lote), asi que
+    envolverlo garantiza que ningun camino se quede sin aviso.
+    """
+    update_withdrawal(withdrawal_id, status, tx_hash, admin_note)
+    if avisar:
+        _avisar_pago(
+            withdrawal_id, status, monto=monto, moneda=moneda, wallet=wallet,
+            user_id=user_id, username=username, tx_hash=tx_hash, nota=admin_note
+        )
 
 
 def _auto_send_ton(destination, ton_amount, memo=''):
@@ -2553,8 +2646,10 @@ def admin_process_withdrawal(withdrawal_id):
     
     if action == 'approve':
         update_withdrawal(withdrawal_id, 'completed', tx_hash, note)
+        _avisar_pago(withdrawal_id, 'completed', tx_hash=tx_hash, nota=note or 'Aprobado por admin')
     elif action == 'reject':
         update_withdrawal(withdrawal_id, 'rejected', None, note)
+        _avisar_pago(withdrawal_id, 'rejected', nota=note or 'Rechazado por admin')
         # TODO: Refund balance
     
     return redirect(url_for('admin_withdrawals'))
@@ -2974,6 +3069,10 @@ def admin_api_approve_withdrawal():
 
     # Marcar como completado
     update_withdrawal(str(withdrawal_id), 'completed', tx_hash or None, note or None)
+    _avisar_pago(withdrawal_id, 'completed', monto=ton_amount, moneda=currency,
+                 wallet=dest_wallet, user_id=w.get('user_id'),
+                 tx_hash=tx_hash,
+                 nota=note or ('Pago automatico (admin)' if auto_sent else 'Pago manual (admin)'))
 
     # Notificar al usuario
     if _NOTIF_OK:
@@ -3042,6 +3141,9 @@ def admin_api_process_all_withdrawals():
                     errors.append(f'{wid}: {send_err}')
                     continue
                 update_withdrawal(wid, 'completed', tx_hash_auto, 'Procesado en lote')
+                _avisar_pago(wid, 'completed', monto=ton_amount, moneda=currency,
+                             wallet=dest_wallet, user_id=w.get('user_id'),
+                             tx_hash=tx_hash_auto, nota='Procesado en lote')
 
                 # Notificar al usuario
                 if _NOTIF_OK:
@@ -3111,6 +3213,11 @@ def admin_api_reject_withdrawal():
 
         # Marcar como rechazado
         update_withdrawal(w['withdrawal_id'], 'rejected', None, reason)
+        _avisar_pago(w['withdrawal_id'], 'rejected',
+                     monto=w.get('net_amount') or w.get('amount'),
+                     moneda=(w.get('currency') or 'TON'),
+                     wallet=w.get('wallet_address'), user_id=w.get('user_id'),
+                     nota=reason or 'Rechazado')
 
         # Refund: devolver el monto (incluida la comisión) al usuario
         refund = float(w.get('amount', 0))
@@ -4627,6 +4734,30 @@ def bot_send_test():
         return jsonify({'ok': False, 'error': 'No ADMIN_IDS o BOT_TOKEN configurado'})
     result = _bot_send(admin_id, "🔔 <b>Test de notificación</b>\n\nEl sistema de notificaciones está funcionando correctamente. ✅")
     return jsonify({'ok': True, 'admin_id': admin_id, 'telegram_response': result})
+
+
+@app.route('/test-grupos')
+def test_grupos():
+    """Prueba que el bot pueda escribir en los dos grupos configurados.
+    Publico a proposito: sirve para diagnosticar sin sesion admin."""
+    res = {}
+    res['ALERT_CHAT_ID']    = CHAT_ALERTAS or '(no configurado)'
+    res['PAYMENTS_CHAT_ID'] = CHAT_PAGOS or '(no configurado)'
+
+    if CHAT_ALERTAS:
+        res['alertas_enviado'] = _enviar_a_grupo(CHAT_ALERTAS,
+            "🔔 <b>Prueba · Canal de ALERTAS</b>\n\n"
+            "Aqui llegaran los avisos de wallet sin fondos. ✅",
+            fallback_admin=False)
+    if CHAT_PAGOS:
+        res['pagos_enviado'] = _enviar_a_grupo(CHAT_PAGOS,
+            "🔔 <b>Prueba · Canal de PAGOS</b>\n\n"
+            "Aqui llegaran los retiros enviados, pendientes y rechazados. ✅",
+            fallback_admin=False)
+
+    res['nota'] = ('Si sale false, el bot no es miembro del grupo o no tiene '
+                   'permiso para escribir. Agregalo al grupo y reintenta.')
+    return jsonify(res)
 
 
 @app.route('/admin/bot/setup-webhook')
