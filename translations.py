@@ -373,6 +373,11 @@ TRANSLATIONS = {
     'wl_wd_to':       {'en': 'To:',                       'es': 'A:'},
     'wl_wd_id':       {'en': 'ID:',                       'es': 'ID:'},
     'wl_wd_send_soon':{'en': 'TON will be sent in the next few minutes.', 'es': 'El TON se enviará en los próximos minutos.'},
+    'wl_view_wallet': {'en': '🔍 View my wallet on Tonviewer',
+                       'es': '🔍 Ver mi wallet en Tonviewer'},
+    'api_wallet_linked_once': {
+        'en': 'Wallet linked successfully. For security, you can only link it once.',
+        'es': 'Wallet vinculada correctamente. Por seguridad, solo puedes vincularla una vez.'},
     # Wallet deposit success messages
     'wl_dep_received':{'en': 'TON received',              'es': 'TON recibidos'},
     'wl_dep_credited_to':{'en': 'TON credited to your account', 'es': 'TON acreditados a tu cuenta'},

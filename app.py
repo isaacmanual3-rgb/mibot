@@ -1050,7 +1050,7 @@ def api_profile_wallet(user):
     try:
         result = link_user_wallet(user['user_id'], wallet)
         if result.get('success'):
-            return jsonify({'success': True, 'message': 'Wallet vinculada correctamente. Por seguridad, solo puedes vincularla una vez.', 'wallet': wallet, 'locked': True})
+            return jsonify({'success': True, 'message': _t('api_wallet_linked_once'), 'wallet': wallet, 'locked': True})
 
         err = result.get('err')
         if err == 'wallet_locked':
