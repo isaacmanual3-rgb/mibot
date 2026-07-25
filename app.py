@@ -1232,6 +1232,39 @@ def api_ton_withdraw_init(user):
         })
 
 
+_ULTIMO_AVISO_SIN_FONDOS = [0.0]   # timestamp del ultimo aviso enviado
+
+def _avisar_admin_sin_fondos(detalle, withdrawal_id=None):
+    """
+    Avisa por Telegram al admin que la wallet del bot se quedo sin fondos.
+
+    Anti-spam: como cada retiro pendiente reintenta, sin limite se
+    mandarian decenas de mensajes. Se avisa como maximo 1 vez cada 30 min.
+    """
+    import time
+    ahora = time.time()
+    if ahora - _ULTIMO_AVISO_SIN_FONDOS[0] < 1800:
+        return
+    _ULTIMO_AVISO_SIN_FONDOS[0] = ahora
+
+    try:
+        admin_id = ADMIN_IDS[0].strip() if ADMIN_IDS else None
+        if not admin_id or not BOT_TOKEN:
+            return
+        ref = f"\n\n🧾 Retiro: <code>{withdrawal_id}</code>" if withdrawal_id else ""
+        _bot_send(admin_id, (
+            "⚠️ <b>WALLET SIN FONDOS</b>\n\n"
+            "Los retiros automaticos quedaron <b>en revision manual</b> "
+            "en vez de enviarse.\n\n"
+            f"📉 {detalle}{ref}\n\n"
+            "Recarga la wallet del bot y aprueba los retiros pendientes "
+            "desde el panel admin. Nada se perdio: siguen en cola."
+        ))
+        logger.info("[sin-fondos] admin avisado por Telegram")
+    except Exception as e:
+        logger.warning(f"[sin-fondos] no se pudo avisar al admin: {e}")
+
+
 def _auto_send_ton(destination, ton_amount, memo=''):
     """
     Enviar TON automáticamente desde la wallet del bot.
@@ -1247,12 +1280,12 @@ def _auto_send_ton(destination, ton_amount, memo=''):
         # Dirección real de la wallet del bot (Tonkeeper)
         bot_wallet = get_config('ton_bot_wallet_address', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES') or os.getenv('TON_BOT_WALLET_ADDRESS', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES')
 
-        from ton_wallet import send_ton
+        from ton_wallet import send_ton, ERR_SIN_FONDOS
         # El comentario de la transacción muestra el nombre de la app (no el ID interno).
         # Con respaldo fijo por si BOT_TITLE está vacío.
         comentario = (_BOT_TITLE or '').strip() or 'Aero Flex'
         logger.info(f"[auto_send] comentario del retiro = {comentario!r}")
-        return send_ton(
+        ok, tx_hash, err = send_ton(
             mnemonic           = mnemonic_str,
             to_addr            = destination,
             ton_amount         = float(ton_amount),
@@ -1260,6 +1293,13 @@ def _auto_send_ton(destination, ton_amount, memo=''):
             api_key            = api_key,
             bot_wallet_address = bot_wallet,
         )
+
+        # Si fue por falta de fondos, avisar al admin: el retiro queda
+        # en revision manual y hay que recargar la wallet.
+        if not ok and err and ERR_SIN_FONDOS in str(err):
+            _avisar_admin_sin_fondos(str(err), memo or None)
+
+        return ok, tx_hash, err
 
     except Exception as exc:
         logger.exception(f'_auto_send_ton error: {exc}')
@@ -3790,6 +3830,44 @@ def admin_api_flag_fraud(user_id):
     flag_user_fraud(user_id, reason)
     logger.info(f"[ANTI-FRAUD] Admin blocked withdrawals for user {user_id} - {reason}")
     return jsonify({'success': True, 'message': f'Retiros bloqueados para #{user_id}'})
+
+
+@app.route('/admin/api/ton/wallet-balance')
+@require_admin
+def admin_api_ton_wallet_balance():
+    """Saldo on-chain de la wallet del bot y cuanto se necesita
+    para cubrir los retiros pendientes."""
+    from ton_wallet import get_wallet_balance, FEE_RESERVE_TON
+    from database import execute_query
+    api_key = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
+    wallet  = (get_config('ton_bot_wallet_address', '')
+               or os.getenv('TON_BOT_WALLET_ADDRESS', ''))
+
+    saldo, err = get_wallet_balance(wallet, api_key)
+    if saldo is None:
+        return jsonify({'success': False, 'message': err, 'wallet': wallet})
+
+    # Cuanto hace falta para pagar todo lo pendiente
+    row = execute_query("""
+        SELECT COUNT(*) AS n, COALESCE(SUM(COALESCE(net_amount, amount)),0) AS total
+        FROM withdrawals
+        WHERE status = 'pending' AND UPPER(COALESCE(currency,'TON')) = 'TON'
+    """, fetch_one=True) or {}
+
+    pendientes = int(row.get('n', 0) or 0)
+    requerido  = float(row.get('total', 0) or 0)
+    comisiones = pendientes * FEE_RESERVE_TON
+
+    return jsonify({
+        'success':     True,
+        'wallet':      wallet,
+        'saldo':       round(saldo, 6),
+        'pendientes':  pendientes,
+        'requerido':   round(requerido, 6),
+        'comisiones':  round(comisiones, 6),
+        'alcanza':     saldo >= (requerido + comisiones),
+        'faltante':    round(max(0.0, (requerido + comisiones) - saldo), 6),
+    })
 
 
 @app.route('/admin/api/mining/settle-expired', methods=['POST'])

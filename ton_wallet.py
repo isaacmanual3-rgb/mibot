@@ -1,17 +1,104 @@
 """
 ton_wallet.py — tonutils con ToncenterClient
+
+Incluye verificacion de saldo ANTES de enviar. Sin esto,
+wallet.transfer() difunde el mensaje a la red y devuelve un hash
+aunque la wallet este vacia: la transaccion se acepta pero falla
+en la blockchain, y la app ya marco el retiro como completado.
 """
 import asyncio
+import json
 import logging
 import re
+import urllib.parse
+import urllib.request
 
 logger = logging.getLogger(__name__)
 
 TON_TO_NANO = 1_000_000_000
 
+# Margen que se deja SIEMPRE en la wallet: cubre la comision de red
+# (~0.005 TON por envio) mas la renta de almacenamiento del contrato.
+# Si el saldo no alcanza para monto + este margen, no se intenta enviar.
+FEE_RESERVE_TON = 0.05
+
+# Prefijo reconocible para que app.py distinga "no hay fondos" de
+# cualquier otro fallo y pueda avisar al admin.
+ERR_SIN_FONDOS = 'SALDO_INSUFICIENTE'
+
+
+def get_wallet_balance(address, api_key='', timeout=12):
+    """
+    Consulta el saldo on-chain de una direccion via Toncenter HTTP API.
+
+    Se usa la API REST directa en vez de tonutils para no depender de
+    los cambios de firma entre versiones de la libreria.
+
+    Devuelve (saldo_en_ton: float|None, error: str|None).
+    """
+    if not address:
+        return None, 'Direccion de wallet vacia'
+
+    url = ('https://toncenter.com/api/v2/getAddressBalance?address='
+           + urllib.parse.quote(str(address), safe=''))
+
+    req = urllib.request.Request(url, headers={'Accept': 'application/json'})
+    if api_key:
+        req.add_header('X-API-Key', api_key)
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return None, f'Toncenter no responde: {e}'
+
+    if not data.get('ok'):
+        return None, f"Toncenter devolvio error: {data.get('error', data)}"
+
+    try:
+        nano = int(data.get('result') or 0)
+    except (TypeError, ValueError):
+        return None, f"Saldo ilegible: {data.get('result')!r}"
+
+    return nano / TON_TO_NANO, None
+
+
+def check_funds(bot_wallet_address, ton_amount, api_key='', reserve=None):
+    """
+    Verifica si la wallet del bot tiene saldo para cubrir el envio.
+
+    Devuelve (alcanza: bool, saldo: float|None, error: str|None).
+
+    Si no se puede consultar el saldo devuelve alcanza=False (fail-closed):
+    ante la duda es mejor mandar el retiro a revision manual que difundir
+    una transaccion que va a fallar. Se reintenta una vez para tolerar
+    cortes momentaneos de red.
+    """
+    if reserve is None:
+        reserve = FEE_RESERVE_TON
+
+    necesario = float(ton_amount) + float(reserve)
+
+    saldo, err = get_wallet_balance(bot_wallet_address, api_key)
+    if saldo is None:
+        # Un reintento por si fue un corte momentaneo
+        logger.warning(f'[check_funds] primer intento fallo ({err}), reintentando')
+        saldo, err = get_wallet_balance(bot_wallet_address, api_key)
+
+    if saldo is None:
+        return False, None, f'No se pudo verificar el saldo: {err}'
+
+    if saldo < necesario:
+        return False, saldo, (
+            f'{ERR_SIN_FONDOS}: la wallet tiene {saldo:.4f} TON y se necesitan '
+            f'{necesario:.4f} TON ({ton_amount:.4f} + {reserve:.4f} de comision)'
+        )
+
+    return True, saldo, None
+
 
 def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
-             bot_wallet_address=''):
+             bot_wallet_address='', skip_balance_check=False):
     try:
         if isinstance(mnemonic, str):
             words = mnemonic.strip().split()
@@ -25,6 +112,27 @@ def send_ton(mnemonic, to_addr, ton_amount, memo='', api_key='',
         # límites más estrictos pero puede funcionar para envíos ocasionales.
         if not api_key:
             logger.warning('send_ton sin TONCENTER_API_KEY — usando límites públicos')
+
+        # ── Verificacion de saldo ANTES de difundir la transaccion.
+        # Es el punto clave: sin esto se enviaba igual y quedaba "Fallido"
+        # en la blockchain mientras la app lo daba por pagado.
+        if not skip_balance_check:
+            if not bot_wallet_address:
+                logger.warning(
+                    'send_ton sin bot_wallet_address — no se puede verificar '
+                    'saldo, se envia a ciegas'
+                )
+            else:
+                alcanza, saldo, err = check_funds(
+                    bot_wallet_address, float(ton_amount), api_key
+                )
+                if not alcanza:
+                    logger.error(f'[send_ton] envio abortado: {err}')
+                    return False, None, err
+                logger.info(
+                    f'[send_ton] saldo OK: {saldo:.4f} TON disponibles para '
+                    f'enviar {float(ton_amount):.4f} TON'
+                )
 
         try:
             loop = asyncio.get_event_loop()
