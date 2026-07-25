@@ -1277,8 +1277,21 @@ def _auto_send_ton(destination, ton_amount, memo=''):
 
         api_key = get_config('toncenter_api_key', '') or os.getenv('TONCENTER_API_KEY', '')
 
-        # Dirección real de la wallet del bot (Tonkeeper)
-        bot_wallet = get_config('ton_bot_wallet_address', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES') or os.getenv('TON_BOT_WALLET_ADDRESS', 'UQBp4whZkwuEDZK-FDHDZeNuBcwmW6uiHXyw1yzhLhrHAHES')
+        # Direccion real de la wallet del bot, usada para verificar el saldo.
+        #
+        # OJO con el orden: antes esta linea tenia una direccion hardcodeada
+        # como default de get_config(). Si la BD no tiene el valor, get_config
+        # devolvia esa direccion ajena (truthy), asi que el `or os.getenv(...)`
+        # NUNCA se ejecutaba y el .env quedaba ignorado: se verificaba el saldo
+        # de una wallet que no era la nuestra y siempre daba 0.
+        # Con default vacio, la cadena BD -> .env funciona de verdad.
+        bot_wallet = (get_config('ton_bot_wallet_address', '') or '').strip() \
+                     or (os.getenv('TON_BOT_WALLET_ADDRESS', '') or '').strip()
+        if not bot_wallet:
+            logger.warning(
+                '[auto_send] Sin TON_BOT_WALLET_ADDRESS ni config: no se puede '
+                'verificar el saldo antes de enviar.'
+            )
 
         from ton_wallet import send_ton, ERR_SIN_FONDOS
         # El comentario de la transacción muestra el nombre de la app (no el ID interno).
