@@ -1767,35 +1767,83 @@ def get_pending_mining_rewards(user_id):
 
     return total_pending
 
+# Cooldown minimo entre reclamos de mineria, en segundos.
+# Configurable con la variable de entorno MINING_CLAIM_COOLDOWN.
+MINING_CLAIM_COOLDOWN = int(os.environ.get('MINING_CLAIM_COOLDOWN', 600))
+
+
+def get_claim_cooldown_remaining(user_id):
+    """Segundos que faltan para que el usuario pueda volver a reclamar.
+
+    0 = puede reclamar ya. Se calcula ENTERO en SQL para que no dependa de
+    la hora del proceso Python (evita desfases de zona horaria).
+    """
+    try:
+        row = execute_query("""
+            SELECT GREATEST(0, %s - TIMESTAMPDIFF(SECOND, MAX(last_claim_at), NOW())) AS faltan
+            FROM user_mining_machines
+            WHERE user_id = %s AND settled = 0 AND expires_at > NOW()
+        """, (MINING_CLAIM_COOLDOWN, str(user_id)), fetch_one=True)
+        if not row or row.get('faltan') is None:
+            return 0
+        return int(row['faltan'])
+    except Exception as e:
+        logger.warning(f"[MINING-CLAIM] error calculando cooldown: {e}")
+        return 0
+
+
+def _fmt_espera(segundos):
+    """600 -> '10m 0s' ; 45 -> '45s'"""
+    segundos = int(segundos)
+    if segundos >= 60:
+        return f"{segundos // 60}m {segundos % 60}s"
+    return f"{segundos}s"
+
+
 def claim_mining_rewards(user_id):
     """Claim all pending mining rewards.
 
-    GUARD ATOMICO sobre last_claim_at: solo acredita si la fila sigue con el
-    mismo last_claim_at que leimos. Esto bloquea:
-      - doble tap en el boton Reclamar / reintentos del frontend
-      - dos workers de gunicorn atendiendo la misma peticion duplicada
-      - la carrera contra settle_expired_machines (el claim pisaba
-        last_claim_at DESPUES de que el settler ya habia pagado el periodo)
+    DOS CANDADOS, los dos aplicados en SQL (no en Python) para que peticiones
+    simultaneas no puedan saltarselos:
+
+      1. COOLDOWN: `last_claim_at <= NOW() - INTERVAL <cooldown> SECOND`.
+         Corta los bucles automatizados que golpeaban el endpoint cada 6s.
+
+      2. GUARD ATOMICO: `last_claim_at <=> <valor que leimos>`.
+         Solo acredita si la fila sigue igual que cuando la leimos. Bloquea
+         el doble tap, los reintentos del frontend y la carrera contra
+         settle_expired_machines (donde el claim pisaba last_claim_at
+         despues de que el settler ya habia pagado ese periodo).
     """
     machines = get_user_machines(user_id)
 
     if not machines:
         return {'success': False, 'err_code': 'api_no_machines'}
 
+    # Aviso temprano y amable (el candado real esta en el WHERE de abajo)
+    faltan = get_claim_cooldown_remaining(user_id)
+    if faltan > 0:
+        return {
+            'success': False,
+            'err_code': 'api_claim_cooldown',
+            'wait': _fmt_espera(faltan),
+            'seconds': faltan,
+        }
+
     total_claimed = 0
     now = datetime.now().replace(microsecond=0)
 
     for machine in machines:
-        raw_last = machine.get('last_claim_at')          # puede ser NULL
+        raw_last   = machine.get('last_claim_at')          # puede ser NULL
         last_claim = raw_last or machine.get('purchased_at')
         if not last_claim:
             continue
 
         # Nunca contar tiempo despues del vencimiento del plan
         expires = machine.get('expires_at')
-        hasta = min(now, expires) if expires else now
+        hasta   = min(now, expires) if expires else now
         hours_elapsed = max(0.0, (hasta - last_claim).total_seconds() / 3600)
-        hourly_rate = float(machine.get('hourly_rate', 0))
+        hourly_rate   = float(machine.get('hourly_rate', 0))
         pending = hours_elapsed * hourly_rate
 
         if pending <= 0:
@@ -1805,13 +1853,20 @@ def claim_mining_rewards(user_id):
         filas = execute_update_rowcount("""
             UPDATE user_mining_machines
             SET last_claim_at = %s, total_mined = total_mined + %s
-            WHERE id = %s AND settled = 0 AND last_claim_at <=> %s
-        """, (hasta, pending, machine['id'], raw_last))
+            WHERE id = %s
+              AND settled = 0
+              AND last_claim_at <=> %s
+              AND (last_claim_at IS NULL
+                   OR last_claim_at <= NOW() - INTERVAL %s SECOND)
+        """, (hasta, pending, machine['id'], raw_last, MINING_CLAIM_COOLDOWN))
 
         if filas:
             total_claimed += pending
         else:
-            logger.info(f"[MINING-CLAIM] carrera evitada en machine {machine['id']} (user {user_id})")
+            logger.info(
+                f"[MINING-CLAIM] bloqueado en machine {machine['id']} "
+                f"(user {user_id}): cooldown o carrera"
+            )
 
     if total_claimed > 0:
         # Credit to user balance

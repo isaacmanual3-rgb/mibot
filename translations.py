@@ -533,6 +533,10 @@ TRANSLATIONS = {
     'api_no_machines':       {'en': 'No active mining machines',   'es': 'No tienes máquinas activas'},
     'api_claimed_rewards':   {'en': 'Claimed {claimed} TON!',      'es': '¡{claimed} TON reclamados!'},
     'api_no_rewards':        {'en': 'No rewards to claim',         'es': 'No hay recompensas para reclamar'},
+    'api_claim_cooldown':    {
+        'en': 'You can claim again in {wait}',
+        'es': 'Puedes reclamar de nuevo en {wait}'
+    },
 }
 
 

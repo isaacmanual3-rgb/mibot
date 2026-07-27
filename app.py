@@ -263,7 +263,8 @@ def translate_result(result):
         amount    = result.pop('amount', '') if isinstance(result.get('amount'), str) else ''
         price     = result.pop('price', '')
         claimed   = result.pop('claimed', '')
-        result['message'] = _t(code, name=plan_name, date=date, amount=amount, price=price, claimed=claimed)
+        wait      = result.pop('wait', '')
+        result['message'] = _t(code, name=plan_name, date=date, amount=amount, price=price, claimed=claimed, wait=wait)
     if 'error' in result and isinstance(result['error'], str) and result['error'].startswith('api_'):
         code = result.pop('error')
         amount = result.pop('amount', '')
@@ -562,38 +563,82 @@ def get_client_ip():
 
     return request.remote_addr or '127.0.0.1'
 
+def _validate_init_data(init_data_raw, max_age_seconds=86400):
+    """Valida CRIPTOGRAFICAMENTE el initData de Telegram.
+
+    Devuelve el dict de parametros si la firma es correcta, o None si no lo es.
+
+    Sin esto cualquiera podia suplantar a cualquier usuario simplemente
+    mandando ?user_id=<id> o un initData inventado: reclamar mineria, pedir
+    retiros y leer datos de otras cuentas sin pasar por Telegram.
+
+    Algoritmo oficial:
+    https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+    """
+    if not init_data_raw:
+        return None
+    if not BOT_TOKEN:
+        logger.error("[AUTH] BOT_TOKEN no configurado: no se puede validar initData.")
+        return None
+    try:
+        import hmac as _hmac, hashlib as _hashlib, urllib.parse as _up, time as _time
+
+        params = dict(_up.parse_qsl(init_data_raw, keep_blank_values=True))
+        recibido = params.pop('hash', '')
+        if not recibido:
+            return None
+
+        # data_check_string = pares "k=v" ordenados alfabeticamente, unidos por \n
+        check_string = '\n'.join(f'{k}={v}' for k, v in sorted(params.items()))
+
+        secret     = _hmac.new(b'WebAppData', BOT_TOKEN.encode(), _hashlib.sha256).digest()
+        calculado  = _hmac.new(secret, check_string.encode(), _hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(calculado, recibido):
+            return None
+
+        # Anti-replay: un initData viejo no sirve para siempre
+        auth_date = int(params.get('auth_date', 0) or 0)
+        if max_age_seconds and auth_date and (_time.time() - auth_date) > max_age_seconds:
+            logger.info("[AUTH] initData caducado")
+            return None
+
+        return params
+    except Exception as e:
+        logger.warning(f"[AUTH] initData ilegible: {e}")
+        return None
+
+
 def get_user_id():
-    """Extract user ID from Telegram WebApp data"""
-    # Check session first
+    """Devuelve el user_id de la sesion (que solo se crea tras validar la firma).
+
+    SEGURIDAD: ya NO se aceptan ?user_id=, ?id= ni initData sin verificar.
+    """
     if session.get('user_id'):
         return session.get('user_id')
-    
-    # Check initData (sent from Telegram WebApp JS)
-    init_data = request.args.get('initData', '')
+
+    # initData por query string: SOLO si la firma HMAC es valida
+    init_data = request.args.get('initData', '') or request.args.get('tgWebAppData', '')
     if init_data:
-        try:
-            import urllib.parse
-            params = dict(urllib.parse.parse_qsl(init_data))
-            if 'user' in params:
+        params = _validate_init_data(init_data)
+        if not params:
+            logger.warning(f"[AUTH] initData con firma invalida rechazado (IP {get_client_ip()})")
+            return None
+        if 'user' in params:
+            try:
                 user_data = json.loads(params['user'])
-                user_id = str(user_data.get('id'))
-                session['user_id'] = user_id
-                session['username'] = user_data.get('username', '')
+                user_id   = str(user_data.get('id'))
+                session['user_id']    = user_id
+                session['username']   = user_data.get('username', '')
                 session['first_name'] = user_data.get('first_name', 'Player')
-                # Save start_param (referral) from Mini App launch
+                session.permanent     = True
                 start_param = params.get('start_param', '')
                 if start_param and start_param != user_id:
                     session['pending_ref'] = start_param
                 return user_id
-        except Exception as e:
-            logger.error(f"initData parse error: {e}")
-    
-    # Check URL parameters
-    user_id = request.args.get('user_id') or request.args.get('id')
-    if user_id:
-        session['user_id'] = str(user_id)
-        return str(user_id)
-    
+            except Exception as e:
+                logger.error(f"initData parse error: {e}")
+
     return None
 
 def ensure_user(user_id):
@@ -804,6 +849,72 @@ def require_user(f):
         return f(user, *args, **kwargs)
     return decorated
 
+
+# ============================================
+# RATE LIMITING
+# ============================================
+import threading as _rl_threading
+import time as _rl_time
+
+_rl_lock = _rl_threading.Lock()
+_rl_hits = {}
+
+
+def rate_limit(max_calls, window_seconds, por='user'):
+    """Limita peticiones en una ventana deslizante.
+
+    por='user' -> por usuario logueado (cae a IP si no hay sesion)
+    por='ip'   -> siempre por IP (para endpoints sin autenticar como /auth)
+
+    Es en memoria y por worker de gunicorn: no es un limite global exacto,
+    pero corta los bucles automatizados y baja la carga del servidor. El
+    limite duro de verdad vive en la base de datos (cooldown del claim).
+    """
+    def decorador(f):
+        @wraps(f)
+        def envuelto(*args, **kwargs):
+            try:
+                if por == 'ip':
+                    ident = get_client_ip()
+                else:
+                    ident = session.get('user_id') or get_client_ip()
+                ahora = _rl_time.time()
+                clave = f"{f.__name__}:{ident}"
+
+                with _rl_lock:
+                    cola = _rl_hits.setdefault(clave, [])
+                    while cola and cola[0] <= ahora - window_seconds:
+                        cola.pop(0)
+
+                    if len(cola) >= max_calls:
+                        espera = int(window_seconds - (ahora - cola[0])) + 1
+                        logger.warning(
+                            f"[RATE-LIMIT] {clave} bloqueado "
+                            f"({len(cola)} peticiones en {window_seconds}s)"
+                        )
+                        return jsonify({
+                            'success': False,
+                            'error': 'rate_limited',
+                            'message': f'Demasiadas peticiones. Espera {espera}s.',
+                            'retry_after': espera,
+                        }), 429
+
+                    cola.append(ahora)
+
+                    # Limpieza para que el dict no crezca sin limite
+                    if len(_rl_hits) > 5000:
+                        muertas = [k for k, v in _rl_hits.items()
+                                   if not v or v[-1] <= ahora - 3600]
+                        for k in muertas:
+                            _rl_hits.pop(k, None)
+            except Exception as e:
+                logger.warning(f"[RATE-LIMIT] error (deja pasar): {e}")
+
+            return f(*args, **kwargs)
+        return envuelto
+    return decorador
+
+
 def require_admin(f):
     """Decorator to require admin access (domain-isolated + Telegram-ID gated)."""
     @wraps(f)
@@ -826,6 +937,7 @@ def require_admin(f):
 
 
 @app.route('/auth', methods=['POST'])
+@rate_limit(20, 60, por='ip')
 def auth():
     """Receive initData from Telegram WebApp JS and save to session"""
     data = request.get_json(force=True) or {}
@@ -834,9 +946,13 @@ def auth():
     if not init_data_raw:
         return jsonify({'success': False, 'message': 'No initData'})
     
+    # SEGURIDAD: verificar la firma HMAC antes de creer nada de lo que llega.
+    params = _validate_init_data(init_data_raw)
+    if params is None:
+        logger.warning(f"[AUTH] initData con firma invalida desde IP {get_client_ip()}")
+        return jsonify({'success': False, 'message': 'Invalid signature'}), 403
+
     try:
-        import urllib.parse
-        params = dict(urllib.parse.parse_qsl(init_data_raw))
         if 'user' not in params:
             return jsonify({'success': False, 'message': 'No user in initData'})
         
@@ -1970,6 +2086,7 @@ def api_complete_task(user):
 
 @app.route('/api/withdraw', methods=['POST'])
 @require_user
+@rate_limit(5, 300)
 def api_withdraw(user):
     """Request withdrawal"""
     data = request.get_json() or {}
@@ -2182,6 +2299,7 @@ def api_mining_purchase(user):
 
 @app.route('/api/mining/claim', methods=['POST'])
 @require_user
+@rate_limit(6, 60)
 def api_mining_claim(user):
     """Claim mining rewards"""
     # Primero acreditar planes vencidos sin reclamar, luego los activos
