@@ -192,28 +192,53 @@ def unban_user(user_id):
 # ============================================
 
 def update_balance(user_id, amount, action, description=None):
-    """Update user DOGE balance with history"""
-    user = get_user(user_id)
-    if not user:
+    """Update user DOGE balance with history.
+
+    ATOMICO: usa `doge_balance = doge_balance + %s` en vez de leer-modificar-escribir.
+    Con read-modify-write dos peticiones simultaneas leian el mismo saldo y la
+    ultima escritura pisaba a la otra (saldo perdido / descuadre con el historial).
+    """
+    amount = float(amount)
+
+    if amount == 0:
+        # MySQL devuelve rowcount=0 si el valor no cambia: se registra y ya.
+        if not get_user(user_id):
+            return False
+        row = execute_query("SELECT doge_balance FROM users WHERE user_id = %s",
+                            (str(user_id),), fetch_one=True)
+        saldo = float(row['doge_balance']) if row else 0.0
+        execute_query("""
+            INSERT INTO balance_history (user_id, action, amount, balance_before, balance_after, description)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (str(user_id), action, 0.0, saldo, saldo, description))
+        return True
+
+    if amount < 0:
+        # Debito con guard atomico: nunca deja el saldo en negativo.
+        filas = execute_update_rowcount(
+            "UPDATE users SET doge_balance = doge_balance + %s "
+            "WHERE user_id = %s AND doge_balance >= %s",
+            (amount, str(user_id), -amount)
+        )
+    else:
+        filas = execute_update_rowcount(
+            "UPDATE users SET doge_balance = doge_balance + %s, total_earned = total_earned + %s "
+            "WHERE user_id = %s",
+            (amount, amount, str(user_id))
+        )
+
+    if not filas:
         return False
 
-    balance_before = Decimal(str(user.get('doge_balance', 0)))
-    balance_after = balance_before + Decimal(str(amount))
+    row = execute_query("SELECT doge_balance FROM users WHERE user_id = %s",
+                        (str(user_id),), fetch_one=True)
+    balance_after  = float(row['doge_balance']) if row else 0.0
+    balance_before = balance_after - amount
 
-    if balance_after < 0:
-        return False
-
-    # Update balance
-    execute_query(
-        "UPDATE users SET doge_balance = %s, total_earned = total_earned + %s WHERE user_id = %s",
-        (float(balance_after), max(0, float(amount)), str(user_id))
-    )
-
-    # Record history
     execute_query("""
         INSERT INTO balance_history (user_id, action, amount, balance_before, balance_after, description)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (str(user_id), action, float(amount), float(balance_before), float(balance_after), description))
+    """, (str(user_id), action, amount, balance_before, balance_after, description))
 
     return True
 
@@ -1743,35 +1768,50 @@ def get_pending_mining_rewards(user_id):
     return total_pending
 
 def claim_mining_rewards(user_id):
-    """Claim all pending mining rewards"""
+    """Claim all pending mining rewards.
+
+    GUARD ATOMICO sobre last_claim_at: solo acredita si la fila sigue con el
+    mismo last_claim_at que leimos. Esto bloquea:
+      - doble tap en el boton Reclamar / reintentos del frontend
+      - dos workers de gunicorn atendiendo la misma peticion duplicada
+      - la carrera contra settle_expired_machines (el claim pisaba
+        last_claim_at DESPUES de que el settler ya habia pagado el periodo)
+    """
     machines = get_user_machines(user_id)
 
     if not machines:
         return {'success': False, 'err_code': 'api_no_machines'}
 
     total_claimed = 0
-    now = datetime.now()
+    now = datetime.now().replace(microsecond=0)
 
     for machine in machines:
-        last_claim = machine.get('last_claim_at') or machine.get('purchased_at')
-        if last_claim:
-            # Nunca contar tiempo despues del vencimiento del plan
-            expires = machine.get('expires_at')
-            hasta = min(now, expires) if expires else now
-            hours_elapsed = max(0.0, (hasta - last_claim).total_seconds() / 3600)
-            hourly_rate = float(machine.get('hourly_rate', 0))
-            pending = hours_elapsed * hourly_rate
+        raw_last = machine.get('last_claim_at')          # puede ser NULL
+        last_claim = raw_last or machine.get('purchased_at')
+        if not last_claim:
+            continue
 
-            if pending > 0:
-                total_claimed += pending
+        # Nunca contar tiempo despues del vencimiento del plan
+        expires = machine.get('expires_at')
+        hasta = min(now, expires) if expires else now
+        hours_elapsed = max(0.0, (hasta - last_claim).total_seconds() / 3600)
+        hourly_rate = float(machine.get('hourly_rate', 0))
+        pending = hours_elapsed * hourly_rate
 
-                # Update machine
-                query = """
-                    UPDATE user_mining_machines
-                    SET last_claim_at = %s, total_mined = total_mined + %s
-                    WHERE id = %s
-                """
-                execute_query(query, (hasta, pending, machine['id']))
+        if pending <= 0:
+            continue
+
+        # <=> es el igual NULL-safe de MySQL (cubre last_claim_at NULL).
+        filas = execute_update_rowcount("""
+            UPDATE user_mining_machines
+            SET last_claim_at = %s, total_mined = total_mined + %s
+            WHERE id = %s AND settled = 0 AND last_claim_at <=> %s
+        """, (hasta, pending, machine['id'], raw_last))
+
+        if filas:
+            total_claimed += pending
+        else:
+            logger.info(f"[MINING-CLAIM] carrera evitada en machine {machine['id']} (user {user_id})")
 
     if total_claimed > 0:
         # Credit to user balance
