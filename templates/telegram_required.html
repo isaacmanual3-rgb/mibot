@@ -203,7 +203,6 @@
                 window.location.replace('/');
                 return;
             }
-            sessionStorage.setItem('tg_auth_done', '1');
             var startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
             fetch('/auth', {
                 method: 'POST',
@@ -213,8 +212,12 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) window.location.replace('/');
-                else if (tries < maxTries) setTimeout(tryAuth, 500);
+                if (data.success) {
+                    sessionStorage.setItem('tg_auth_done', '1');
+                    window.location.replace('/');
+                } else if (tries < maxTries) {
+                    setTimeout(tryAuth, 500);
+                }
             })
             .catch(function() {
                 if (tries < maxTries) setTimeout(tryAuth, 500);

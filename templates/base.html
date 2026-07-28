@@ -540,7 +540,6 @@
             if (sessionStorage.getItem('tg_auth_done')) return;
             const initData = tg.initData;
             if (!initData) return;
-            sessionStorage.setItem('tg_auth_done', '1');
             const startParam = (tg.initDataUnsafe && tg.initDataUnsafe.start_param) || '';
             fetch('/auth', {
                 method: 'POST',
@@ -549,7 +548,12 @@
                 body: JSON.stringify({ initData: initData, start_param: startParam })
             })
             .then(r => r.json())
-            .then(data => { if (data.success) window.location.reload(); })
+            .then(data => {
+                if (data.success) {
+                    sessionStorage.setItem('tg_auth_done', '1');
+                    window.location.reload();
+                }
+            })
             .catch(() => {});
         })();
     </script>
