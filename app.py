@@ -2222,6 +2222,19 @@ def api_mining_ad_watched(user):
             'message': f'Espera {result.get("cooldown", 0)}s antes del siguiente anuncio.'
         })
 
+    # ── Registro forense: una fila por anuncio, con timestamp de segundos ──
+    # Solo se loguea cuando el servidor ACEPTA el anuncio (pasó el cooldown).
+    # Sirve para medir el espaciado entre recompensas y cazar scripts.
+    try:
+        from database import execute_query
+        execute_query(
+            "INSERT INTO ad_log (user_id, slot, plan_id, ip_address) "
+            "VALUES (%s, 'mining_free', %s, %s)",
+            (str(user['user_id']), plan_id, get_client_ip())
+        )
+    except Exception as _adlog_err:
+        logger.warning(f"[ad_log] no se pudo registrar anuncio: {_adlog_err}")
+
     return jsonify({
         'success': True,
         'ads_watched': result.get('ads_watched', 0),
