@@ -281,8 +281,10 @@ def setlang_initial(code):
         session['lang_asked_ts'] = time.time()
         session['lang_chosen'] = True
         session.permanent = True
-        # user_id: de la URL (?u=), o get_user_id(), o sesión
-        uid = request.args.get('u') or get_user_id() or session.get('user_id') or session.get('tg_user_id')
+        # SEGURIDAD: ?u= ELIMINADO. Permitia /setlang/es?u=<victima> para
+        # secuestrar la sesion de cualquier usuario. La identidad sale solo
+        # de la sesion firmada o de initData con HMAC valido.
+        uid = get_user_id() or session.get('user_id') or session.get('tg_user_id')
         if uid:
             session['user_id'] = str(uid)  # recordar para próximas navegaciones
             try:
@@ -302,8 +304,8 @@ def set_lang(code):
     if code in get_supported_langs():
         session['lang'] = code
         # Guardar en BD para que notificaciones y bot usen este idioma.
-        # user_id de varias fuentes (get_user_id da None dentro de Telegram).
-        uid = request.args.get('u') or get_user_id() or session.get('user_id') or session.get('tg_user_id')
+        # SEGURIDAD: ?u= ELIMINADO (suplantacion de sesion). Ver /setlang.
+        uid = get_user_id() or session.get('user_id') or session.get('tg_user_id')
         if uid:
             session['user_id'] = str(uid)
             try:
@@ -4778,7 +4780,18 @@ def telegram_webhook():
 @app.route('/tgwebhook', methods=['POST'])
 def telegram_webhook_simple():
     """Ruta alternativa de webhook sin token en URL (para PythonAnywhere/proxies)."""
-    # Verificar que viene de Telegram con el token en header o body
+    # Verificar que viene de Telegram (cabecera oficial de secreto).
+    # Si TELEGRAM_WEBHOOK_SECRET no esta definido: NO bloquea, solo avisa,
+    # para no tumbar el bot si esta ruta es la registrada ahora mismo.
+    _secreto = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip()
+    if _secreto:
+        _recibido = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        if not secrets.compare_digest(str(_recibido), _secreto):
+            logger.warning(f"[webhook] update falso rechazado (IP {get_client_ip()})")
+            return 'forbidden', 403
+    else:
+        logger.warning("[webhook] /tgwebhook SIN secreto: acepta updates de cualquiera")
+
     try:
         update = request.get_json(force=True, silent=True) or {}
         _process_update(update)
@@ -4789,9 +4802,17 @@ def telegram_webhook_simple():
 
 # ─── Diagnóstico público ─────────────────────────────────
 
+def _ocultar_token(txt):
+    """Nunca imprimir el BOT_TOKEN: es la clave HMAC del initData."""
+    if not txt or not BOT_TOKEN:
+        return txt
+    return str(txt).replace(BOT_TOKEN, '<TOKEN-OCULTO>')
+
+
 @app.route('/bot-status')
+@require_admin
 def bot_status():
-    """Página de diagnóstico del bot — accesible sin login."""
+    """Diagnostico del bot. SOLO ADMIN: antes filtraba el BOT_TOKEN en claro."""
     token = BOT_TOKEN
     webapp = _WEBAPP_URL
     channels = _OFFICIAL_CHANNELS
@@ -4836,7 +4857,7 @@ def bot_status():
             if wh.get('ok'):
                 info = wh['result']
                 results['webhook'] = {
-                    'url': info.get('url') or '❌ NO REGISTRADO',
+                    'url': _ocultar_token(info.get('url')) or '❌ NO REGISTRADO',
                     'has_custom_certificate': info.get('has_custom_certificate'),
                     'pending_update_count': info.get('pending_update_count', 0),
                     'last_error': info.get('last_error_message', 'Ninguno'),
@@ -4852,7 +4873,7 @@ def bot_status():
 
     # 6. Determinar URLs de webhook correctas
     host = request.host_url.rstrip('/')
-    results['correct_webhook_url'] = f"{host}/webhook/{token}"
+    results['correct_webhook_url'] = _ocultar_token(f"{host}/webhook/{token}")
     results['simple_webhook_url'] = f"{host}/tgwebhook"
 
     # Generar HTML de diagnóstico
@@ -4915,6 +4936,7 @@ def bot_status():
 
 
 @app.route('/bot-setup-webhook')
+@require_admin
 def bot_setup_webhook_public():
     """Registra el webhook — accesible sin login para facilitar setup."""
     if not BOT_TOKEN:
@@ -4950,6 +4972,7 @@ def bot_setup_webhook_public():
 
 
 @app.route('/bot-delete-webhook')
+@require_admin
 def bot_delete_webhook_public():
     """Elimina el webhook."""
     result = _bot_api("deleteWebhook", {"drop_pending_updates": True})
@@ -4957,6 +4980,7 @@ def bot_delete_webhook_public():
 
 
 @app.route('/bot-send-test')
+@require_admin
 def bot_send_test():
     """Envía un mensaje de prueba al primer admin configurado."""
     admin_id = ADMIN_IDS[0] if ADMIN_IDS else None
@@ -4967,6 +4991,7 @@ def bot_send_test():
 
 
 @app.route('/test-grupos')
+@require_admin
 def test_grupos():
     """Prueba que el bot pueda escribir en los dos grupos configurados.
     Publico a proposito: sirve para diagnosticar sin sesion admin."""
