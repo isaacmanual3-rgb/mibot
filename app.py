@@ -2171,6 +2171,25 @@ def api_verify_channel(user):
 # MINING API ROUTES
 # ============================================
 
+def _plan_ya_activo(user_id, plan_id):
+    """True si el usuario ya tiene una maquina activa de ese plan.
+
+    Reutiliza la MISMA condicion que purchase_mining_machine (expires_at > NOW()),
+    asi que al expirar el plan (diario) los anuncios se reabren solos.
+    """
+    try:
+        from database import execute_query
+        row = execute_query(
+            "SELECT id FROM user_mining_machines "
+            "WHERE user_id=%s AND plan_id=%s AND expires_at > NOW() LIMIT 1",
+            (str(user_id), int(plan_id)), fetch_one=True
+        )
+        return bool(row)
+    except Exception as e:
+        logger.warning(f"[ad-gate] no se pudo comprobar plan activo: {e}")
+        return False   # ante la duda, NO bloquear al usuario
+
+
 @app.route('/api/mining/ad-progress', methods=['GET'])
 @require_user
 def api_mining_ad_progress(user):
@@ -2181,8 +2200,23 @@ def api_mining_ad_progress(user):
     ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
     watched = get_free_plan_ad_progress(user['user_id'], plan_id)
     cooldown = get_ad_cooldown_remaining(user['user_id'], plan_id)
+
+    # Si el plan ya esta activo, no hay nada que desbloquear: el front
+    # debe ocultar el boton de ver anuncios hasta que expire.
+    if _plan_ya_activo(user['user_id'], plan_id):
+        return jsonify({
+            'success': True,
+            'plan_active': True,
+            'ads_blocked': True,
+            'ads_watched': watched,
+            'ads_required': ADS_REQUIRED,
+            'cooldown': 0
+        })
+
     return jsonify({
         'success': True,
+        'plan_active': False,
+        'ads_blocked': False,
         'ads_watched': watched,
         'ads_required': ADS_REQUIRED,
         'cooldown': cooldown
@@ -2206,6 +2240,18 @@ def api_mining_ad_watched(user):
     plan_check = get_mining_plan(plan_id)
     if not plan_check or float(plan_check.get('price', 0)) != 0.0:
         return jsonify({'success': False, 'message': 'No es un plan gratis'})
+
+    # ── Plan ya activo: no tiene sentido ver mas anuncios ──
+    # Se corta ANTES de contar y ANTES de registrar en ad_log, para no
+    # ensuciar el log ni gastar impresiones de anuncio en balde.
+    if _plan_ya_activo(user['user_id'], plan_id):
+        return jsonify({
+            'success': False,
+            'reason': 'plan_active',
+            'plan_active': True,
+            'ads_blocked': True,
+            'message': 'Ya tienes este plan activo. Podras ver anuncios de nuevo cuando expire.'
+        })
 
     ADS_REQUIRED = int(get_config('free_plan_ads_required', '10') or 10)
     COOLDOWN = int(get_config('free_plan_ad_cooldown', '30') or 30)
