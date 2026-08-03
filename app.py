@@ -4550,6 +4550,28 @@ def _handle_start(msg):
             update_user(user_id, username=username, first_name=first_name)
         else:
             create_user(user_id, username=username, first_name=first_name, referred_by=referrer_id)
+
+        # ── FIX referidos ──────────────────────────────────────────────
+        # BUG: aqui solo se guardaba users.referred_by, pero NUNCA se
+        # insertaba la fila en la tabla `referrals`. Resultado: el invitador
+        # no veia nada en su lista y referral_count nunca subia.
+        # add_referral usa INSERT IGNORE + UNIQUE(referrer_id,referred_id),
+        # asi que es seguro llamarlo aunque la fila ya exista.
+        if referrer_id and get_user(referrer_id):
+            from database import execute_query, add_referral
+            _actual = (existing or {}).get('referred_by') or ''
+            if not _actual:
+                if existing:
+                    execute_query(
+                        "UPDATE users SET referred_by=%s WHERE user_id=%s "
+                        "AND (referred_by IS NULL OR referred_by='')",
+                        (str(referrer_id), str(user_id)))
+                add_referral(referrer_id, user_id, username, first_name)
+                logger.info(f"[ref] {user_id} registrado como referido de {referrer_id}")
+            elif str(_actual) == str(referrer_id):
+                # ya tenia referred_by pero pudo faltar la fila (bug antiguo)
+                add_referral(referrer_id, user_id, username, first_name)
+            # si _actual apunta a OTRO invitador: no se toca (gana el primero)
     except Exception as e:
         logger.warning(f"DB error on /start: {e}")
         is_new = False

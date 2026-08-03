@@ -2602,7 +2602,10 @@ def confirm_ton_deposit(deposit_id, ton_tx_hash=None):
         """, (ton_tx_hash, deposit_id))
 
         # Pay 5% lifetime commission to referrer (if any)
-        pay_referral_commission(deposit['user_id'], deposit['doge_credited'], 'deposit')
+        # DESACTIVADO a peticion del operador: ya no se paga 5% al invitador
+        # cuando su referido deposita/invierte TON. La comision de MINADO
+        # (ver llamadas con source='mining') sigue activa.
+        # pay_referral_commission(deposit['user_id'], deposit['doge_credited'], 'deposit')
 
         return True
     return False
