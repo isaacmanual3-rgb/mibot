@@ -1111,7 +1111,9 @@ function setAdsStatus(msg, type) {
 }
 
 function openAdsModal(planName) {
-  adsWatched = 0;
+  // NO se pone adsWatched a 0: el servidor es la unica fuente de verdad.
+  // Antes se reseteaba aqui y si loadAdProgress() fallaba el usuario veia
+  // "anuncio 1" aunque el servidor tuviera 6 -> parecia que se reiniciaba.
   adsInProgress = false;
   // Resetear cualquier cooldown previo
   adCooldownActive = false;
@@ -1122,27 +1124,49 @@ function openAdsModal(planName) {
   buildAdsDots();
   renderAdsProgress();
   setAdsStatus('', '');
-  document.getElementById('adsWatchBtn').disabled = false;
+  // Boton bloqueado hasta confirmar el progreso real con el servidor.
+  document.getElementById('adsWatchBtn').disabled = true;
   document.getElementById('adsModal').classList.add('show');
   initAdsgram();
-  // Cargar el progreso guardado en el servidor (persiste al salir de la app)
   loadAdProgress();
 }
 
-async function loadAdProgress() {
-  if (!currentPlanId) return;
-  try {
-    const res = await fetch('/api/mining/ad-progress?plan_id=' + currentPlanId);
-    const data = await res.json();
-    if (data.success && typeof data.ads_watched === 'number') {
-      adsWatched = Math.min(data.ads_watched, ADS_REQUIRED);
-      renderAdsProgress();
-      // Reanudar el cooldown si el servidor dice que aún falta tiempo
-      if (data.cooldown && data.cooldown > 0 && adsWatched < ADS_REQUIRED) {
-        startAdCooldown(data.cooldown);
+async function loadAdProgress(intentos) {
+  intentos = (typeof intentos === 'number') ? intentos : 3;
+  const btn = document.getElementById('adsWatchBtn');
+  if (!currentPlanId) { if (btn) btn.disabled = false; return false; }
+
+  for (let i = 0; i < intentos; i++) {
+    try {
+      const res = await fetch('/api/mining/ad-progress?plan_id=' + currentPlanId,
+                              { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && typeof data.ads_watched === 'number') {
+        adsWatched = Math.min(data.ads_watched, ADS_REQUIRED);
+        renderAdsProgress();
+
+        // El plan ya esta activo: no hay que ver mas anuncios.
+        if (data.ads_blocked) {
+          if (btn) btn.disabled = true;
+          return true;
+        }
+        if (data.cooldown && data.cooldown > 0 && adsWatched < ADS_REQUIRED) {
+          startAdCooldown(data.cooldown);
+        } else if (btn) {
+          btn.disabled = false;
+        }
+        return true;
       }
-    }
-  } catch (e) { /* si falla, empieza en 0 */ }
+    } catch (e) { /* reintentar abajo */ }
+    // Espera progresiva antes de reintentar (red movil inestable)
+    await new Promise(r => setTimeout(r, 800 * (i + 1)));
+  }
+
+  // Tras varios intentos fallidos: NO mostrar un progreso falso de 0.
+  // Mejor avisar que dejar al usuario ver anuncios que no se van a contar.
+  setAdsStatus((window.I18N?.mn_conn_error || '{{ t.mn_conn_error }}'), 'err');
+  if (btn) btn.disabled = true;
+  return false;
 }
 
 function closeAdsModal() {
@@ -1251,10 +1275,19 @@ async function watchAd() {
         adsWatched = data.ads_watched;
         serverCooldown = data.cooldown || 30;
       } else {
-        adsWatched++; // fallback local si el servidor no responde bien
+        // El servidor NO confirmo el anuncio: no inventar progreso local.
+        // Antes se hacia adsWatched++ y el contador quedaba por encima del
+        // real; la siguiente sincronizacion lo bajaba de golpe.
+        setAdsStatus((window.I18N?.mn_conn_error || '{{ t.mn_conn_error }}'), 'err');
+        adsInProgress = false;
+        await loadAdProgress(2);
+        return;
       }
     } catch (_e) {
-      adsWatched++; // fallback local
+      setAdsStatus((window.I18N?.mn_conn_error || '{{ t.mn_conn_error }}'), 'err');
+      adsInProgress = false;
+      await loadAdProgress(2);
+      return;
     }
     renderAdsProgress();
     createPixelExplosion(window.innerWidth / 2, window.innerHeight / 2, '#00ff66');

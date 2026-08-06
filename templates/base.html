@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_lang|default('en') }}" dir="{{ dir_attr|default('ltr') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -216,6 +216,55 @@
     </style>
 
     {% block head %}{% endblock %}
+
+    <!-- ── Soporte RTL (arabe) ─────────────────────────────── -->
+    <style>
+      /* Fuente con buen soporte de arabe */
+      html[dir="rtl"] body,
+      html[dir="rtl"] button,
+      html[dir="rtl"] input,
+      html[dir="rtl"] textarea {
+        font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+        letter-spacing: 0 !important;   /* el arabe es cursivo: no separar letras */
+      }
+      html[dir="rtl"] { text-align: right; }
+
+      /* Voltear el eje horizontal de los contenedores flex */
+      html[dir="rtl"] .row,
+      html[dir="rtl"] .flex-row,
+      html[dir="rtl"] .nav-item,
+      html[dir="rtl"] .stat-row,
+      html[dir="rtl"] .list-item { flex-direction: row-reverse; }
+
+      /* Margenes y rellenos direccionales -> logicos */
+      html[dir="rtl"] [class*="ml-"], html[dir="rtl"] .margin-left  { margin-left: 0;  margin-right: var(--sp, .5rem); }
+      html[dir="rtl"] [class*="mr-"], html[dir="rtl"] .margin-right { margin-right: 0; margin-left:  var(--sp, .5rem); }
+
+      /* Numeros y codigos SIEMPRE de izquierda a derecha:
+         direcciones TON, importes, IDs y marcas de tiempo */
+      html[dir="rtl"] .ltr,
+      html[dir="rtl"] code,
+      html[dir="rtl"] .wallet-address,
+      html[dir="rtl"] .amount,
+      html[dir="rtl"] .balance,
+      html[dir="rtl"] input[type="number"],
+      html[dir="rtl"] input[inputmode="decimal"] {
+        direction: ltr;
+        unicode-bidi: embed;
+        text-align: left;
+      }
+
+      /* Flechas que apuntan al lado contrario en RTL */
+      html[dir="rtl"] .arrow-flip { transform: scaleX(-1); display: inline-block; }
+
+      /* La barra inferior se voltea entera */
+      html[dir="rtl"] .bottom-nav { flex-direction: row-reverse; }
+
+      /* El ticker desplazante va al reves */
+      html[dir="rtl"] .ticker-content { animation-direction: reverse; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
