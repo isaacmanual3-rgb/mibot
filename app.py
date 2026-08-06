@@ -12,7 +12,7 @@ import requests
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, abort
-from translations import get_t, get_supported_langs
+from translations import get_t, get_supported_langs, is_rtl
 
 # Logging Configuration
 logging.basicConfig(
@@ -239,7 +239,11 @@ def _admin_key_ok():
 def inject_lang():
     """Inject `t` (translations) and `current_lang` into every template."""
     lang = session.get('lang', 'en')
-    return dict(t=get_t(lang), current_lang=lang)
+    _rtl = is_rtl(lang)
+    return dict(t=get_t(lang), current_lang=lang,
+                is_rtl=_rtl,
+                dir_attr='rtl' if _rtl else 'ltr',
+                text_align='right' if _rtl else 'left')
 
 
 def _t(key, **kwargs):
@@ -4439,7 +4443,7 @@ def _autoban_check_shared_ip(user_id, ip):
             u = get_user(uid)
             if u:
                 saved = u.get('language')
-                if saved and str(saved).lower() in ('es', 'en'):
+                if saved and str(saved).lower() in ('es', 'en', 'ar'):
                     return str(saved).lower()
         except Exception:
             pass
@@ -4514,7 +4518,7 @@ def _detect_lang_from_update(user_obj):
             u = get_user(uid)
             if u:
                 saved = u.get('language')
-                if saved and str(saved).lower() in ('es', 'en'):
+                if saved and str(saved).lower() in ('es', 'en', 'ar'):
                     return str(saved).lower()
     except Exception:
         pass
@@ -4695,7 +4699,7 @@ def _handle_callback(cq):
                     'fr': "👥 <b>Mes Filleuls</b>\n\nVous n'avez pas encore de filleuls. Partagez votre lien pour gagner!",
                 }
             back_btn = {"inline_keyboard":[[{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}]]}
-            _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), back_btn)
+            _bot_edit(chat_id, msg_id, texts.get(lang, texts.get('en', texts['es'])), back_btn)
         except Exception as e:
             logger.warning(f"my_referrals error: {e}")
             _bot_answer(cq_id, "Error al cargar referidos", alert=True)
@@ -4720,7 +4724,7 @@ def _handle_callback(cq):
             [{"text": share_text.get(lang,'📤 Share'), "switch_inline_query": share_msg.get(lang, share_msg['en'])}],
             [{"text":"⬅️ Volver" if lang=='es' else "⬅️ Back","callback_data":"back_main"}],
         ]}
-        _bot_edit(chat_id, msg_id, texts.get(lang, texts['es']), kb)
+        _bot_edit(chat_id, msg_id, texts.get(lang, texts.get('en', texts['es'])), kb)
 
     elif data == 'back_main':
         _bot_answer(cq_id)

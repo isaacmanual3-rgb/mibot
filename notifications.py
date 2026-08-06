@@ -30,8 +30,8 @@ _LANG_MAP = {
 def detect_lang(language_code):
     if not language_code: return 'en'
     lc = str(language_code).lower().strip()
-    # Si ya es un idioma soportado ('es'/'en'), usarlo directo
-    if lc in ('es', 'en'):
+    # Si ya es un idioma soportado ('es'/'en'/'ar'), usarlo directo
+    if lc in ('es', 'en', 'ar'):
         return lc
     return _LANG_MAP.get(lc) or _LANG_MAP.get(lc[:2]) or 'en'
 
