@@ -1960,12 +1960,20 @@ def settle_expired_machines(user_id=None, limit=300):
                 continue  # otro proceso ya lo liquido
 
             # ── Al VENCER el plan, borrar el progreso de anuncios ──────────
-            # Los anuncios son DIARIOS: al expirar debe volver a ver los 10.
-            # Antes el progreso acumulado durante el plan activo se quedaba
-            # guardado y el usuario reactivaba sin ver ni un anuncio nuevo.
-            # Va detras del guard atomico -> se ejecuta una sola vez.
+            # Los anuncios son DIARIOS: al expirar debe ver los 10 de nuevo.
+            #
+            # IMPORTANTE: solo se borra el progreso ANTERIOR al vencimiento
+            # (updated_at <= expires_at). Este barrido corre cada 5 minutos,
+            # asi que si el usuario ya vio anuncios DESPUES de que venciera,
+            # borrarlos sin mas le reiniciaria el contador delante de las
+            # narices. Con este filtro esos anuncios se respetan.
             try:
-                reset_free_plan_ad_progress(m['user_id'], m.get('plan_id'))
+                if expires and m.get('plan_id') is not None:
+                    execute_query(
+                        "DELETE FROM free_plan_ad_progress "
+                        "WHERE user_id=%s AND plan_id=%s AND updated_at <= %s",
+                        (str(m['user_id']), m.get('plan_id'), expires)
+                    )
             except Exception as _e_ads:
                 logger.warning(f"[MINING-SETTLE] no se pudo reiniciar anuncios: {_e_ads}")
 
